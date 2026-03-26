@@ -4,14 +4,18 @@ Rust port of the current explicit Vulkan post-process frame-generation layer MVP
 
 ## Current goal
 
-Reach feature parity with the C++ MVP while building a safer foundation for future work:
+Reach feature parity with the C++ MVP while building a safer foundation for future work.
+
+Current Rust capability set:
 - explicit Vulkan layer ABI exports
 - instance / device / swapchain / present interception
-- runtime modes:
+- parity runtime modes:
   - `passthrough`
   - `clear`
   - `copy`
   - `history-copy`
+- first Rust-only generated backend mode:
+  - `blend`
 - testable swapchain mutation + present sequencing logic
 - expandable regression harness for future interpolation work
 
@@ -29,6 +33,7 @@ This currently covers:
 - swapchain mutation policy
 - present ordering semantics
 - generated-frame accounting
+- blend-mode policy semantics
 - dispatch-key extraction helper
 - exported layer enumeration/proc-address plumbing
 - loader negotiation ABI
@@ -64,6 +69,16 @@ export PPFG_LAYER_MODE=passthrough
 
 export PPFG_LAYER_MODE=history-copy
 ./scripts/test-steamdeck-vkcube.sh
+
+export PPFG_LAYER_MODE=blend
+./scripts/test-steamdeck-vkcube.sh
+```
+
+### Full regression suite
+```bash
+export STEAMDECK_PASS='...'
+export PPFG_LAYER_IMPL=rust
+./scripts/run-layer-regression-suite.sh
 ```
 
 ## Design notes
@@ -72,5 +87,9 @@ The Rust port intentionally separates:
 - **pure policy logic** in `src/config.rs` and `src/planner.rs`
 - **unsafe Vulkan ABI/runtime glue** in `src/lib.rs`
 - **loader-specific structs** in `src/layer_defs.rs`
+- **precompiled test shaders** in `shaders/`
+
+The current `blend` mode uses a simple fullscreen graphics pass to synthesize a midpoint placeholder from the previous and current frames.
+That is still not motion-aware interpolation, but it is the first real shader-based generated-frame backend in this repo.
 
 That split should make it much easier to grow the test suite as frame generation gets more complex.

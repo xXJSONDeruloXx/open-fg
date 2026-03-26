@@ -31,6 +31,11 @@ MODE_MARKERS = {
         "first previous-frame insertion present succeeded",
         "history-copy generated frame present=60",
     ],
+    "blend": [
+        "blend primed previous frame history",
+        "first blended generated-frame present succeeded",
+        "blended frame present=60",
+    ],
 }
 
 

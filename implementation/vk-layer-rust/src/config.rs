@@ -4,6 +4,7 @@ pub enum Mode {
     ClearTest,
     CopyTest,
     HistoryCopyTest,
+    BlendTest,
 }
 
 impl Mode {
@@ -12,6 +13,7 @@ impl Mode {
             "clear" | "clear-test" => Self::ClearTest,
             "copy" | "copy-test" | "duplicate" => Self::CopyTest,
             "history" | "history-copy" | "copy-prev" | "history-copy-test" => Self::HistoryCopyTest,
+            "blend" | "blend-test" | "history-blend" | "blend-prev-current" => Self::BlendTest,
             _ => Self::PassThrough,
         }
     }
@@ -26,6 +28,7 @@ impl Mode {
             Self::ClearTest => "clear-test",
             Self::CopyTest => "copy-test",
             Self::HistoryCopyTest => "history-copy-test",
+            Self::BlendTest => "blend-test",
         }
     }
 }
@@ -56,6 +59,13 @@ mod tests {
             Mode::from_env_value(Some("history-copy-test")),
             Mode::HistoryCopyTest
         );
+        assert_eq!(Mode::from_env_value(Some("blend")), Mode::BlendTest);
+        assert_eq!(Mode::from_env_value(Some("blend-test")), Mode::BlendTest);
+        assert_eq!(Mode::from_env_value(Some("history-blend")), Mode::BlendTest);
+        assert_eq!(
+            Mode::from_env_value(Some("blend-prev-current")),
+            Mode::BlendTest
+        );
         assert_eq!(Mode::from_env_value(Some("wat")), Mode::PassThrough);
     }
 
@@ -65,5 +75,6 @@ mod tests {
         assert_eq!(Mode::ClearTest.name(), "clear-test");
         assert_eq!(Mode::CopyTest.name(), "copy-test");
         assert_eq!(Mode::HistoryCopyTest.name(), "history-copy-test");
+        assert_eq!(Mode::BlendTest.name(), "blend-test");
     }
 }

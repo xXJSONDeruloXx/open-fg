@@ -5,6 +5,7 @@
 We now have:
 - a **working Linux Vulkan layer MVP** in C++
 - a **working Rust parity port** for the current MVP scope
+- a first **Rust shader-based generated-frame backend** (`blend`)
 - a repeatable local + Linux + Steam Deck regression harness
 
 This is beyond paper architecture at this point.
@@ -34,6 +35,9 @@ Rust implementation currently has verified parity for the existing MVP feature s
 - `clear`
 - `copy`
 - `history-copy`
+
+Rust also now has an additional next-step backend mode:
+- `blend`
 
 Validated via:
 - local `cargo test --locked`
@@ -101,6 +105,24 @@ This is the current strongest proof that the project direction is viable, becaus
 - timing-aligned placeholder insertion
 - present ordering closer to actual frame generation
 
+#### 5. `blend` (Rust)
+Working as the first shader-based generated backend.
+
+Validated with Rust layer on Steam Deck:
+- `vkcube --c 120`
+- `vkcube --c 600`
+- `vkcube --c 120 --present_mode 0`
+
+Observed:
+- first frame primes history
+- subsequent frames render a generated frame from a **50/50 blend** of previous and current frames
+- generated frame is presented before the current real frame
+- stable through 120-frame and 600-frame runs on Deck
+- stable in **IMMEDIATE** present mode on Deck
+- uses a real graphics pipeline + shader pass, not just transfer-copy placeholders
+
+This is the first step beyond placeholder-only generation in the Rust implementation.
+
 ---
 
 ## Important technical insight from implementation
@@ -124,9 +146,10 @@ Right now the layer can do:
 - **post-process frame insertion**
 - **same-frame duplication**
 - **previous-frame placeholder insertion with private history**
+- **simple shader-based previous/current frame blending**
 
 It still cannot do:
-- **interpolated frame generation**
+- **motion-aware interpolated frame generation**
 
 So the next major milestone is replacing duplicate copy with:
 - optical-flow / warp / blend / inpaint logic
@@ -150,6 +173,9 @@ Rust parity port:
 - `artifacts/steamdeck/rust/vkcube/clear/ppfg-vkcube.log`
 - `artifacts/steamdeck/rust/vkcube/copy/ppfg-vkcube.log`
 - `artifacts/steamdeck/rust/vkcube/history-copy/ppfg-vkcube.log`
+- `artifacts/steamdeck/rust/vkcube/blend/ppfg-vkcube.log`
+- `artifacts/steamdeck/rust/vkcube/blend-long/ppfg-vkcube-blend-long.log`
+- `artifacts/steamdeck/rust/vkcube/blend-immediate/ppfg-vkcube-blend-immediate.log`
 
 ### vkgears
 - `artifacts/steamdeck/vkgears/clear/ppfg-vkgears.log`
@@ -191,4 +217,5 @@ Recommended execution model now:
 
 Meaning:
 - keep the current queue/swapchain/present path
-- replace raw copy / previous-frame placeholders with interpolation logic
+- treat `blend` as the first shader backend stepping stone
+- replace raw copy / previous-frame placeholders / simple blending with motion-aware interpolation logic
