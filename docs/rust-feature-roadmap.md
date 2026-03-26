@@ -38,6 +38,8 @@ Continue iterating on the Rust implementation until practical feature parity is 
   - `blend`
 - Next synthesis step:
   - `adaptive-blend`
+- First multi-FG stepping stone:
+  - `multi-blend`
 
 ## Next implementation ladder
 
@@ -45,10 +47,15 @@ Continue iterating on the Rust implementation until practical feature parity is 
 Goal:
 - generate more than one synthetic frame between real app frames
 
-Likely path:
-- extend injection resources for multiple acquired images / semaphores
-- render multiple generated frames with different temporal alphas
-- validate with Deck finite-frame runs
+Current status:
+- initial stepping stone achieved via `multi-blend`
+- two generated frames are now emitted between real frames in Rust
+
+Next likely path:
+- generalize beyond fixed 2x generation
+- make generated-frame count configurable/adaptive
+- improve synchronization model beyond the current conservative approach
+- validate with broader Deck finite-frame runs and additional modes
 
 ### 2. Adaptive FG controller
 Goal:
@@ -109,6 +116,6 @@ New capability work should continue following this loop:
 
 ## Current practical priority
 
-The next highest-value capability after `adaptive-blend` is:
+With `multi-blend` now working, the next highest-value capability is:
 
-## **multi-FG in Rust**
+## **adaptive FG frame-count control and richer motion-aware synthesis in Rust**

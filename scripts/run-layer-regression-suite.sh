@@ -20,7 +20,7 @@ fi
 
 PPFG_LAYER_IMPL="${PPFG_LAYER_IMPL}" "${ROOT_DIR}/scripts/deploy-steamdeck-layer.sh"
 
-for mode in passthrough clear copy history-copy blend adaptive-blend; do
+for mode in passthrough clear copy history-copy blend adaptive-blend multi-blend; do
   PPFG_LAYER_IMPL="${PPFG_LAYER_IMPL}" PPFG_LAYER_MODE="${mode}" "${ROOT_DIR}/scripts/test-steamdeck-vkcube.sh"
   python3 "${ROOT_DIR}/scripts/assert-vkcube-log.py" \
     --mode "${mode}" \

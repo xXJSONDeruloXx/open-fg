@@ -6,6 +6,7 @@ pub enum Mode {
     HistoryCopyTest,
     BlendTest,
     AdaptiveBlendTest,
+    MultiBlendTest,
 }
 
 impl Mode {
@@ -17,6 +18,9 @@ impl Mode {
             "blend" | "blend-test" | "history-blend" | "blend-prev-current" => Self::BlendTest,
             "adaptive-blend" | "adaptive" | "adaptive-blend-test" | "blend-adaptive" => {
                 Self::AdaptiveBlendTest
+            }
+            "multi-blend" | "multi-fg" | "multi-fg-test" | "multi-blend-test" => {
+                Self::MultiBlendTest
             }
             _ => Self::PassThrough,
         }
@@ -34,6 +38,7 @@ impl Mode {
             Self::HistoryCopyTest => "history-copy-test",
             Self::BlendTest => "blend-test",
             Self::AdaptiveBlendTest => "adaptive-blend-test",
+            Self::MultiBlendTest => "multi-blend-test",
         }
     }
 }
@@ -87,6 +92,19 @@ mod tests {
             Mode::from_env_value(Some("blend-adaptive")),
             Mode::AdaptiveBlendTest
         );
+        assert_eq!(
+            Mode::from_env_value(Some("multi-blend")),
+            Mode::MultiBlendTest
+        );
+        assert_eq!(Mode::from_env_value(Some("multi-fg")), Mode::MultiBlendTest);
+        assert_eq!(
+            Mode::from_env_value(Some("multi-fg-test")),
+            Mode::MultiBlendTest
+        );
+        assert_eq!(
+            Mode::from_env_value(Some("multi-blend-test")),
+            Mode::MultiBlendTest
+        );
         assert_eq!(Mode::from_env_value(Some("wat")), Mode::PassThrough);
     }
 
@@ -98,5 +116,6 @@ mod tests {
         assert_eq!(Mode::HistoryCopyTest.name(), "history-copy-test");
         assert_eq!(Mode::BlendTest.name(), "blend-test");
         assert_eq!(Mode::AdaptiveBlendTest.name(), "adaptive-blend-test");
+        assert_eq!(Mode::MultiBlendTest.name(), "multi-blend-test");
     }
 }

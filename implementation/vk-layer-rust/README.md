@@ -17,6 +17,7 @@ Current Rust capability set:
 - shader-based generated backend modes:
   - `blend`
   - `adaptive-blend`
+  - `multi-blend`
 - testable swapchain mutation + present sequencing logic
 - expandable regression harness for future interpolation work
 
@@ -34,7 +35,7 @@ This currently covers:
 - swapchain mutation policy
 - present ordering semantics
 - generated-frame accounting
-- blend/adaptive-blend policy semantics
+- blend/adaptive-blend/multi-blend policy semantics
 - dispatch-key extraction helper
 - exported layer enumeration/proc-address plumbing
 - loader negotiation ABI
@@ -76,6 +77,9 @@ export PPFG_LAYER_MODE=blend
 
 export PPFG_LAYER_MODE=adaptive-blend
 ./scripts/test-steamdeck-vkcube.sh
+
+export PPFG_LAYER_MODE=multi-blend
+./scripts/test-steamdeck-vkcube.sh
 ```
 
 ### Full regression suite
@@ -95,6 +99,7 @@ The Rust port intentionally separates:
 
 The current `blend` mode uses a simple fullscreen graphics pass to synthesize a midpoint placeholder from the previous and current frames.
 The `adaptive-blend` mode builds on that by biasing the blend toward the current frame in higher-difference regions.
+The `multi-blend` mode is the first Rust **multi-FG** step, emitting two synthetic frames between real frames using temporal blend positions.
 
 These are still not fully motion-aware interpolation backends, but they are real shader-based generated-frame steps beyond placeholder copying.
 

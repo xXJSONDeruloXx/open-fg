@@ -41,6 +41,11 @@ MODE_MARKERS = {
         "first adaptive blended generated-frame present succeeded",
         "adaptive blended frame present=60",
     ],
+    "multi-blend": [
+        "multi-blend primed previous frame history",
+        "first multi blended generated-frame present succeeded",
+        "multi blended frame present=120",
+    ],
 }
 
 

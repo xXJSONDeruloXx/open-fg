@@ -460,6 +460,7 @@ struct InjectResources {
     ready_original_semaphore: vk::Semaphore,
     ready_generated_semaphore: vk::Semaphore,
     submit_fence: vk::Fence,
+    acquire_fence: vk::Fence,
 }
 
 #[derive(Clone, Copy, Default)]
@@ -821,6 +822,10 @@ unsafe fn destroy_inject_resources(
         if !inject.submit_fence.is_null() {
             destroy_fence(device, inject.submit_fence, ptr::null());
             inject.submit_fence = vk::Fence::null();
+        }
+        if !inject.acquire_fence.is_null() {
+            destroy_fence(device, inject.acquire_fence, ptr::null());
+            inject.acquire_fence = vk::Fence::null();
         }
     }
     if let (Some(free_command_buffers), Some(destroy_command_pool)) =
@@ -1659,19 +1664,39 @@ unsafe fn init_inject_resources(
         return false;
     }
 
-    let fence_info = vk::FenceCreateInfo {
+    let submit_fence_info = vk::FenceCreateInfo {
         s_type: vk::StructureType::FENCE_CREATE_INFO,
         flags: vk::FenceCreateFlags::SIGNALED,
         ..Default::default()
     };
     if create_fence(
         device_info.device,
-        &fence_info,
+        &submit_fence_info,
         ptr::null(),
         &mut swapchain.inject.submit_fence,
     ) != vk::Result::SUCCESS
     {
         log_warn("CreateFence failed for submit fence");
+        destroy_inject_resources(
+            &device_info.dispatch,
+            device_info.device,
+            &mut swapchain.inject,
+        );
+        return false;
+    }
+
+    let acquire_fence_info = vk::FenceCreateInfo {
+        s_type: vk::StructureType::FENCE_CREATE_INFO,
+        ..Default::default()
+    };
+    if create_fence(
+        device_info.device,
+        &acquire_fence_info,
+        ptr::null(),
+        &mut swapchain.inject.acquire_fence,
+    ) != vk::Result::SUCCESS
+    {
+        log_warn("CreateFence failed for acquire fence");
         destroy_inject_resources(
             &device_info.dispatch,
             device_info.device,
@@ -1831,7 +1856,7 @@ unsafe fn update_blend_descriptor_set(
 
 fn blend_push_constants_for_mode(mode: Mode) -> BlendPushConstants {
     match mode {
-        Mode::BlendTest => BlendPushConstants {
+        Mode::BlendTest | Mode::MultiBlendTest => BlendPushConstants {
             alpha: 0.5,
             adaptive_strength: 0.0,
             adaptive_bias: 0.0,
@@ -1847,12 +1872,37 @@ fn blend_push_constants_for_mode(mode: Mode) -> BlendPushConstants {
     }
 }
 
+fn multi_blend_push_constants_plan(mode: Mode) -> Vec<BlendPushConstants> {
+    match mode {
+        Mode::MultiBlendTest => vec![
+            BlendPushConstants {
+                alpha: 1.0 / 3.0,
+                adaptive_strength: 0.0,
+                adaptive_bias: 0.0,
+                mode: 0,
+            },
+            BlendPushConstants {
+                alpha: 2.0 / 3.0,
+                adaptive_strength: 0.0,
+                adaptive_bias: 0.0,
+                mode: 0,
+            },
+        ],
+        _ => vec![blend_push_constants_for_mode(mode)],
+    }
+}
+
 fn blend_mode_labels(mode: Mode) -> (&'static str, &'static str, &'static str) {
     match mode {
         Mode::AdaptiveBlendTest => (
             "adaptive-blend primed previous frame history",
             "first adaptive blended generated-frame present succeeded",
             "adaptive blended frame present=",
+        ),
+        Mode::MultiBlendTest => (
+            "multi-blend primed previous frame history",
+            "first multi blended generated-frame present succeeded",
+            "multi blended frame present=",
         ),
         _ => (
             "blend primed previous frame history",
@@ -2462,6 +2512,703 @@ unsafe fn try_present_blend_frame(
                 generated_label_prefix,
                 state.generated_present_count,
                 generated_image_index,
+                source_index
+            ));
+        }
+    } else {
+        log_info(prime_label);
+    }
+
+    true
+}
+
+unsafe fn destroy_multi_blend_frame_resources(
+    dispatch: &DeviceDispatch,
+    device: vk::Device,
+    current_view: &mut vk::ImageView,
+    generated_views: &mut Vec<vk::ImageView>,
+    framebuffers: &mut Vec<vk::Framebuffer>,
+) {
+    if let Some(destroy_framebuffer) = dispatch.destroy_framebuffer {
+        for framebuffer in framebuffers.drain(..) {
+            if !framebuffer.is_null() {
+                destroy_framebuffer(device, framebuffer, ptr::null());
+            }
+        }
+    } else {
+        framebuffers.clear();
+    }
+    if let Some(destroy_image_view) = dispatch.destroy_image_view {
+        for image_view in generated_views.drain(..) {
+            if !image_view.is_null() {
+                destroy_image_view(device, image_view, ptr::null());
+            }
+        }
+        if !current_view.is_null() {
+            destroy_image_view(device, *current_view, ptr::null());
+            *current_view = vk::ImageView::null();
+        }
+    } else {
+        generated_views.clear();
+        *current_view = vk::ImageView::null();
+    }
+}
+
+unsafe fn try_present_multi_blend_frame(
+    state: &mut SwapchainState,
+    device_info: &DeviceInfo,
+    queue_info: &QueueInfo,
+    queue: vk::Queue,
+    present_info: *const PresentInfoKHR,
+) -> bool {
+    if !init_inject_resources(state, device_info, queue_info) {
+        return false;
+    }
+    if !init_blend_resources(state, device_info) {
+        return false;
+    }
+
+    let present_info = match present_info.as_ref() {
+        Some(present_info) if present_info.swapchain_count == 1 => present_info,
+        _ => return false,
+    };
+
+    let generated_plan = multi_blend_push_constants_plan(Mode::MultiBlendTest);
+    let (prime_label, first_success_label, generated_label_prefix) =
+        blend_mode_labels(Mode::MultiBlendTest);
+
+    let (
+        Some(wait_for_fences),
+        Some(reset_fences),
+        Some(acquire_next_image),
+        Some(reset_command_pool),
+        Some(begin_command_buffer),
+        Some(cmd_pipeline_barrier),
+        Some(cmd_copy_image),
+        Some(end_command_buffer),
+        Some(queue_submit),
+        Some(queue_present),
+        Some(queue_wait_idle),
+        Some(create_framebuffer),
+        Some(cmd_begin_render_pass),
+        Some(cmd_end_render_pass),
+        Some(cmd_bind_pipeline),
+        Some(cmd_bind_descriptor_sets),
+        Some(cmd_draw),
+        Some(cmd_push_constants),
+    ) = (
+        device_info.dispatch.wait_for_fences,
+        device_info.dispatch.reset_fences,
+        device_info.dispatch.acquire_next_image_khr,
+        device_info.dispatch.reset_command_pool,
+        device_info.dispatch.begin_command_buffer,
+        device_info.dispatch.cmd_pipeline_barrier,
+        device_info.dispatch.cmd_copy_image,
+        device_info.dispatch.end_command_buffer,
+        device_info.dispatch.queue_submit,
+        device_info.dispatch.queue_present_khr,
+        device_info.dispatch.queue_wait_idle,
+        device_info.dispatch.create_framebuffer,
+        device_info.dispatch.cmd_begin_render_pass,
+        device_info.dispatch.cmd_end_render_pass,
+        device_info.dispatch.cmd_bind_pipeline,
+        device_info.dispatch.cmd_bind_descriptor_sets,
+        device_info.dispatch.cmd_draw,
+        device_info.dispatch.cmd_push_constants,
+    )
+    else {
+        return false;
+    };
+
+    let prior_submit_wait = wait_for_fences(
+        device_info.device,
+        1,
+        &state.inject.submit_fence,
+        vk::TRUE,
+        5_000_000_000,
+    );
+    if prior_submit_wait != vk::Result::SUCCESS {
+        log_warn(format!(
+            "WaitForFences failed for submit fence: {}",
+            prior_submit_wait.as_raw()
+        ));
+        return false;
+    }
+
+    let source_index = *present_info.p_image_indices;
+    if source_index as usize >= state.images.len() {
+        refresh_swapchain_images(state, &device_info.dispatch);
+        if source_index as usize >= state.images.len() {
+            log_warn("multi-blend source image index out of bounds after refresh");
+            return false;
+        }
+    }
+    let source_image = state.images[source_index as usize];
+
+    let have_generated = state.history_valid;
+    let mut generated_image_indices = Vec::new();
+    if have_generated {
+        for _ in 0..generated_plan.len() {
+            if reset_fences(device_info.device, 1, &state.inject.acquire_fence)
+                != vk::Result::SUCCESS
+            {
+                log_warn("ResetFences failed for multi-blend acquire fence");
+                return false;
+            }
+            let mut generated_image_index = 0;
+            let acquire_result = acquire_next_image(
+                device_info.device,
+                state.handle,
+                20_000_000,
+                vk::Semaphore::null(),
+                state.inject.acquire_fence,
+                &mut generated_image_index,
+            );
+            if acquire_result == vk::Result::TIMEOUT || acquire_result == vk::Result::NOT_READY {
+                log_warn("AcquireNextImageKHR timed out for multi-blend frame; skipping injection this present");
+                return false;
+            }
+            if acquire_result != vk::Result::SUCCESS && acquire_result != vk::Result::SUBOPTIMAL_KHR
+            {
+                log_warn(format!(
+                    "AcquireNextImageKHR failed for multi-blend frame: {}",
+                    acquire_result.as_raw()
+                ));
+                return false;
+            }
+            let acquire_wait = wait_for_fences(
+                device_info.device,
+                1,
+                &state.inject.acquire_fence,
+                vk::TRUE,
+                5_000_000_000,
+            );
+            if acquire_wait != vk::Result::SUCCESS {
+                log_warn(format!(
+                    "WaitForFences failed for multi-blend acquire fence: {}",
+                    acquire_wait.as_raw()
+                ));
+                return false;
+            }
+            if generated_image_index as usize >= state.images.len() {
+                refresh_swapchain_images(state, &device_info.dispatch);
+                if generated_image_index as usize >= state.images.len() {
+                    log_warn("multi-blend generated image index out of bounds after refresh");
+                    return false;
+                }
+            }
+            if generated_image_index == source_index
+                || generated_image_indices.contains(&generated_image_index)
+            {
+                log_warn("multi-blend acquire returned duplicate or current source image index; skipping injection");
+                return false;
+            }
+            generated_image_indices.push(generated_image_index);
+        }
+    }
+
+    let mut current_view = vk::ImageView::null();
+    let mut generated_views = Vec::new();
+    let mut framebuffers = Vec::new();
+
+    if have_generated {
+        current_view = match create_simple_image_view(device_info, source_image, state.format) {
+            Some(view) => view,
+            None => {
+                log_warn("CreateImageView failed for multi-blend current source view");
+                return false;
+            }
+        };
+
+        for &generated_image_index in &generated_image_indices {
+            let generated_view = match create_simple_image_view(
+                device_info,
+                state.images[generated_image_index as usize],
+                state.format,
+            ) {
+                Some(view) => view,
+                None => {
+                    log_warn("CreateImageView failed for multi-blend generated target view");
+                    destroy_multi_blend_frame_resources(
+                        &device_info.dispatch,
+                        device_info.device,
+                        &mut current_view,
+                        &mut generated_views,
+                        &mut framebuffers,
+                    );
+                    return false;
+                }
+            };
+            let attachments = [generated_view];
+            let framebuffer_info = vk::FramebufferCreateInfo {
+                s_type: vk::StructureType::FRAMEBUFFER_CREATE_INFO,
+                render_pass: state.blend.render_pass,
+                attachment_count: attachments.len() as u32,
+                p_attachments: attachments.as_ptr(),
+                width: state.extent.width,
+                height: state.extent.height,
+                layers: 1,
+                ..Default::default()
+            };
+            let mut framebuffer = vk::Framebuffer::null();
+            if create_framebuffer(
+                device_info.device,
+                &framebuffer_info,
+                ptr::null(),
+                &mut framebuffer,
+            ) != vk::Result::SUCCESS
+            {
+                log_warn("CreateFramebuffer failed for multi-blend generated target");
+                generated_views.push(generated_view);
+                destroy_multi_blend_frame_resources(
+                    &device_info.dispatch,
+                    device_info.device,
+                    &mut current_view,
+                    &mut generated_views,
+                    &mut framebuffers,
+                );
+                return false;
+            }
+            generated_views.push(generated_view);
+            framebuffers.push(framebuffer);
+        }
+
+        if !update_blend_descriptor_set(
+            device_info,
+            &state.blend,
+            state.blend.history_view,
+            current_view,
+        ) {
+            destroy_multi_blend_frame_resources(
+                &device_info.dispatch,
+                device_info.device,
+                &mut current_view,
+                &mut generated_views,
+                &mut framebuffers,
+            );
+            return false;
+        }
+    }
+
+    if reset_command_pool(
+        device_info.device,
+        state.inject.command_pool,
+        vk::CommandPoolResetFlags::empty(),
+    ) != vk::Result::SUCCESS
+    {
+        log_warn("ResetCommandPool failed in multi-blend mode");
+        destroy_multi_blend_frame_resources(
+            &device_info.dispatch,
+            device_info.device,
+            &mut current_view,
+            &mut generated_views,
+            &mut framebuffers,
+        );
+        return false;
+    }
+    let begin_info = vk::CommandBufferBeginInfo {
+        s_type: vk::StructureType::COMMAND_BUFFER_BEGIN_INFO,
+        flags: vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT,
+        ..Default::default()
+    };
+    if begin_command_buffer(state.inject.command_buffer, &begin_info) != vk::Result::SUCCESS {
+        log_warn("BeginCommandBuffer failed in multi-blend mode");
+        destroy_multi_blend_frame_resources(
+            &device_info.dispatch,
+            device_info.device,
+            &mut current_view,
+            &mut generated_views,
+            &mut framebuffers,
+        );
+        return false;
+    }
+
+    if have_generated {
+        let mut barriers_before = Vec::with_capacity(2 + generated_image_indices.len());
+        barriers_before.push(image_barrier(
+            source_image,
+            vk::AccessFlags::MEMORY_READ,
+            vk::AccessFlags::SHADER_READ,
+            vk::ImageLayout::PRESENT_SRC_KHR,
+            vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
+        ));
+        barriers_before.push(image_barrier(
+            state.history_image,
+            vk::AccessFlags::MEMORY_READ,
+            vk::AccessFlags::SHADER_READ,
+            vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
+            vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
+        ));
+        for &generated_image_index in &generated_image_indices {
+            barriers_before.push(image_barrier(
+                state.images[generated_image_index as usize],
+                vk::AccessFlags::empty(),
+                vk::AccessFlags::COLOR_ATTACHMENT_WRITE,
+                vk::ImageLayout::UNDEFINED,
+                vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL,
+            ));
+        }
+        cmd_pipeline_barrier(
+            state.inject.command_buffer,
+            vk::PipelineStageFlags::ALL_COMMANDS,
+            vk::PipelineStageFlags::FRAGMENT_SHADER
+                | vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,
+            vk::DependencyFlags::empty(),
+            0,
+            ptr::null(),
+            0,
+            ptr::null(),
+            barriers_before.len() as u32,
+            barriers_before.as_ptr(),
+        );
+
+        let render_area = vk::Rect2D {
+            offset: vk::Offset2D { x: 0, y: 0 },
+            extent: state.extent,
+        };
+        for (idx, framebuffer) in framebuffers.iter().enumerate() {
+            let render_pass_info = vk::RenderPassBeginInfo {
+                s_type: vk::StructureType::RENDER_PASS_BEGIN_INFO,
+                render_pass: state.blend.render_pass,
+                framebuffer: *framebuffer,
+                render_area,
+                clear_value_count: 0,
+                p_clear_values: ptr::null(),
+                ..Default::default()
+            };
+            cmd_begin_render_pass(
+                state.inject.command_buffer,
+                &render_pass_info,
+                vk::SubpassContents::INLINE,
+            );
+            cmd_bind_pipeline(
+                state.inject.command_buffer,
+                vk::PipelineBindPoint::GRAPHICS,
+                state.blend.pipeline,
+            );
+            cmd_bind_descriptor_sets(
+                state.inject.command_buffer,
+                vk::PipelineBindPoint::GRAPHICS,
+                state.blend.pipeline_layout,
+                0,
+                1,
+                &state.blend.descriptor_set,
+                0,
+                ptr::null(),
+            );
+            let push_constants = generated_plan[idx];
+            cmd_push_constants(
+                state.inject.command_buffer,
+                state.blend.pipeline_layout,
+                vk::ShaderStageFlags::FRAGMENT,
+                0,
+                std::mem::size_of::<BlendPushConstants>() as u32,
+                (&push_constants as *const BlendPushConstants).cast(),
+            );
+            cmd_draw(state.inject.command_buffer, 3, 1, 0, 0);
+            cmd_end_render_pass(state.inject.command_buffer);
+        }
+
+        let mut barriers_after_render = Vec::with_capacity(2 + generated_image_indices.len());
+        barriers_after_render.push(image_barrier(
+            source_image,
+            vk::AccessFlags::SHADER_READ,
+            vk::AccessFlags::TRANSFER_READ,
+            vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
+            vk::ImageLayout::TRANSFER_SRC_OPTIMAL,
+        ));
+        barriers_after_render.push(image_barrier(
+            state.history_image,
+            vk::AccessFlags::SHADER_READ,
+            vk::AccessFlags::TRANSFER_WRITE,
+            vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
+            vk::ImageLayout::TRANSFER_DST_OPTIMAL,
+        ));
+        for &generated_image_index in &generated_image_indices {
+            barriers_after_render.push(image_barrier(
+                state.images[generated_image_index as usize],
+                vk::AccessFlags::COLOR_ATTACHMENT_WRITE,
+                vk::AccessFlags::MEMORY_READ,
+                vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL,
+                vk::ImageLayout::PRESENT_SRC_KHR,
+            ));
+        }
+        cmd_pipeline_barrier(
+            state.inject.command_buffer,
+            vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,
+            vk::PipelineStageFlags::TRANSFER,
+            vk::DependencyFlags::empty(),
+            0,
+            ptr::null(),
+            0,
+            ptr::null(),
+            barriers_after_render.len() as u32,
+            barriers_after_render.as_ptr(),
+        );
+    } else {
+        let barriers_before_prime = [
+            image_barrier(
+                source_image,
+                vk::AccessFlags::MEMORY_READ,
+                vk::AccessFlags::TRANSFER_READ,
+                vk::ImageLayout::PRESENT_SRC_KHR,
+                vk::ImageLayout::TRANSFER_SRC_OPTIMAL,
+            ),
+            image_barrier(
+                state.history_image,
+                vk::AccessFlags::empty(),
+                vk::AccessFlags::TRANSFER_WRITE,
+                vk::ImageLayout::UNDEFINED,
+                vk::ImageLayout::TRANSFER_DST_OPTIMAL,
+            ),
+        ];
+        cmd_pipeline_barrier(
+            state.inject.command_buffer,
+            vk::PipelineStageFlags::ALL_COMMANDS,
+            vk::PipelineStageFlags::TRANSFER,
+            vk::DependencyFlags::empty(),
+            0,
+            ptr::null(),
+            0,
+            ptr::null(),
+            barriers_before_prime.len() as u32,
+            barriers_before_prime.as_ptr(),
+        );
+    }
+
+    let current_to_history = vk::ImageCopy {
+        src_subresource: vk::ImageSubresourceLayers {
+            aspect_mask: vk::ImageAspectFlags::COLOR,
+            mip_level: 0,
+            base_array_layer: 0,
+            layer_count: 1,
+        },
+        dst_subresource: vk::ImageSubresourceLayers {
+            aspect_mask: vk::ImageAspectFlags::COLOR,
+            mip_level: 0,
+            base_array_layer: 0,
+            layer_count: 1,
+        },
+        extent: vk::Extent3D {
+            width: state.extent.width,
+            height: state.extent.height,
+            depth: 1,
+        },
+        ..Default::default()
+    };
+    cmd_copy_image(
+        state.inject.command_buffer,
+        source_image,
+        vk::ImageLayout::TRANSFER_SRC_OPTIMAL,
+        state.history_image,
+        vk::ImageLayout::TRANSFER_DST_OPTIMAL,
+        1,
+        &current_to_history,
+    );
+
+    let barriers_after_copy = [
+        image_barrier(
+            source_image,
+            vk::AccessFlags::TRANSFER_READ,
+            vk::AccessFlags::MEMORY_READ,
+            vk::ImageLayout::TRANSFER_SRC_OPTIMAL,
+            vk::ImageLayout::PRESENT_SRC_KHR,
+        ),
+        image_barrier(
+            state.history_image,
+            vk::AccessFlags::TRANSFER_WRITE,
+            vk::AccessFlags::SHADER_READ,
+            vk::ImageLayout::TRANSFER_DST_OPTIMAL,
+            vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
+        ),
+    ];
+    cmd_pipeline_barrier(
+        state.inject.command_buffer,
+        vk::PipelineStageFlags::TRANSFER,
+        vk::PipelineStageFlags::BOTTOM_OF_PIPE,
+        vk::DependencyFlags::empty(),
+        0,
+        ptr::null(),
+        0,
+        ptr::null(),
+        barriers_after_copy.len() as u32,
+        barriers_after_copy.as_ptr(),
+    );
+
+    if end_command_buffer(state.inject.command_buffer) != vk::Result::SUCCESS {
+        log_warn("EndCommandBuffer failed in multi-blend mode");
+        destroy_multi_blend_frame_resources(
+            &device_info.dispatch,
+            device_info.device,
+            &mut current_view,
+            &mut generated_views,
+            &mut framebuffers,
+        );
+        return false;
+    }
+
+    let mut wait_semaphores = Vec::with_capacity(present_info.wait_semaphore_count as usize);
+    let mut wait_stages = Vec::with_capacity(present_info.wait_semaphore_count as usize);
+    for index in 0..present_info.wait_semaphore_count as usize {
+        wait_semaphores.push(*present_info.p_wait_semaphores.add(index));
+        wait_stages.push(
+            vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT | vk::PipelineStageFlags::TRANSFER,
+        );
+    }
+    let submit_info = SubmitInfo {
+        s_type: vk::StructureType::SUBMIT_INFO,
+        wait_semaphore_count: wait_semaphores.len() as u32,
+        p_wait_semaphores: if wait_semaphores.is_empty() {
+            ptr::null()
+        } else {
+            wait_semaphores.as_ptr()
+        },
+        p_wait_dst_stage_mask: if wait_stages.is_empty() {
+            ptr::null()
+        } else {
+            wait_stages.as_ptr()
+        },
+        command_buffer_count: 1,
+        p_command_buffers: &state.inject.command_buffer,
+        ..Default::default()
+    };
+
+    if reset_fences(device_info.device, 1, &state.inject.submit_fence) != vk::Result::SUCCESS {
+        log_warn("ResetFences failed for submit fence before multi-blend QueueSubmit");
+        destroy_multi_blend_frame_resources(
+            &device_info.dispatch,
+            device_info.device,
+            &mut current_view,
+            &mut generated_views,
+            &mut framebuffers,
+        );
+        return false;
+    }
+    let submit_result = queue_submit(queue, 1, &submit_info, state.inject.submit_fence);
+    if submit_result != vk::Result::SUCCESS {
+        log_warn(format!(
+            "QueueSubmit failed for multi-blend frame: {}",
+            submit_result.as_raw()
+        ));
+        destroy_multi_blend_frame_resources(
+            &device_info.dispatch,
+            device_info.device,
+            &mut current_view,
+            &mut generated_views,
+            &mut framebuffers,
+        );
+        return false;
+    }
+
+    let submit_wait = wait_for_fences(
+        device_info.device,
+        1,
+        &state.inject.submit_fence,
+        vk::TRUE,
+        5_000_000_000,
+    );
+    if submit_wait != vk::Result::SUCCESS {
+        log_warn(format!(
+            "WaitForFences failed after multi-blend submit: {}",
+            submit_wait.as_raw()
+        ));
+        destroy_multi_blend_frame_resources(
+            &device_info.dispatch,
+            device_info.device,
+            &mut current_view,
+            &mut generated_views,
+            &mut framebuffers,
+        );
+        return false;
+    }
+
+    const EMPTY_WAIT_SEMAPHORE_COUNT: u32 = 0;
+    let first_success = !state.injection_works;
+    if have_generated {
+        for &generated_image_index in &generated_image_indices {
+            let generated_present = PresentInfoKHR {
+                s_type: vk::StructureType::PRESENT_INFO_KHR,
+                wait_semaphore_count: EMPTY_WAIT_SEMAPHORE_COUNT,
+                p_wait_semaphores: ptr::null(),
+                swapchain_count: 1,
+                p_swapchains: &state.handle,
+                p_image_indices: &generated_image_index,
+                ..Default::default()
+            };
+            let generated_result = queue_present(queue, &generated_present);
+            if generated_result != vk::Result::SUCCESS
+                && generated_result != vk::Result::SUBOPTIMAL_KHR
+            {
+                log_warn(format!(
+                    "generated QueuePresentKHR failed in multi-blend mode: {}",
+                    generated_result.as_raw()
+                ));
+                destroy_multi_blend_frame_resources(
+                    &device_info.dispatch,
+                    device_info.device,
+                    &mut current_view,
+                    &mut generated_views,
+                    &mut framebuffers,
+                );
+                return false;
+            }
+        }
+    }
+
+    let mut original_present = *present_info;
+    original_present.wait_semaphore_count = 0;
+    original_present.p_wait_semaphores = ptr::null();
+    let original_result = queue_present(queue, &original_present);
+    if original_result != vk::Result::SUCCESS && original_result != vk::Result::SUBOPTIMAL_KHR {
+        log_warn(format!(
+            "original QueuePresentKHR failed in multi-blend mode: {}",
+            original_result.as_raw()
+        ));
+        destroy_multi_blend_frame_resources(
+            &device_info.dispatch,
+            device_info.device,
+            &mut current_view,
+            &mut generated_views,
+            &mut framebuffers,
+        );
+        return false;
+    }
+
+    if queue_wait_idle(queue) != vk::Result::SUCCESS {
+        log_warn("QueueWaitIdle failed in multi-blend mode");
+        destroy_multi_blend_frame_resources(
+            &device_info.dispatch,
+            device_info.device,
+            &mut current_view,
+            &mut generated_views,
+            &mut framebuffers,
+        );
+        return false;
+    }
+
+    destroy_multi_blend_frame_resources(
+        &device_info.dispatch,
+        device_info.device,
+        &mut current_view,
+        &mut generated_views,
+        &mut framebuffers,
+    );
+
+    state.history_valid = true;
+    state.injection_works = state.injection_works || have_generated;
+    if have_generated {
+        state.generated_present_count += generated_image_indices.len() as u64;
+        if first_success {
+            log_info(first_success_label);
+        }
+        if state.generated_present_count <= generated_image_indices.len() as u64 * 3
+            || state.generated_present_count % 60 == 0
+        {
+            log_info(format!(
+                "{}{}; generatedImageIndices={:?}; currentImageIndex={}",
+                generated_label_prefix,
+                state.generated_present_count,
+                generated_image_indices,
                 source_index
             ));
         }
@@ -3904,7 +4651,7 @@ unsafe extern "system" fn layer_create_swapchain_khr(
     refresh_swapchain_images(&mut state_entry, &device_info.dispatch);
     if matches!(
         mode,
-        Mode::HistoryCopyTest | Mode::BlendTest | Mode::AdaptiveBlendTest
+        Mode::HistoryCopyTest | Mode::BlendTest | Mode::AdaptiveBlendTest | Mode::MultiBlendTest
     ) {
         let _ = ensure_history_image(&mut state_entry, &device_info);
     }
@@ -4004,6 +4751,7 @@ unsafe extern "system" fn layer_queue_present_khr(
                         | Mode::HistoryCopyTest
                         | Mode::BlendTest
                         | Mode::AdaptiveBlendTest
+                        | Mode::MultiBlendTest
                 ) {
                     "vkQueuePresentKHR frame="
                 } else {
@@ -4101,6 +4849,21 @@ unsafe extern "system" fn layer_queue_present_khr(
                         queue,
                         present_info,
                         mode,
+                    ) {
+                        return vk::Result::SUCCESS;
+                    }
+                }
+                planner::PresentSequence::PrimeHistory
+                | planner::PresentSequence::GeneratedThenOriginal
+                    if matches!(mode, Mode::MultiBlendTest) && have_queue =>
+                {
+                    swapchain_state.injection_attempted = true;
+                    if try_present_multi_blend_frame(
+                        swapchain_state,
+                        &device_info,
+                        &queue_info,
+                        queue,
+                        present_info,
                     ) {
                         return vk::Result::SUCCESS;
                     }

@@ -39,6 +39,7 @@ Rust implementation currently has verified parity for the existing MVP feature s
 Rust also now has additional next-step backend modes:
 - `blend`
 - `adaptive-blend`
+- `multi-blend`
 
 Validated via:
 - local `cargo test --locked`
@@ -139,6 +140,22 @@ Observed:
 - stable in **IMMEDIATE** present mode on Deck
 - keeps the same present/interception infrastructure while improving synthesis behavior over fixed 50/50 blending
 
+#### 7. `multi-blend` (Rust)
+Working as the first multi-FG stepping stone.
+
+Validated with Rust layer on Steam Deck:
+- `vkcube --c 120`
+- `vkcube --c 600`
+- `vkcube --c 120 --present_mode 0`
+- full Rust regression suite including `multi-blend`
+
+Observed:
+- first frame primes history
+- subsequent real frames emit **two generated frames** before the current real frame
+- generated frames are rendered at multiple temporal blend positions between previous and current frames
+- swapchain image count was increased from `3 -> 6` for the validated Deck path
+- stable on Deck through 120-frame, 600-frame, and IMMEDIATE-mode runs
+
 These modes are still stepping stones toward motion-aware interpolation, but they are now clearly beyond placeholder-only generation in the Rust implementation.
 
 ---
@@ -166,11 +183,12 @@ Right now the layer can do:
 - **previous-frame placeholder insertion with private history**
 - **simple shader-based previous/current frame blending**
 - **difference-aware adaptive blending**
+- **initial multi-FG via two generated frames per real frame**
 
 It still cannot do:
 - **motion-aware interpolated frame generation**
-- **multi-FG**
 - **adaptive FG frame-count control**
+- **higher-quality motion/disocclusion-aware multi-FG**
 
 So the next major milestone is replacing duplicate copy with:
 - optical-flow / warp / blend / inpaint logic
@@ -200,6 +218,9 @@ Rust parity port:
 - `artifacts/steamdeck/rust/vkcube/adaptive-blend/ppfg-vkcube.log`
 - `artifacts/steamdeck/rust/vkcube/adaptive-blend-long/ppfg-vkcube-adaptive-long.log`
 - `artifacts/steamdeck/rust/vkcube/adaptive-blend-immediate/ppfg-vkcube-adaptive-immediate.log`
+- `artifacts/steamdeck/rust/vkcube/multi-blend/ppfg-vkcube.log`
+- `artifacts/steamdeck/rust/vkcube/multi-blend-long/ppfg-vkcube-multi-long.log`
+- `artifacts/steamdeck/rust/vkcube/multi-blend-immediate/ppfg-vkcube-multi-immediate.log`
 
 ### vkgears
 - `artifacts/steamdeck/vkgears/clear/ppfg-vkgears.log`
@@ -242,6 +263,6 @@ Recommended execution model now:
 
 Meaning:
 - keep the current queue/swapchain/present path
-- treat `blend` and `adaptive-blend` as shader stepping stones
-- next target **multi-FG in Rust**
-- then continue toward motion-aware interpolation and adaptive FG policies
+- treat `blend`, `adaptive-blend`, and `multi-blend` as shader stepping stones
+- next target **adaptive FG frame-count control in Rust**
+- then continue toward motion-aware interpolation and richer multi-FG policies

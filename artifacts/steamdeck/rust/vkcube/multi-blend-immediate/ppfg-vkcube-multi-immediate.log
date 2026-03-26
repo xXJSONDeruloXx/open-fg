@@ -1,0 +1,25 @@
+[ppfg][info][1774557114279] vkNegotiateLoaderLayerInterfaceVersion ok; mode=multi-blend-test
+[ppfg][info][1774557114281] vkCreateInstance ok; mode=multi-blend-test; app=vkcube; engine=vkcube; apiVersion=1.0.0
+[ppfg][info][1774557114304] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH)
+[ppfg][info][1774557114309] created history image for swapchain
+[ppfg][info][1774557114309] vkCreateSwapchainKHR ok; extent=500x500; format=44; presentMode=IMMEDIATE; minImages=3->6; usage=COLOR_ATTACHMENT (0x10) -> TRANSFER_SRC|SAMPLED|COLOR_ATTACHMENT (0x15); images=6; mode=multi-blend-test
+[ppfg][info][1774557114311] vkQueuePresentKHR frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
+[ppfg][info][1774557114311] initialized injection resources for queue family 0
+[ppfg][info][1774557114312] initialized blend resources for swapchain
+[ppfg][info][1774557114312] multi-blend primed previous frame history
+[ppfg][info][1774557114312] vkQueuePresentKHR frame=2; queueFamily=0; imageIndex=1; waitSemaphores=1
+[ppfg][info][1774557114313] first multi blended generated-frame present succeeded
+[ppfg][info][1774557114313] multi blended frame present=2; generatedImageIndices=[2, 3]; currentImageIndex=1
+[ppfg][info][1774557114313] vkQueuePresentKHR frame=3; queueFamily=0; imageIndex=4; waitSemaphores=1
+[ppfg][info][1774557114313] multi blended frame present=4; generatedImageIndices=[5, 0]; currentImageIndex=4
+[ppfg][info][1774557114313] vkQueuePresentKHR frame=4; queueFamily=0; imageIndex=2; waitSemaphores=1
+[ppfg][info][1774557114314] multi blended frame present=6; generatedImageIndices=[3, 1]; currentImageIndex=2
+[ppfg][info][1774557114314] vkQueuePresentKHR frame=5; queueFamily=0; imageIndex=5; waitSemaphores=1
+[ppfg][info][1774557114327] multi blended frame present=60; generatedImageIndices=[4, 5]; currentImageIndex=0
+[ppfg][info][1774557114339] vkQueuePresentKHR frame=60; queueFamily=0; imageIndex=3; waitSemaphores=1
+[ppfg][info][1774557114340] multi blended frame present=120; generatedImageIndices=[4, 5]; currentImageIndex=0
+[ppfg][info][1774557114354] multi blended frame present=180; generatedImageIndices=[4, 5]; currentImageIndex=0
+[ppfg][info][1774557114367] vkQueuePresentKHR frame=120; queueFamily=0; imageIndex=3; waitSemaphores=1
+[ppfg][info][1774557114367] vkDestroySwapchainKHR
+[ppfg][info][1774557114368] vkDestroyDevice
+[ppfg][info][1774557114391] vkDestroyInstance
