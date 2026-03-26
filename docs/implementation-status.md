@@ -42,7 +42,7 @@ Observed:
 - extra frame insertion proven on real Linux hardware
 
 #### 3. `copy`
-Working and currently the best MVP mode.
+Working.
 
 Validated with:
 - `vkcube --c 120`
@@ -54,17 +54,39 @@ Observed:
 - usage flags bumped to include `TRANSFER_SRC` + `TRANSFER_DST`
 - per-frame copy from source app image into generated swapchain image succeeded across the full run
 
-This is the current strongest proof that the project direction is viable.
+#### 4. `history-copy`
+Working and now the best placeholder mode.
+
+Validated with:
+- `vkcube --c 120`
+
+Observed:
+- first frame primes private history
+- subsequent frames present a generated placeholder frame derived from the **previous** real frame
+- generated frame is presented **before** the current real frame
+- 120 real presents completed cleanly
+- 119+ generated placeholder presents completed cleanly after priming, with stable operation through the run
+- additional stress run completed cleanly through **600 real frames** on `vkcube`
+- `vkcube` also completed successfully in **IMMEDIATE** present mode with `history-copy`
+- `vkcube` also completed successfully in **MAILBOX** present mode with `history-copy`
+- private history image allocation and reuse works on the Steam Deck
+
+This is the current strongest proof that the project direction is viable, because it demonstrates:
+- persistent frame history
+- timing-aligned placeholder insertion
+- present ordering closer to actual frame generation
 
 ---
 
 ## Important technical insight from implementation
 
-### The stable duplicate-frame path was:
+### The stable placeholder-frame paths were:
 - increase swapchain image count
-- acquire an extra image for the generated frame
-- copy the source present image into that acquired image
-- present original + generated frame on the same queue
+- acquire an extra image for the generated frame path
+- either:
+  - copy the current source frame into that acquired image (`copy`)
+  - or maintain private history and present the previous real frame first (`history-copy`)
+- drive both paths from explicit queue submission and explicit semaphore wiring
 - use conservative synchronization and queue idle in test mode
 
 That is not final-product pacing, but it is a real, working insertion path.
@@ -75,7 +97,8 @@ That is not final-product pacing, but it is a real, working insertion path.
 
 Right now the layer can do:
 - **post-process frame insertion**
-- **duplicate-frame generation**
+- **same-frame duplication**
+- **previous-frame placeholder insertion with private history**
 
 It still cannot do:
 - **interpolated frame generation**
@@ -91,6 +114,10 @@ So the next major milestone is replacing duplicate copy with:
 - `artifacts/steamdeck/vkcube/passthrough/ppfg-vkcube.log`
 - `artifacts/steamdeck/vkcube/clear/ppfg-vkcube.log`
 - `artifacts/steamdeck/vkcube/copy/ppfg-vkcube.log`
+- `artifacts/steamdeck/vkcube/history-copy/ppfg-vkcube.log`
+- `artifacts/steamdeck/vkcube/history-copy-long/ppfg-vkcube-long.log`
+- `artifacts/steamdeck/vkcube/history-copy-immediate/ppfg-vkcube-immediate.log`
+- `artifacts/steamdeck/vkcube/history-copy-mailbox/ppfg-vkcube-mailbox.log`
 
 ### vkgears
 - `artifacts/steamdeck/vkgears/clear/ppfg-vkgears.log`
@@ -117,12 +144,12 @@ The project has now crossed from:
 - research only
 
 to:
-- working Linux runtime MVP with duplicate generated-frame insertion
+- working Linux runtime MVP with duplicate and history-based generated-frame insertion
 
 The next best implementation step is:
 
-## **add a real generated-frame backend behind the existing `copy` mode infrastructure**
+## **add a real generated-frame backend behind the existing `history-copy` / `copy` infrastructure**
 
 Meaning:
 - keep the current queue/swapchain/present path
-- replace raw copy with interpolation logic
+- replace raw copy / previous-frame placeholders with interpolation logic

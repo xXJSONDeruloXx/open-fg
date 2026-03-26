@@ -91,6 +91,7 @@ enum class Mode {
     PassThrough,
     ClearTest,
     CopyTest,
+    HistoryCopyTest,
 };
 
 Mode current_mode() {
@@ -105,6 +106,10 @@ Mode current_mode() {
     if (std::strcmp(mode, "copy") == 0 || std::strcmp(mode, "copy-test") == 0 || std::strcmp(mode, "duplicate") == 0) {
         return Mode::CopyTest;
     }
+    if (std::strcmp(mode, "history") == 0 || std::strcmp(mode, "history-copy") == 0
+            || std::strcmp(mode, "copy-prev") == 0 || std::strcmp(mode, "history-copy-test") == 0) {
+        return Mode::HistoryCopyTest;
+    }
 
     return Mode::PassThrough;
 }
@@ -117,6 +122,8 @@ const char* mode_name(Mode mode) {
             return "clear-test";
         case Mode::CopyTest:
             return "copy-test";
+        case Mode::HistoryCopyTest:
+            return "history-copy-test";
     }
     return "unknown";
 }
@@ -201,6 +208,7 @@ struct InstanceDispatch {
     PFN_vkEnumerateDeviceExtensionProperties EnumerateDeviceExtensionProperties = nullptr;
     PFN_vkGetPhysicalDeviceProperties GetPhysicalDeviceProperties = nullptr;
     PFN_vkGetPhysicalDeviceQueueFamilyProperties GetPhysicalDeviceQueueFamilyProperties = nullptr;
+    PFN_vkGetPhysicalDeviceMemoryProperties GetPhysicalDeviceMemoryProperties = nullptr;
     PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR GetPhysicalDeviceSurfaceCapabilitiesKHR = nullptr;
 };
 
@@ -229,6 +237,12 @@ struct DeviceDispatch {
     PFN_vkCreateSemaphore CreateSemaphore = nullptr;
     PFN_vkDestroySemaphore DestroySemaphore = nullptr;
     PFN_vkQueueWaitIdle QueueWaitIdle = nullptr;
+    PFN_vkCreateImage CreateImage = nullptr;
+    PFN_vkDestroyImage DestroyImage = nullptr;
+    PFN_vkGetImageMemoryRequirements GetImageMemoryRequirements = nullptr;
+    PFN_vkAllocateMemory AllocateMemory = nullptr;
+    PFN_vkFreeMemory FreeMemory = nullptr;
+    PFN_vkBindImageMemory BindImageMemory = nullptr;
     PFN_vkCmdPipelineBarrier CmdPipelineBarrier = nullptr;
     PFN_vkCmdClearColorImage CmdClearColorImage = nullptr;
     PFN_vkCmdCopyImage CmdCopyImage = nullptr;
@@ -267,6 +281,9 @@ struct SwapchainState {
     uint32_t original_min_image_count = 0;
     uint32_t modified_min_image_count = 0;
     std::vector<VkImage> images;
+    VkImage history_image = VK_NULL_HANDLE;
+    VkDeviceMemory history_memory = VK_NULL_HANDLE;
+    bool history_valid = false;
     uint64_t present_count = 0;
     uint64_t generated_present_count = 0;
     bool injection_attempted = false;
@@ -299,6 +316,8 @@ void fill_instance_dispatch(VkInstance instance, PFN_vkGetInstanceProcAddr gipa,
         gipa(instance, "vkGetPhysicalDeviceProperties"));
     dispatch.GetPhysicalDeviceQueueFamilyProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyProperties>(
         gipa(instance, "vkGetPhysicalDeviceQueueFamilyProperties"));
+    dispatch.GetPhysicalDeviceMemoryProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceMemoryProperties>(
+        gipa(instance, "vkGetPhysicalDeviceMemoryProperties"));
     dispatch.GetPhysicalDeviceSurfaceCapabilitiesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR>(
         gipa(instance, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR"));
 }
@@ -328,6 +347,12 @@ void fill_device_dispatch(VkDevice device, PFN_vkGetDeviceProcAddr gdpa, DeviceD
     dispatch.CreateSemaphore = reinterpret_cast<PFN_vkCreateSemaphore>(gdpa(device, "vkCreateSemaphore"));
     dispatch.DestroySemaphore = reinterpret_cast<PFN_vkDestroySemaphore>(gdpa(device, "vkDestroySemaphore"));
     dispatch.QueueWaitIdle = reinterpret_cast<PFN_vkQueueWaitIdle>(gdpa(device, "vkQueueWaitIdle"));
+    dispatch.CreateImage = reinterpret_cast<PFN_vkCreateImage>(gdpa(device, "vkCreateImage"));
+    dispatch.DestroyImage = reinterpret_cast<PFN_vkDestroyImage>(gdpa(device, "vkDestroyImage"));
+    dispatch.GetImageMemoryRequirements = reinterpret_cast<PFN_vkGetImageMemoryRequirements>(gdpa(device, "vkGetImageMemoryRequirements"));
+    dispatch.AllocateMemory = reinterpret_cast<PFN_vkAllocateMemory>(gdpa(device, "vkAllocateMemory"));
+    dispatch.FreeMemory = reinterpret_cast<PFN_vkFreeMemory>(gdpa(device, "vkFreeMemory"));
+    dispatch.BindImageMemory = reinterpret_cast<PFN_vkBindImageMemory>(gdpa(device, "vkBindImageMemory"));
     dispatch.CmdPipelineBarrier = reinterpret_cast<PFN_vkCmdPipelineBarrier>(gdpa(device, "vkCmdPipelineBarrier"));
     dispatch.CmdClearColorImage = reinterpret_cast<PFN_vkCmdClearColorImage>(gdpa(device, "vkCmdClearColorImage"));
     dispatch.CmdCopyImage = reinterpret_cast<PFN_vkCmdCopyImage>(gdpa(device, "vkCmdCopyImage"));
@@ -405,6 +430,107 @@ void destroy_inject_resources(const DeviceDispatch& dispatch, VkDevice device, I
         inject.command_pool = VK_NULL_HANDLE;
     }
     inject.initialized = false;
+}
+
+std::optional<uint32_t> find_memory_type_index(const DeviceInfo& device_info, uint32_t memory_type_bits, VkMemoryPropertyFlags required_flags) {
+    if (!device_info.instance_dispatch.GetPhysicalDeviceMemoryProperties || device_info.physical_device == VK_NULL_HANDLE) {
+        return std::nullopt;
+    }
+
+    VkPhysicalDeviceMemoryProperties memory_properties{};
+    device_info.instance_dispatch.GetPhysicalDeviceMemoryProperties(device_info.physical_device, &memory_properties);
+    for (uint32_t i = 0; i < memory_properties.memoryTypeCount; ++i) {
+        if ((memory_type_bits & (1u << i)) == 0) {
+            continue;
+        }
+        if ((memory_properties.memoryTypes[i].propertyFlags & required_flags) == required_flags) {
+            return i;
+        }
+    }
+    return std::nullopt;
+}
+
+bool ensure_history_image(SwapchainState& swapchain, const DeviceInfo& device_info) {
+    if (swapchain.history_image != VK_NULL_HANDLE) {
+        return true;
+    }
+    if (!device_info.dispatch.CreateImage || !device_info.dispatch.GetImageMemoryRequirements
+            || !device_info.dispatch.AllocateMemory || !device_info.dispatch.BindImageMemory) {
+        log_warn("history image creation functions unavailable");
+        return false;
+    }
+
+    VkImageCreateInfo image_info{};
+    image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_info.imageType = VK_IMAGE_TYPE_2D;
+    image_info.format = swapchain.format;
+    image_info.extent.width = swapchain.extent.width;
+    image_info.extent.height = swapchain.extent.height;
+    image_info.extent.depth = 1;
+    image_info.mipLevels = 1;
+    image_info.arrayLayers = 1;
+    image_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    image_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    if (device_info.dispatch.CreateImage(device_info.device, &image_info, nullptr, &swapchain.history_image) != VK_SUCCESS) {
+        log_warn("CreateImage failed for history image");
+        swapchain.history_image = VK_NULL_HANDLE;
+        return false;
+    }
+
+    VkMemoryRequirements memory_requirements{};
+    device_info.dispatch.GetImageMemoryRequirements(device_info.device, swapchain.history_image, &memory_requirements);
+    const auto memory_type_index = find_memory_type_index(device_info, memory_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    if (!memory_type_index.has_value()) {
+        log_warn("failed to find device-local memory type for history image");
+        device_info.dispatch.DestroyImage(device_info.device, swapchain.history_image, nullptr);
+        swapchain.history_image = VK_NULL_HANDLE;
+        return false;
+    }
+
+    VkMemoryAllocateInfo alloc_info{};
+    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    alloc_info.allocationSize = memory_requirements.size;
+    alloc_info.memoryTypeIndex = *memory_type_index;
+    if (device_info.dispatch.AllocateMemory(device_info.device, &alloc_info, nullptr, &swapchain.history_memory) != VK_SUCCESS) {
+        log_warn("AllocateMemory failed for history image");
+        device_info.dispatch.DestroyImage(device_info.device, swapchain.history_image, nullptr);
+        swapchain.history_image = VK_NULL_HANDLE;
+        swapchain.history_memory = VK_NULL_HANDLE;
+        return false;
+    }
+
+    if (device_info.dispatch.BindImageMemory(device_info.device, swapchain.history_image, swapchain.history_memory, 0) != VK_SUCCESS) {
+        log_warn("BindImageMemory failed for history image");
+        device_info.dispatch.FreeMemory(device_info.device, swapchain.history_memory, nullptr);
+        device_info.dispatch.DestroyImage(device_info.device, swapchain.history_image, nullptr);
+        swapchain.history_memory = VK_NULL_HANDLE;
+        swapchain.history_image = VK_NULL_HANDLE;
+        return false;
+    }
+
+    swapchain.history_valid = false;
+    log_info("created history image for swapchain");
+    return true;
+}
+
+void destroy_swapchain_resources(const DeviceInfo& device_info, SwapchainState& swapchain) {
+    if (device_info.dispatch.DeviceWaitIdle) {
+        device_info.dispatch.DeviceWaitIdle(device_info.device);
+    }
+    destroy_inject_resources(device_info.dispatch, device_info.device, swapchain.inject);
+    swapchain.history_valid = false;
+    if (swapchain.history_image != VK_NULL_HANDLE) {
+        device_info.dispatch.DestroyImage(device_info.device, swapchain.history_image, nullptr);
+        swapchain.history_image = VK_NULL_HANDLE;
+    }
+    if (swapchain.history_memory != VK_NULL_HANDLE) {
+        device_info.dispatch.FreeMemory(device_info.device, swapchain.history_memory, nullptr);
+        swapchain.history_memory = VK_NULL_HANDLE;
+    }
 }
 
 bool init_inject_resources(SwapchainState& swapchain, const DeviceInfo& device_info, const QueueInfo& queue_info) {
@@ -708,6 +834,269 @@ bool try_present_copy_frame(SwapchainState& state, const DeviceInfo& device_info
             + "; sourceImageIndex=" + std::to_string(source_index)
             + "; generatedImageIndex=" + std::to_string(generated_image_index));
     }
+    return true;
+}
+
+bool try_present_history_copy_frame(SwapchainState& state, const DeviceInfo& device_info, const QueueInfo& queue_info, VkQueue queue,
+        const VkPresentInfoKHR* present_info) {
+    if (!init_inject_resources(state, device_info, queue_info)) {
+        return false;
+    }
+    if (!present_info || present_info->swapchainCount != 1 || !device_info.dispatch.CmdCopyImage) {
+        return false;
+    }
+    if (!ensure_history_image(state, device_info)) {
+        return false;
+    }
+
+    const VkResult prior_submit_wait = device_info.dispatch.WaitForFences(
+        device_info.device,
+        1,
+        &state.inject.submit_fence,
+        VK_TRUE,
+        5'000'000'000ULL);
+    if (prior_submit_wait != VK_SUCCESS) {
+        log_warn("WaitForFences failed for submit fence: " + std::to_string(prior_submit_wait));
+        return false;
+    }
+
+    const uint32_t source_index = present_info->pImageIndices[0];
+    if (source_index >= state.images.size()) {
+        refresh_swapchain_images(state, device_info.dispatch);
+        if (source_index >= state.images.size()) {
+            log_warn("history-copy source image index out of bounds after refresh");
+            return false;
+        }
+    }
+    const VkImage source_image = state.images[source_index];
+
+    const bool have_generated = state.history_valid;
+    uint32_t generated_image_index = 0;
+    if (have_generated) {
+        const VkResult acquire_result = device_info.dispatch.AcquireNextImageKHR(
+            device_info.device,
+            state.handle,
+            20'000'000ULL,
+            state.inject.acquire_semaphore,
+            VK_NULL_HANDLE,
+            &generated_image_index);
+        if (acquire_result == VK_TIMEOUT || acquire_result == VK_NOT_READY) {
+            log_warn("AcquireNextImageKHR timed out for history-copy frame; skipping injection this present");
+            return false;
+        }
+        if (acquire_result != VK_SUCCESS && acquire_result != VK_SUBOPTIMAL_KHR) {
+            log_warn("AcquireNextImageKHR failed for history-copy frame: " + std::to_string(acquire_result));
+            return false;
+        }
+        if (generated_image_index >= state.images.size()) {
+            refresh_swapchain_images(state, device_info.dispatch);
+            if (generated_image_index >= state.images.size()) {
+                log_warn("history-copy generated image index out of bounds after refresh");
+                return false;
+            }
+        }
+    }
+
+    if (device_info.dispatch.ResetCommandPool(device_info.device, state.inject.command_pool, 0) != VK_SUCCESS) {
+        log_warn("ResetCommandPool failed in history-copy mode");
+        return false;
+    }
+
+    VkCommandBufferBeginInfo begin_info{};
+    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    if (device_info.dispatch.BeginCommandBuffer(state.inject.command_buffer, &begin_info) != VK_SUCCESS) {
+        log_warn("BeginCommandBuffer failed in history-copy mode");
+        return false;
+    }
+
+    std::vector<VkImageMemoryBarrier> barriers_before;
+    barriers_before.reserve(3);
+    barriers_before.push_back(image_barrier(source_image, VK_ACCESS_MEMORY_READ_BIT, VK_ACCESS_TRANSFER_READ_BIT,
+        VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL));
+    if (have_generated) {
+        barriers_before.push_back(image_barrier(state.history_image, VK_ACCESS_MEMORY_READ_BIT, VK_ACCESS_TRANSFER_READ_BIT,
+            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL));
+        barriers_before.push_back(image_barrier(state.images[generated_image_index], 0, VK_ACCESS_TRANSFER_WRITE_BIT,
+            VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL));
+    }
+    device_info.dispatch.CmdPipelineBarrier(
+        state.inject.command_buffer,
+        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        0,
+        0, nullptr,
+        0, nullptr,
+        static_cast<uint32_t>(barriers_before.size()),
+        barriers_before.data());
+
+    if (have_generated) {
+        VkImageCopy previous_copy{};
+        previous_copy.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        previous_copy.srcSubresource.layerCount = 1;
+        previous_copy.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        previous_copy.dstSubresource.layerCount = 1;
+        previous_copy.extent.width = state.extent.width;
+        previous_copy.extent.height = state.extent.height;
+        previous_copy.extent.depth = 1;
+        device_info.dispatch.CmdCopyImage(
+            state.inject.command_buffer,
+            state.history_image,
+            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            state.images[generated_image_index],
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            1,
+            &previous_copy);
+    }
+
+    VkImageMemoryBarrier history_to_dst = image_barrier(
+        state.history_image,
+        have_generated ? VK_ACCESS_TRANSFER_READ_BIT : 0,
+        VK_ACCESS_TRANSFER_WRITE_BIT,
+        state.history_valid ? VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL : VK_IMAGE_LAYOUT_UNDEFINED,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    device_info.dispatch.CmdPipelineBarrier(
+        state.inject.command_buffer,
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        0,
+        0, nullptr,
+        0, nullptr,
+        1,
+        &history_to_dst);
+
+    VkImageCopy current_to_history{};
+    current_to_history.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    current_to_history.srcSubresource.layerCount = 1;
+    current_to_history.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    current_to_history.dstSubresource.layerCount = 1;
+    current_to_history.extent.width = state.extent.width;
+    current_to_history.extent.height = state.extent.height;
+    current_to_history.extent.depth = 1;
+    device_info.dispatch.CmdCopyImage(
+        state.inject.command_buffer,
+        source_image,
+        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        state.history_image,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        1,
+        &current_to_history);
+
+    std::vector<VkImageMemoryBarrier> barriers_after;
+    barriers_after.reserve(3);
+    barriers_after.push_back(image_barrier(source_image, VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_MEMORY_READ_BIT,
+        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR));
+    barriers_after.push_back(image_barrier(state.history_image, VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_MEMORY_READ_BIT,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL));
+    if (have_generated) {
+        barriers_after.push_back(image_barrier(state.images[generated_image_index], VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_MEMORY_READ_BIT,
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR));
+    }
+    device_info.dispatch.CmdPipelineBarrier(
+        state.inject.command_buffer,
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+        0,
+        0, nullptr,
+        0, nullptr,
+        static_cast<uint32_t>(barriers_after.size()),
+        barriers_after.data());
+
+    if (device_info.dispatch.EndCommandBuffer(state.inject.command_buffer) != VK_SUCCESS) {
+        log_warn("EndCommandBuffer failed in history-copy mode");
+        return false;
+    }
+
+    std::vector<VkSemaphore> wait_semaphores;
+    std::vector<VkPipelineStageFlags> wait_stages;
+    wait_semaphores.reserve(present_info->waitSemaphoreCount + (have_generated ? 1u : 0u));
+    wait_stages.reserve(present_info->waitSemaphoreCount + (have_generated ? 1u : 0u));
+    for (uint32_t i = 0; i < present_info->waitSemaphoreCount; ++i) {
+        wait_semaphores.push_back(present_info->pWaitSemaphores[i]);
+        wait_stages.push_back(VK_PIPELINE_STAGE_TRANSFER_BIT);
+    }
+    if (have_generated) {
+        wait_semaphores.push_back(state.inject.acquire_semaphore);
+        wait_stages.push_back(VK_PIPELINE_STAGE_TRANSFER_BIT);
+    }
+
+    std::vector<VkSemaphore> signal_semaphores;
+    signal_semaphores.push_back(state.inject.ready_original_semaphore);
+    if (have_generated) {
+        signal_semaphores.push_back(state.inject.ready_generated_semaphore);
+    }
+
+    VkSubmitInfo submit_info{};
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.waitSemaphoreCount = static_cast<uint32_t>(wait_semaphores.size());
+    submit_info.pWaitSemaphores = wait_semaphores.empty() ? nullptr : wait_semaphores.data();
+    submit_info.pWaitDstStageMask = wait_stages.empty() ? nullptr : wait_stages.data();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &state.inject.command_buffer;
+    submit_info.signalSemaphoreCount = static_cast<uint32_t>(signal_semaphores.size());
+    submit_info.pSignalSemaphores = signal_semaphores.data();
+
+    if (device_info.dispatch.ResetFences(device_info.device, 1, &state.inject.submit_fence) != VK_SUCCESS) {
+        log_warn("ResetFences failed for submit fence before history-copy QueueSubmit");
+        return false;
+    }
+    const VkResult submit_result = device_info.dispatch.QueueSubmit(queue, 1, &submit_info, state.inject.submit_fence);
+    if (submit_result != VK_SUCCESS) {
+        log_warn("QueueSubmit failed for history-copy frame: " + std::to_string(submit_result));
+        return false;
+    }
+
+    const bool first_success = !state.injection_works;
+    if (have_generated) {
+        VkPresentInfoKHR generated_present{};
+        generated_present.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+        generated_present.waitSemaphoreCount = 1;
+        generated_present.pWaitSemaphores = &state.inject.ready_generated_semaphore;
+        generated_present.swapchainCount = 1;
+        generated_present.pSwapchains = &state.handle;
+        generated_present.pImageIndices = &generated_image_index;
+        const VkResult generated_result = device_info.dispatch.QueuePresentKHR(queue, &generated_present);
+        if (generated_result != VK_SUCCESS && generated_result != VK_SUBOPTIMAL_KHR) {
+            log_warn("generated QueuePresentKHR failed in history-copy mode: " + std::to_string(generated_result));
+            return false;
+        }
+    }
+
+    VkPresentInfoKHR original_present = *present_info;
+    original_present.waitSemaphoreCount = 1;
+    original_present.pWaitSemaphores = &state.inject.ready_original_semaphore;
+    const VkResult original_result = device_info.dispatch.QueuePresentKHR(queue, &original_present);
+    if (original_result != VK_SUCCESS && original_result != VK_SUBOPTIMAL_KHR) {
+        log_warn("original QueuePresentKHR failed in history-copy mode: " + std::to_string(original_result));
+        return false;
+    }
+
+    if (device_info.dispatch.QueueWaitIdle) {
+        const VkResult wait_idle_result = device_info.dispatch.QueueWaitIdle(queue);
+        if (wait_idle_result != VK_SUCCESS) {
+            log_warn("QueueWaitIdle failed in history-copy mode: " + std::to_string(wait_idle_result));
+            return false;
+        }
+    }
+
+    state.history_valid = true;
+    state.injection_works = state.injection_works || have_generated;
+    if (have_generated) {
+        state.generated_present_count++;
+        if (first_success) {
+            log_info("first previous-frame insertion present succeeded");
+        }
+        if ((state.generated_present_count <= 5) || (state.generated_present_count % 60 == 0)) {
+            log_info(
+                std::string("history-copy generated frame present=") + std::to_string(state.generated_present_count)
+                + "; previousFrameSourceStored=1"
+                + "; generatedImageIndex=" + std::to_string(generated_image_index)
+                + "; currentImageIndex=" + std::to_string(source_index));
+        }
+    } else {
+        log_info("history-copy primed previous frame history");
+    }
+
     return true;
 }
 
@@ -1083,7 +1472,7 @@ void VKAPI_CALL layer_destroy_device(VkDevice device, const VkAllocationCallback
 
         for (auto it = g_swapchains.begin(); it != g_swapchains.end();) {
             if (it->second.device == device) {
-                destroy_inject_resources(device_info.dispatch, device, it->second.inject);
+                destroy_swapchain_resources(device_info, it->second);
                 it = g_swapchains.erase(it);
             } else {
                 ++it;
@@ -1176,9 +1565,9 @@ VkResult VKAPI_CALL layer_create_swapchain_khr(VkDevice device,
     VkSurfaceCapabilitiesKHR caps{};
     const Mode mode = current_mode();
 
-    if (mode == Mode::ClearTest || mode == Mode::CopyTest) {
+    if (mode == Mode::ClearTest || mode == Mode::CopyTest || mode == Mode::HistoryCopyTest) {
         modified.imageUsage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-        if (mode == Mode::CopyTest) {
+        if (mode == Mode::CopyTest || mode == Mode::HistoryCopyTest) {
             modified.imageUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
         }
 
@@ -1190,7 +1579,7 @@ VkResult VKAPI_CALL layer_create_swapchain_khr(VkDevice device,
                 create_info->surface,
                 &caps);
             if (caps_result == VK_SUCCESS) {
-                const uint32_t image_bump = (mode == Mode::CopyTest) ? 2u : 1u;
+                const uint32_t image_bump = (mode == Mode::CopyTest || mode == Mode::HistoryCopyTest) ? 2u : 1u;
                 const uint32_t desired = create_info->minImageCount + image_bump;
                 if (caps.maxImageCount == 0) {
                     modified.minImageCount = desired;
@@ -1210,7 +1599,7 @@ VkResult VKAPI_CALL layer_create_swapchain_khr(VkDevice device,
     if (create_info->oldSwapchain) {
         std::lock_guard<std::mutex> lock(g_mutex);
         if (auto it = g_swapchains.find(create_info->oldSwapchain); it != g_swapchains.end()) {
-            destroy_inject_resources(device_info.dispatch, device, it->second.inject);
+            destroy_swapchain_resources(device_info, it->second);
             g_swapchains.erase(it);
         }
     }
@@ -1228,6 +1617,9 @@ VkResult VKAPI_CALL layer_create_swapchain_khr(VkDevice device,
     state.original_min_image_count = create_info->minImageCount;
     state.modified_min_image_count = modified.minImageCount;
     refresh_swapchain_images(state, device_info.dispatch);
+    if (mode == Mode::HistoryCopyTest) {
+        (void)ensure_history_image(state, device_info);
+    }
 
     {
         std::lock_guard<std::mutex> lock(g_mutex);
@@ -1257,7 +1649,7 @@ void VKAPI_CALL layer_destroy_swapchain_khr(VkDevice device, VkSwapchainKHR swap
         }
         if (auto it = g_swapchains.find(swapchain); it != g_swapchains.end()) {
             if (have_device) {
-                destroy_inject_resources(device_info.dispatch, device, it->second.inject);
+                destroy_swapchain_resources(device_info, it->second);
             }
             g_swapchains.erase(it);
         }
@@ -1304,7 +1696,7 @@ VkResult VKAPI_CALL layer_queue_present_khr(VkQueue queue, const VkPresentInfoKH
                 state.present_count++;
                 if ((state.present_count <= 5) || (state.present_count % 60 == 0)) {
                     const char* prefix = "vkQueuePresentKHR passthrough frame=";
-                    if (mode == Mode::ClearTest || mode == Mode::CopyTest) {
+                    if (mode == Mode::ClearTest || mode == Mode::CopyTest || mode == Mode::HistoryCopyTest) {
                         prefix = "vkQueuePresentKHR frame=";
                     }
                     log_info(
@@ -1338,6 +1730,17 @@ VkResult VKAPI_CALL layer_queue_present_khr(VkQueue queue, const VkPresentInfoKH
                 SwapchainState& state = it->second;
                 state.injection_attempted = true;
                 if (try_present_copy_frame(state, device_info, queue_info, queue, present_info)) {
+                    return VK_SUCCESS;
+                }
+            }
+        }
+
+        if (have_queue && mode == Mode::HistoryCopyTest) {
+            std::lock_guard<std::mutex> lock(g_mutex);
+            if (auto it = g_swapchains.find(present_info->pSwapchains[0]); it != g_swapchains.end()) {
+                SwapchainState& state = it->second;
+                state.injection_attempted = true;
+                if (try_present_history_copy_frame(state, device_info, queue_info, queue, present_info)) {
                     return VK_SUCCESS;
                 }
             }

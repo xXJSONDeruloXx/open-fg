@@ -28,7 +28,7 @@ Purpose:
 - prove swapchain image recycling and synchronization
 
 ### `copy`
-Current best MVP mode.
+Stable duplicate-frame insertion mode.
 The layer:
 1. acquires an additional swapchain image
 2. copies the app’s current present image into that extra image
@@ -43,11 +43,27 @@ It is a stable **duplicate-frame insertion** path that proves:
 - copy into generated frame
 - two presents per app frame
 
+### `history-copy`
+Current best timing-aligned placeholder mode.
+The layer:
+1. stores the current real frame into a private history image
+2. on the next frame, acquires an extra swapchain image
+3. copies the **previous real frame** into that extra image
+4. presents that previous-frame placeholder first
+5. then presents the current real frame
+
+This is still **not real interpolation**, but it is a better approximation of the intended frame-generation ordering than `copy` mode.
+
+It proves:
+- persistent frame history
+- generated-frame-first ordering
+- separate original/generated present semaphores
+- post-process insertion using prior-frame state
+
 ## What it is not yet
 
 Not yet implemented:
 - real interpolation / optical flow
-- history buffers
 - pacing thread
 - latency optimization
 - HUD masking
@@ -62,16 +78,15 @@ Primary validated runtime target:
 
 ## Key implementation insight
 
-The stable duplicate-frame path currently works best by:
+The current stable placeholder paths work by:
 - increasing swapchain image count
-- acquiring the generated image **before** original present in `copy` mode
-- submitting one copy pass that waits on:
-  - app render-complete semaphores
-  - acquired-image semaphore
-- signaling separate semaphores for:
-  - original present
-  - generated present
-- using `vkQueueWaitIdle` after both presents in test mode so semaphore reuse is safe and predictable
+- acquiring one extra swapchain image for the generated frame path
+- either:
+  - copying the current frame into that extra image (`copy`)
+  - or storing current into history and presenting the previous frame first (`history-copy`)
+- submitting explicit transfer work that waits on app render-complete semaphores
+- signaling separate semaphores for original vs generated presentation
+- using `vkQueueWaitIdle` in test-oriented modes so semaphore reuse is safe and predictable
 
 That last step is not production-grade, but it makes the MVP robust.
 
@@ -102,6 +117,9 @@ export PPFG_LAYER_MODE=clear
 ./scripts/test-steamdeck-vkcube.sh
 
 export PPFG_LAYER_MODE=copy
+./scripts/test-steamdeck-vkcube.sh
+
+export PPFG_LAYER_MODE=history-copy
 ./scripts/test-steamdeck-vkcube.sh
 ```
 

@@ -1,23 +1,23 @@
-[ppfg][info][1774544140273] vkNegotiateLoaderLayerInterfaceVersion ok; mode=copy-test
-[ppfg][info][1774544140276] vkCreateInstance ok; mode=copy-test; app=vkcube; engine=vkcube; apiVersion=1.0.0
-[ppfg][info][1774544140298] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH)
-[ppfg][info][1774544140302] vkCreateSwapchainKHR ok; extent=500x500; format=44; presentMode=FIFO; minImages=3->5; usage=COLOR_ATTACHMENT (0x10) -> TRANSFER_SRC|TRANSFER_DST|COLOR_ATTACHMENT (0x13); images=5; mode=copy-test
-[ppfg][info][1774544140304] vkQueuePresentKHR frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
-[ppfg][info][1774544140304] initialized injection resources for queue family 0
-[ppfg][info][1774544140305] first duplicated-frame present succeeded
-[ppfg][info][1774544140305] duplicated frame present=1; sourceImageIndex=0; generatedImageIndex=1
-[ppfg][info][1774544140305] vkQueuePresentKHR frame=2; queueFamily=0; imageIndex=2; waitSemaphores=1
-[ppfg][info][1774544140305] duplicated frame present=2; sourceImageIndex=2; generatedImageIndex=3
-[ppfg][info][1774544140305] vkQueuePresentKHR frame=3; queueFamily=0; imageIndex=4; waitSemaphores=1
-[ppfg][info][1774544140307] duplicated frame present=3; sourceImageIndex=4; generatedImageIndex=0
-[ppfg][info][1774544140318] vkQueuePresentKHR frame=4; queueFamily=0; imageIndex=1; waitSemaphores=1
-[ppfg][info][1774544140331] duplicated frame present=4; sourceImageIndex=1; generatedImageIndex=2
-[ppfg][info][1774544140341] vkQueuePresentKHR frame=5; queueFamily=0; imageIndex=3; waitSemaphores=1
-[ppfg][info][1774544140353] duplicated frame present=5; sourceImageIndex=3; generatedImageIndex=4
-[ppfg][info][1774544141563] vkQueuePresentKHR frame=60; queueFamily=0; imageIndex=3; waitSemaphores=1
-[ppfg][info][1774544141575] duplicated frame present=60; sourceImageIndex=3; generatedImageIndex=4
-[ppfg][info][1774544142896] vkQueuePresentKHR frame=120; queueFamily=0; imageIndex=3; waitSemaphores=1
-[ppfg][info][1774544142909] duplicated frame present=120; sourceImageIndex=3; generatedImageIndex=4
-[ppfg][info][1774544142909] vkDestroySwapchainKHR
-[ppfg][info][1774544142919] vkDestroyDevice
-[ppfg][info][1774544143001] vkDestroyInstance
+[ppfg][info][1774551536990] vkNegotiateLoaderLayerInterfaceVersion ok; mode=copy-test
+[ppfg][info][1774551536992] vkCreateInstance ok; mode=copy-test; app=vkcube; engine=vkcube; apiVersion=1.0.0
+[ppfg][info][1774551537016] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH)
+[ppfg][info][1774551537020] vkCreateSwapchainKHR ok; extent=500x500; format=44; presentMode=FIFO; minImages=3->5; usage=COLOR_ATTACHMENT (0x10) -> TRANSFER_SRC|TRANSFER_DST|COLOR_ATTACHMENT (0x13); images=5; mode=copy-test
+[ppfg][info][1774551537022] vkQueuePresentKHR frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
+[ppfg][info][1774551537023] initialized injection resources for queue family 0
+[ppfg][info][1774551537023] first duplicated-frame present succeeded
+[ppfg][info][1774551537023] duplicated frame present=1; sourceImageIndex=0; generatedImageIndex=1
+[ppfg][info][1774551537023] vkQueuePresentKHR frame=2; queueFamily=0; imageIndex=2; waitSemaphores=1
+[ppfg][info][1774551537023] duplicated frame present=2; sourceImageIndex=2; generatedImageIndex=3
+[ppfg][info][1774551537023] vkQueuePresentKHR frame=3; queueFamily=0; imageIndex=4; waitSemaphores=1
+[ppfg][info][1774551537028] duplicated frame present=3; sourceImageIndex=4; generatedImageIndex=0
+[ppfg][info][1774551537038] vkQueuePresentKHR frame=4; queueFamily=0; imageIndex=1; waitSemaphores=1
+[ppfg][info][1774551537050] duplicated frame present=4; sourceImageIndex=1; generatedImageIndex=2
+[ppfg][info][1774551537060] vkQueuePresentKHR frame=5; queueFamily=0; imageIndex=3; waitSemaphores=1
+[ppfg][info][1774551537072] duplicated frame present=5; sourceImageIndex=3; generatedImageIndex=4
+[ppfg][info][1774551538282] vkQueuePresentKHR frame=60; queueFamily=0; imageIndex=3; waitSemaphores=1
+[ppfg][info][1774551538294] duplicated frame present=60; sourceImageIndex=3; generatedImageIndex=4
+[ppfg][info][1774551539615] vkQueuePresentKHR frame=120; queueFamily=0; imageIndex=3; waitSemaphores=1
+[ppfg][info][1774551539628] duplicated frame present=120; sourceImageIndex=3; generatedImageIndex=4
+[ppfg][info][1774551539628] vkDestroySwapchainKHR
+[ppfg][info][1774551539638] vkDestroyDevice
+[ppfg][info][1774551539717] vkDestroyInstance
