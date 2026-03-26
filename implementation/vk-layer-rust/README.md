@@ -17,6 +17,7 @@ Current Rust capability set:
 - shader-based generated backend modes:
   - `blend`
   - `adaptive-blend`
+  - `search-blend`
   - `multi-blend`
   - `adaptive-multi-blend`
 - testable swapchain mutation + present sequencing logic
@@ -36,7 +37,7 @@ This currently covers:
 - swapchain mutation policy
 - present ordering semantics
 - generated-frame accounting
-- blend/adaptive-blend/multi-blend/adaptive-multi-blend policy semantics
+- blend/adaptive-blend/search-blend/multi-blend/adaptive-multi-blend policy semantics
 - dispatch-key extraction helper
 - exported layer enumeration/proc-address plumbing
 - loader negotiation ABI
@@ -79,6 +80,9 @@ export PPFG_LAYER_MODE=blend
 export PPFG_LAYER_MODE=adaptive-blend
 ./scripts/test-steamdeck-vkcube.sh
 
+export PPFG_LAYER_MODE=search-blend
+./scripts/test-steamdeck-vkcube.sh
+
 export PPFG_LAYER_MODE=multi-blend
 ./scripts/test-steamdeck-vkcube.sh
 
@@ -103,6 +107,7 @@ The Rust port intentionally separates:
 
 The current `blend` mode uses a simple fullscreen graphics pass to synthesize a midpoint placeholder from the previous and current frames.
 The `adaptive-blend` mode builds on that by biasing the blend toward the current frame in higher-difference regions.
+The `search-blend` mode adds a small neighborhood search on the previous frame to approximate motion-aware reprojection before blending.
 The `multi-blend` mode is the first Rust **multi-FG** step, emitting two synthetic frames between real frames using temporal blend positions.
 The `adaptive-multi-blend` mode combines both ideas: multi-FG plus adaptive current-frame weighting, and now also includes an initial present-interval-based frame-count controller.
 

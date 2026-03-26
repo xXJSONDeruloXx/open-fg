@@ -40,6 +40,7 @@ Rust implementation currently has verified parity for the existing MVP feature s
 Rust also now has additional next-step backend modes:
 - `blend`
 - `adaptive-blend`
+- `search-blend`
 - `multi-blend`
 - `adaptive-multi-blend`
 
@@ -142,7 +143,20 @@ Observed:
 - stable in **IMMEDIATE** present mode on Deck
 - keeps the same present/interception infrastructure while improving synthesis behavior over fixed 50/50 blending
 
-#### 7. `multi-blend` (Rust)
+#### 7. `search-blend` (Rust)
+Working as the first motion-search synthesis heuristic.
+
+Validated with Rust layer on Steam Deck:
+- `vkcube --c 120`
+- full Rust regression suite including `search-blend`
+
+Observed:
+- first frame primes history
+- subsequent generated frames search a small neighborhood in the previous frame before blending with current
+- stable on the Deck 120-frame smoke path
+- demonstrates the first explicit motion-search style heuristic in the Rust implementation
+
+#### 8. `multi-blend` (Rust)
 Working as the first multi-FG stepping stone.
 
 Validated with Rust layer on Steam Deck:
@@ -158,7 +172,7 @@ Observed:
 - swapchain image count was increased from `3 -> 6` for the validated Deck path
 - stable on Deck through 120-frame, 600-frame, and IMMEDIATE-mode runs
 
-#### 8. `adaptive-multi-blend` (Rust)
+#### 9. `adaptive-multi-blend` (Rust)
 Working as the current richest generated-frame backend in the Rust layer.
 
 Validated with Rust layer on Steam Deck:
@@ -203,11 +217,12 @@ Right now the layer can do:
 - **previous-frame placeholder insertion with private history**
 - **simple shader-based previous/current frame blending**
 - **difference-aware adaptive blending**
+- **small-neighborhood motion-search blending**
 - **initial multi-FG via two generated frames per real frame**
 - **combined adaptive + multi-FG synthesis**
 
 It still cannot do:
-- **motion-aware interpolated frame generation**
+- **true motion-aware interpolated frame generation**
 - **richer adaptive FG frame-count control beyond the current interval-based heuristic**
 - **higher-quality motion/disocclusion-aware multi-FG**
 
@@ -239,6 +254,7 @@ Rust parity port:
 - `artifacts/steamdeck/rust/vkcube/adaptive-blend/ppfg-vkcube.log`
 - `artifacts/steamdeck/rust/vkcube/adaptive-blend-long/ppfg-vkcube-adaptive-long.log`
 - `artifacts/steamdeck/rust/vkcube/adaptive-blend-immediate/ppfg-vkcube-adaptive-immediate.log`
+- `artifacts/steamdeck/rust/vkcube/search-blend/ppfg-vkcube.log`
 - `artifacts/steamdeck/rust/vkcube/multi-blend/ppfg-vkcube.log`
 - `artifacts/steamdeck/rust/vkcube/multi-blend-long/ppfg-vkcube-multi-long.log`
 - `artifacts/steamdeck/rust/vkcube/multi-blend-immediate/ppfg-vkcube-multi-immediate.log`
@@ -287,6 +303,6 @@ Recommended execution model now:
 
 Meaning:
 - keep the current queue/swapchain/present path
-- treat `blend`, `adaptive-blend`, `multi-blend`, and `adaptive-multi-blend` as shader stepping stones
-- next target **richer motion-aware synthesis in Rust**
+- treat `blend`, `adaptive-blend`, `search-blend`, `multi-blend`, and `adaptive-multi-blend` as shader stepping stones
+- next target **stronger motion-aware synthesis in Rust**
 - then continue toward stronger adaptive policies and higher-quality multi-FG

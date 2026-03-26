@@ -6,6 +6,7 @@ pub enum Mode {
     HistoryCopyTest,
     BlendTest,
     AdaptiveBlendTest,
+    SearchBlendTest,
     MultiBlendTest,
     AdaptiveMultiBlendTest,
 }
@@ -19,6 +20,9 @@ impl Mode {
             "blend" | "blend-test" | "history-blend" | "blend-prev-current" => Self::BlendTest,
             "adaptive-blend" | "adaptive" | "adaptive-blend-test" | "blend-adaptive" => {
                 Self::AdaptiveBlendTest
+            }
+            "search-blend" | "motion-search" | "motion-search-blend" | "search-blend-test" => {
+                Self::SearchBlendTest
             }
             "multi-blend" | "multi-fg" | "multi-fg-test" | "multi-blend-test" => {
                 Self::MultiBlendTest
@@ -43,6 +47,7 @@ impl Mode {
             Self::HistoryCopyTest => "history-copy-test",
             Self::BlendTest => "blend-test",
             Self::AdaptiveBlendTest => "adaptive-blend-test",
+            Self::SearchBlendTest => "search-blend-test",
             Self::MultiBlendTest => "multi-blend-test",
             Self::AdaptiveMultiBlendTest => "adaptive-multi-blend-test",
         }
@@ -99,6 +104,22 @@ mod tests {
             Mode::AdaptiveBlendTest
         );
         assert_eq!(
+            Mode::from_env_value(Some("search-blend")),
+            Mode::SearchBlendTest
+        );
+        assert_eq!(
+            Mode::from_env_value(Some("motion-search")),
+            Mode::SearchBlendTest
+        );
+        assert_eq!(
+            Mode::from_env_value(Some("motion-search-blend")),
+            Mode::SearchBlendTest
+        );
+        assert_eq!(
+            Mode::from_env_value(Some("search-blend-test")),
+            Mode::SearchBlendTest
+        );
+        assert_eq!(
             Mode::from_env_value(Some("multi-blend")),
             Mode::MultiBlendTest
         );
@@ -138,6 +159,7 @@ mod tests {
         assert_eq!(Mode::HistoryCopyTest.name(), "history-copy-test");
         assert_eq!(Mode::BlendTest.name(), "blend-test");
         assert_eq!(Mode::AdaptiveBlendTest.name(), "adaptive-blend-test");
+        assert_eq!(Mode::SearchBlendTest.name(), "search-blend-test");
         assert_eq!(Mode::MultiBlendTest.name(), "multi-blend-test");
         assert_eq!(
             Mode::AdaptiveMultiBlendTest.name(),
