@@ -14,8 +14,9 @@ Current Rust capability set:
   - `clear`
   - `copy`
   - `history-copy`
-- first Rust-only generated backend mode:
+- shader-based generated backend modes:
   - `blend`
+  - `adaptive-blend`
 - testable swapchain mutation + present sequencing logic
 - expandable regression harness for future interpolation work
 
@@ -33,7 +34,7 @@ This currently covers:
 - swapchain mutation policy
 - present ordering semantics
 - generated-frame accounting
-- blend-mode policy semantics
+- blend/adaptive-blend policy semantics
 - dispatch-key extraction helper
 - exported layer enumeration/proc-address plumbing
 - loader negotiation ABI
@@ -72,6 +73,9 @@ export PPFG_LAYER_MODE=history-copy
 
 export PPFG_LAYER_MODE=blend
 ./scripts/test-steamdeck-vkcube.sh
+
+export PPFG_LAYER_MODE=adaptive-blend
+./scripts/test-steamdeck-vkcube.sh
 ```
 
 ### Full regression suite
@@ -90,6 +94,8 @@ The Rust port intentionally separates:
 - **precompiled test shaders** in `shaders/`
 
 The current `blend` mode uses a simple fullscreen graphics pass to synthesize a midpoint placeholder from the previous and current frames.
-That is still not motion-aware interpolation, but it is the first real shader-based generated-frame backend in this repo.
+The `adaptive-blend` mode builds on that by biasing the blend toward the current frame in higher-difference regions.
+
+These are still not fully motion-aware interpolation backends, but they are real shader-based generated-frame steps beyond placeholder copying.
 
 That split should make it much easier to grow the test suite as frame generation gets more complex.

@@ -308,6 +308,14 @@ type PfnVkCmdBindDescriptorSets = unsafe extern "system" fn(
     *const u32,
 );
 type PfnVkCmdDraw = unsafe extern "system" fn(vk::CommandBuffer, u32, u32, u32, u32);
+type PfnVkCmdPushConstants = unsafe extern "system" fn(
+    vk::CommandBuffer,
+    vk::PipelineLayout,
+    vk::ShaderStageFlags,
+    u32,
+    u32,
+    *const std::ffi::c_void,
+);
 
 #[derive(Default)]
 struct LoggerSink {
@@ -430,6 +438,7 @@ struct DeviceDispatch {
     cmd_bind_pipeline: Option<PfnVkCmdBindPipeline>,
     cmd_bind_descriptor_sets: Option<PfnVkCmdBindDescriptorSets>,
     cmd_draw: Option<PfnVkCmdDraw>,
+    cmd_push_constants: Option<PfnVkCmdPushConstants>,
 }
 
 #[derive(Clone, Copy, Default)]
@@ -464,6 +473,15 @@ struct BlendResources {
     descriptor_set: vk::DescriptorSet,
     sampler: vk::Sampler,
     history_view: vk::ImageView,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+struct BlendPushConstants {
+    alpha: f32,
+    adaptive_strength: f32,
+    adaptive_bias: f32,
+    mode: u32,
 }
 
 #[derive(Clone)]
@@ -685,6 +703,7 @@ unsafe fn fill_device_dispatch(device: vk::Device, gdpa: PfnVkGetDeviceProcAddr)
         cmd_bind_pipeline: load_device_fn(gdpa, device, cstr!("vkCmdBindPipeline")),
         cmd_bind_descriptor_sets: load_device_fn(gdpa, device, cstr!("vkCmdBindDescriptorSets")),
         cmd_draw: load_device_fn(gdpa, device, cstr!("vkCmdDraw")),
+        cmd_push_constants: load_device_fn(gdpa, device, cstr!("vkCmdPushConstants")),
     }
 }
 
@@ -1226,10 +1245,17 @@ unsafe fn init_blend_resources(swapchain: &mut SwapchainState, device_info: &Dev
     }
 
     let set_layouts = [blend.descriptor_set_layout];
+    let push_constant_ranges = [vk::PushConstantRange {
+        stage_flags: vk::ShaderStageFlags::FRAGMENT,
+        offset: 0,
+        size: std::mem::size_of::<BlendPushConstants>() as u32,
+    }];
     let pipeline_layout_info = vk::PipelineLayoutCreateInfo {
         s_type: vk::StructureType::PIPELINE_LAYOUT_CREATE_INFO,
         set_layout_count: set_layouts.len() as u32,
         p_set_layouts: set_layouts.as_ptr(),
+        push_constant_range_count: push_constant_ranges.len() as u32,
+        p_push_constant_ranges: push_constant_ranges.as_ptr(),
         ..Default::default()
     };
     if create_pipeline_layout(
@@ -1803,12 +1829,46 @@ unsafe fn update_blend_descriptor_set(
     true
 }
 
+fn blend_push_constants_for_mode(mode: Mode) -> BlendPushConstants {
+    match mode {
+        Mode::BlendTest => BlendPushConstants {
+            alpha: 0.5,
+            adaptive_strength: 0.0,
+            adaptive_bias: 0.0,
+            mode: 0,
+        },
+        Mode::AdaptiveBlendTest => BlendPushConstants {
+            alpha: 0.5,
+            adaptive_strength: 2.0,
+            adaptive_bias: 0.25,
+            mode: 1,
+        },
+        _ => BlendPushConstants::default(),
+    }
+}
+
+fn blend_mode_labels(mode: Mode) -> (&'static str, &'static str, &'static str) {
+    match mode {
+        Mode::AdaptiveBlendTest => (
+            "adaptive-blend primed previous frame history",
+            "first adaptive blended generated-frame present succeeded",
+            "adaptive blended frame present=",
+        ),
+        _ => (
+            "blend primed previous frame history",
+            "first blended generated-frame present succeeded",
+            "blended frame present=",
+        ),
+    }
+}
+
 unsafe fn try_present_blend_frame(
     state: &mut SwapchainState,
     device_info: &DeviceInfo,
     queue_info: &QueueInfo,
     queue: vk::Queue,
     present_info: *const PresentInfoKHR,
+    mode: Mode,
 ) -> bool {
     if !init_inject_resources(state, device_info, queue_info) {
         return false;
@@ -1840,6 +1900,7 @@ unsafe fn try_present_blend_frame(
         Some(cmd_bind_pipeline),
         Some(cmd_bind_descriptor_sets),
         Some(cmd_draw),
+        Some(cmd_push_constants),
     ) = (
         device_info.dispatch.wait_for_fences,
         device_info.dispatch.acquire_next_image_khr,
@@ -1858,10 +1919,13 @@ unsafe fn try_present_blend_frame(
         device_info.dispatch.cmd_bind_pipeline,
         device_info.dispatch.cmd_bind_descriptor_sets,
         device_info.dispatch.cmd_draw,
+        device_info.dispatch.cmd_push_constants,
     )
     else {
         return false;
     };
+
+    let (prime_label, first_success_label, generated_label_prefix) = blend_mode_labels(mode);
 
     let prior_submit_wait = wait_for_fences(
         device_info.device,
@@ -2101,6 +2165,15 @@ unsafe fn try_present_blend_frame(
             &state.blend.descriptor_set,
             0,
             ptr::null(),
+        );
+        let push_constants = blend_push_constants_for_mode(mode);
+        cmd_push_constants(
+            state.inject.command_buffer,
+            state.blend.pipeline_layout,
+            vk::ShaderStageFlags::FRAGMENT,
+            0,
+            std::mem::size_of::<BlendPushConstants>() as u32,
+            (&push_constants as *const BlendPushConstants).cast(),
         );
         cmd_draw(state.inject.command_buffer, 3, 1, 0, 0);
         cmd_end_render_pass(state.inject.command_buffer);
@@ -2381,16 +2454,19 @@ unsafe fn try_present_blend_frame(
     if have_generated {
         state.generated_present_count += 1;
         if first_success {
-            log_info("first blended generated-frame present succeeded");
+            log_info(first_success_label);
         }
         if state.generated_present_count <= 5 || state.generated_present_count % 60 == 0 {
             log_info(format!(
-                "blended frame present={}; generatedImageIndex={}; currentImageIndex={}",
-                state.generated_present_count, generated_image_index, source_index
+                "{}{}; generatedImageIndex={}; currentImageIndex={}",
+                generated_label_prefix,
+                state.generated_present_count,
+                generated_image_index,
+                source_index
             ));
         }
     } else {
-        log_info("blend primed previous frame history");
+        log_info(prime_label);
     }
 
     true
@@ -3826,7 +3902,10 @@ unsafe extern "system" fn layer_create_swapchain_khr(
         ..Default::default()
     };
     refresh_swapchain_images(&mut state_entry, &device_info.dispatch);
-    if matches!(mode, Mode::HistoryCopyTest | Mode::BlendTest) {
+    if matches!(
+        mode,
+        Mode::HistoryCopyTest | Mode::BlendTest | Mode::AdaptiveBlendTest
+    ) {
         let _ = ensure_history_image(&mut state_entry, &device_info);
     }
 
@@ -3920,7 +3999,11 @@ unsafe extern "system" fn layer_queue_present_khr(
             if swapchain_state.present_count <= 5 || swapchain_state.present_count % 60 == 0 {
                 let prefix = if matches!(
                     mode,
-                    Mode::ClearTest | Mode::CopyTest | Mode::HistoryCopyTest | Mode::BlendTest
+                    Mode::ClearTest
+                        | Mode::CopyTest
+                        | Mode::HistoryCopyTest
+                        | Mode::BlendTest
+                        | Mode::AdaptiveBlendTest
                 ) {
                     "vkQueuePresentKHR frame="
                 } else {
@@ -4008,7 +4091,7 @@ unsafe extern "system" fn layer_queue_present_khr(
                 }
                 planner::PresentSequence::PrimeHistory
                 | planner::PresentSequence::GeneratedThenOriginal
-                    if matches!(mode, Mode::BlendTest) && have_queue =>
+                    if matches!(mode, Mode::BlendTest | Mode::AdaptiveBlendTest) && have_queue =>
                 {
                     swapchain_state.injection_attempted = true;
                     if try_present_blend_frame(
@@ -4017,6 +4100,7 @@ unsafe extern "system" fn layer_queue_present_khr(
                         &queue_info,
                         queue,
                         present_info,
+                        mode,
                     ) {
                         return vk::Result::SUCCESS;
                     }

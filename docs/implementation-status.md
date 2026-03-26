@@ -36,8 +36,9 @@ Rust implementation currently has verified parity for the existing MVP feature s
 - `copy`
 - `history-copy`
 
-Rust also now has an additional next-step backend mode:
+Rust also now has additional next-step backend modes:
 - `blend`
+- `adaptive-blend`
 
 Validated via:
 - local `cargo test --locked`
@@ -121,7 +122,24 @@ Observed:
 - stable in **IMMEDIATE** present mode on Deck
 - uses a real graphics pipeline + shader pass, not just transfer-copy placeholders
 
-This is the first step beyond placeholder-only generation in the Rust implementation.
+#### 6. `adaptive-blend` (Rust)
+Working as the next shader synthesis step.
+
+Validated with Rust layer on Steam Deck:
+- `vkcube --c 120`
+- `vkcube --c 600`
+- `vkcube --c 120 --present_mode 0`
+- full Rust regression suite including `adaptive-blend`
+
+Observed:
+- first frame primes history
+- subsequent generated frames use adaptive current-frame bias based on previous/current frame difference
+- generated frame is still presented before the current real frame
+- stable on Deck through the 120-frame smoke path and an additional **600-frame** run
+- stable in **IMMEDIATE** present mode on Deck
+- keeps the same present/interception infrastructure while improving synthesis behavior over fixed 50/50 blending
+
+These modes are still stepping stones toward motion-aware interpolation, but they are now clearly beyond placeholder-only generation in the Rust implementation.
 
 ---
 
@@ -147,9 +165,12 @@ Right now the layer can do:
 - **same-frame duplication**
 - **previous-frame placeholder insertion with private history**
 - **simple shader-based previous/current frame blending**
+- **difference-aware adaptive blending**
 
 It still cannot do:
 - **motion-aware interpolated frame generation**
+- **multi-FG**
+- **adaptive FG frame-count control**
 
 So the next major milestone is replacing duplicate copy with:
 - optical-flow / warp / blend / inpaint logic
@@ -176,6 +197,9 @@ Rust parity port:
 - `artifacts/steamdeck/rust/vkcube/blend/ppfg-vkcube.log`
 - `artifacts/steamdeck/rust/vkcube/blend-long/ppfg-vkcube-blend-long.log`
 - `artifacts/steamdeck/rust/vkcube/blend-immediate/ppfg-vkcube-blend-immediate.log`
+- `artifacts/steamdeck/rust/vkcube/adaptive-blend/ppfg-vkcube.log`
+- `artifacts/steamdeck/rust/vkcube/adaptive-blend-long/ppfg-vkcube-adaptive-long.log`
+- `artifacts/steamdeck/rust/vkcube/adaptive-blend-immediate/ppfg-vkcube-adaptive-immediate.log`
 
 ### vkgears
 - `artifacts/steamdeck/vkgears/clear/ppfg-vkgears.log`
@@ -214,8 +238,10 @@ Recommended execution model now:
 - keep the C++ layer as the already-proven oracle
 - make the Rust port the primary place for new safety-minded implementation and test growth
 - keep both on the same Deck smoke harness until interpolation parity is achieved
+- continue iterating toward the roadmap recorded in `docs/rust-feature-roadmap.md`
 
 Meaning:
 - keep the current queue/swapchain/present path
-- treat `blend` as the first shader backend stepping stone
-- replace raw copy / previous-frame placeholders / simple blending with motion-aware interpolation logic
+- treat `blend` and `adaptive-blend` as shader stepping stones
+- next target **multi-FG in Rust**
+- then continue toward motion-aware interpolation and adaptive FG policies

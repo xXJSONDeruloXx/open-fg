@@ -56,6 +56,9 @@ Build toward an open solution that can:
 - `docs/implementation-status.md`
   - current build/deploy/runtime status
   - what now works on the Steam Deck
+- `docs/rust-feature-roadmap.md`
+  - Rust-first implementation ladder
+  - parity goals and next capability targets
 
 ### Implementation
 - `implementation/vk-layer-mvp/README.md`

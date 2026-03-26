@@ -36,7 +36,7 @@ pub fn mutate_swapchain(
         };
     }
 
-    if matches!(mode, Mode::BlendTest) {
+    if matches!(mode, Mode::BlendTest | Mode::AdaptiveBlendTest) {
         modified_usage |= vk::ImageUsageFlags::TRANSFER_SRC;
         modified_usage |= vk::ImageUsageFlags::SAMPLED;
         let desired = original_min_image_count.saturating_add(2);
@@ -71,10 +71,14 @@ pub fn planned_sequence(mode: Mode, state: &SimulatedPresentState) -> PresentSeq
     match mode {
         Mode::PassThrough => PresentSequence::PassThrough,
         Mode::ClearTest | Mode::CopyTest => PresentSequence::OriginalThenGenerated,
-        Mode::HistoryCopyTest | Mode::BlendTest if !state.history_valid => {
+        Mode::HistoryCopyTest | Mode::BlendTest | Mode::AdaptiveBlendTest
+            if !state.history_valid =>
+        {
             PresentSequence::PrimeHistory
         }
-        Mode::HistoryCopyTest | Mode::BlendTest => PresentSequence::GeneratedThenOriginal,
+        Mode::HistoryCopyTest | Mode::BlendTest | Mode::AdaptiveBlendTest => {
+            PresentSequence::GeneratedThenOriginal
+        }
     }
 }
 
@@ -91,7 +95,7 @@ pub fn mark_injection_result(
                 state.generated_present_count += 1;
             }
         }
-        Mode::HistoryCopyTest | Mode::BlendTest => {
+        Mode::HistoryCopyTest | Mode::BlendTest | Mode::AdaptiveBlendTest => {
             if state.history_valid && injected_successfully {
                 state.injection_works = true;
                 state.generated_present_count += 1;
@@ -186,6 +190,24 @@ mod tests {
     }
 
     #[test]
+    fn adaptive_blend_mode_adds_sampled_and_transfer_src_usage() {
+        let result = mutate_swapchain(
+            Mode::AdaptiveBlendTest,
+            3,
+            vk::ImageUsageFlags::COLOR_ATTACHMENT,
+            Some(10),
+        );
+        assert_eq!(result.modified_min_image_count, 5);
+        assert!(result
+            .modified_usage
+            .contains(vk::ImageUsageFlags::TRANSFER_SRC));
+        assert!(result.modified_usage.contains(vk::ImageUsageFlags::SAMPLED));
+        assert!(!result
+            .modified_usage
+            .contains(vk::ImageUsageFlags::TRANSFER_DST));
+    }
+
+    #[test]
     fn history_copy_primes_then_switches_to_generated_before_original() {
         let mut state = SimulatedPresentState::default();
         assert_eq!(
@@ -219,6 +241,25 @@ mod tests {
             PresentSequence::GeneratedThenOriginal
         );
         mark_injection_result(Mode::BlendTest, &mut state, true);
+        assert_eq!(state.generated_present_count, 1);
+        assert!(state.injection_works);
+    }
+
+    #[test]
+    fn adaptive_blend_mode_uses_history_prime_then_generated_before_original() {
+        let mut state = SimulatedPresentState::default();
+        assert_eq!(
+            planned_sequence(Mode::AdaptiveBlendTest, &state),
+            PresentSequence::PrimeHistory
+        );
+        mark_injection_result(Mode::AdaptiveBlendTest, &mut state, true);
+        assert!(state.history_valid);
+        assert_eq!(state.generated_present_count, 0);
+        assert_eq!(
+            planned_sequence(Mode::AdaptiveBlendTest, &state),
+            PresentSequence::GeneratedThenOriginal
+        );
+        mark_injection_result(Mode::AdaptiveBlendTest, &mut state, true);
         assert_eq!(state.generated_present_count, 1);
         assert!(state.injection_works);
     }

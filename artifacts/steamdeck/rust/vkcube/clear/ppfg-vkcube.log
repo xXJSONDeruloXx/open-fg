@@ -1,23 +1,23 @@
-[ppfg][info][1774555338951] vkNegotiateLoaderLayerInterfaceVersion ok; mode=clear-test
-[ppfg][info][1774555338953] vkCreateInstance ok; mode=clear-test; app=vkcube; engine=vkcube; apiVersion=1.0.0
-[ppfg][info][1774555338975] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH)
-[ppfg][info][1774555338979] vkCreateSwapchainKHR ok; extent=500x500; format=44; presentMode=FIFO; minImages=3->4; usage=COLOR_ATTACHMENT (0x10) -> TRANSFER_DST|COLOR_ATTACHMENT (0x12); images=4; mode=clear-test
-[ppfg][info][1774555338981] vkQueuePresentKHR frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
-[ppfg][info][1774555338982] initialized injection resources for queue family 0
-[ppfg][info][1774555338982] first generated clear-frame present succeeded
-[ppfg][info][1774555338982] generated frame present=1; swapchainImageIndex=1
-[ppfg][info][1774555338982] vkQueuePresentKHR frame=2; queueFamily=0; imageIndex=2; waitSemaphores=1
-[ppfg][info][1774555338982] generated frame present=2; swapchainImageIndex=3
-[ppfg][info][1774555338993] vkQueuePresentKHR frame=3; queueFamily=0; imageIndex=0; waitSemaphores=1
-[ppfg][info][1774555339006] generated frame present=3; swapchainImageIndex=1
-[ppfg][info][1774555339015] vkQueuePresentKHR frame=4; queueFamily=0; imageIndex=2; waitSemaphores=1
-[ppfg][info][1774555339028] generated frame present=4; swapchainImageIndex=3
-[ppfg][info][1774555339037] vkQueuePresentKHR frame=5; queueFamily=0; imageIndex=0; waitSemaphores=1
-[ppfg][info][1774555339050] generated frame present=5; swapchainImageIndex=1
-[ppfg][info][1774555340259] vkQueuePresentKHR frame=60; queueFamily=0; imageIndex=2; waitSemaphores=1
-[ppfg][info][1774555340272] generated frame present=60; swapchainImageIndex=3
-[ppfg][info][1774555341593] vkQueuePresentKHR frame=120; queueFamily=0; imageIndex=2; waitSemaphores=1
-[ppfg][info][1774555341605] generated frame present=120; swapchainImageIndex=3
-[ppfg][info][1774555341606] vkDestroySwapchainKHR
-[ppfg][info][1774555341616] vkDestroyDevice
-[ppfg][info][1774555341666] vkDestroyInstance
+[ppfg][info][1774556107176] vkNegotiateLoaderLayerInterfaceVersion ok; mode=clear-test
+[ppfg][info][1774556107178] vkCreateInstance ok; mode=clear-test; app=vkcube; engine=vkcube; apiVersion=1.0.0
+[ppfg][info][1774556107200] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH)
+[ppfg][info][1774556107204] vkCreateSwapchainKHR ok; extent=500x500; format=44; presentMode=FIFO; minImages=3->4; usage=COLOR_ATTACHMENT (0x10) -> TRANSFER_DST|COLOR_ATTACHMENT (0x12); images=4; mode=clear-test
+[ppfg][info][1774556107207] vkQueuePresentKHR frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
+[ppfg][info][1774556107207] initialized injection resources for queue family 0
+[ppfg][info][1774556107207] first generated clear-frame present succeeded
+[ppfg][info][1774556107207] generated frame present=1; swapchainImageIndex=1
+[ppfg][info][1774556107207] vkQueuePresentKHR frame=2; queueFamily=0; imageIndex=2; waitSemaphores=1
+[ppfg][info][1774556107208] generated frame present=2; swapchainImageIndex=3
+[ppfg][info][1774556107215] vkQueuePresentKHR frame=3; queueFamily=0; imageIndex=0; waitSemaphores=1
+[ppfg][info][1774556107227] generated frame present=3; swapchainImageIndex=1
+[ppfg][info][1774556107237] vkQueuePresentKHR frame=4; queueFamily=0; imageIndex=2; waitSemaphores=1
+[ppfg][info][1774556107249] generated frame present=4; swapchainImageIndex=3
+[ppfg][info][1774556107259] vkQueuePresentKHR frame=5; queueFamily=0; imageIndex=0; waitSemaphores=1
+[ppfg][info][1774556107272] generated frame present=5; swapchainImageIndex=1
+[ppfg][info][1774556108481] vkQueuePresentKHR frame=60; queueFamily=0; imageIndex=2; waitSemaphores=1
+[ppfg][info][1774556108494] generated frame present=60; swapchainImageIndex=3
+[ppfg][info][1774556109815] vkQueuePresentKHR frame=120; queueFamily=0; imageIndex=2; waitSemaphores=1
+[ppfg][info][1774556109827] generated frame present=120; swapchainImageIndex=3
+[ppfg][info][1774556109827] vkDestroySwapchainKHR
+[ppfg][info][1774556109838] vkDestroyDevice
+[ppfg][info][1774556109906] vkDestroyInstance
