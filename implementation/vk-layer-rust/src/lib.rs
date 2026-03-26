@@ -1903,6 +1903,12 @@ fn blend_push_constants_for_mode(mode: Mode) -> BlendPushConstants {
             adaptive_bias: 0.0,
             mode: 2,
         },
+        Mode::SearchAdaptiveBlendTest => BlendPushConstants {
+            alpha: 0.5,
+            adaptive_strength: 2.0,
+            adaptive_bias: 0.25,
+            mode: 3,
+        },
         _ => BlendPushConstants::default(),
     }
 }
@@ -1938,6 +1944,11 @@ fn blend_mode_labels(mode: Mode) -> (&'static str, &'static str, &'static str) {
             "search-blend primed previous frame history",
             "first search blended generated-frame present succeeded",
             "search blended frame present=",
+        ),
+        Mode::SearchAdaptiveBlendTest => (
+            "search-adaptive-blend primed previous frame history",
+            "first search adaptive blended generated-frame present succeeded",
+            "search adaptive blended frame present=",
         ),
         Mode::MultiBlendTest => (
             "multi-blend primed previous frame history",
@@ -4715,6 +4726,7 @@ unsafe extern "system" fn layer_create_swapchain_khr(
             | Mode::BlendTest
             | Mode::AdaptiveBlendTest
             | Mode::SearchBlendTest
+            | Mode::SearchAdaptiveBlendTest
             | Mode::MultiBlendTest
             | Mode::AdaptiveMultiBlendTest
     ) {
@@ -4823,6 +4835,7 @@ unsafe extern "system" fn layer_queue_present_khr(
                         | Mode::BlendTest
                         | Mode::AdaptiveBlendTest
                         | Mode::SearchBlendTest
+                        | Mode::SearchAdaptiveBlendTest
                         | Mode::MultiBlendTest
                         | Mode::AdaptiveMultiBlendTest
                 ) {
@@ -4914,7 +4927,10 @@ unsafe extern "system" fn layer_queue_present_khr(
                 | planner::PresentSequence::GeneratedThenOriginal
                     if matches!(
                         mode,
-                        Mode::BlendTest | Mode::AdaptiveBlendTest | Mode::SearchBlendTest
+                        Mode::BlendTest
+                            | Mode::AdaptiveBlendTest
+                            | Mode::SearchBlendTest
+                            | Mode::SearchAdaptiveBlendTest
                     ) && have_queue =>
                 {
                     swapchain_state.injection_attempted = true;

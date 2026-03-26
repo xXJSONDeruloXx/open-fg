@@ -24,7 +24,7 @@ void main() {
         float diff = length(curr_color.rgb - prev_color.rgb);
         float motion = clamp(diff * u_params.adaptive_strength, 0.0, 1.0);
         blend_alpha = clamp(mix(u_params.alpha, 1.0 - u_params.adaptive_bias, motion), 0.0, 1.0);
-    } else if (u_params.mode == 2u) {
+    } else if (u_params.mode == 2u || u_params.mode == 3u) {
         ivec2 size_px = textureSize(u_prev_frame, 0);
         vec2 texel = 1.0 / vec2(size_px);
         float best_error = 1e20;
@@ -41,6 +41,12 @@ void main() {
             }
         }
         source_prev = best_prev;
+
+        if (u_params.mode == 3u) {
+            float diff = length(curr_color.rgb - best_prev.rgb);
+            float motion = clamp(diff * u_params.adaptive_strength, 0.0, 1.0);
+            blend_alpha = clamp(mix(u_params.alpha, 1.0 - u_params.adaptive_bias, motion), 0.0, 1.0);
+        }
     }
 
     out_color = mix(source_prev, curr_color, blend_alpha);

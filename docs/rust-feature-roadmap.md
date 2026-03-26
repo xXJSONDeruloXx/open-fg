@@ -40,6 +40,8 @@ Continue iterating on the Rust implementation until practical feature parity is 
   - `adaptive-blend`
 - First motion-search synthesis heuristic:
   - `search-blend`
+- First combined motion-search + adaptive synthesis heuristic:
+  - `search-adaptive-blend`
 - First multi-FG stepping stone:
   - `multi-blend`
 - Adaptive multi-FG synthesis stepping stone:
@@ -127,6 +129,6 @@ New capability work should continue following this loop:
 
 ## Current practical priority
 
-With `search-blend` and `adaptive-multi-blend` now working, the next highest-value capability is:
+With `search-blend`, `search-adaptive-blend`, and `adaptive-multi-blend` now working, the next highest-value capability is:
 
-## **stronger motion-aware synthesis in Rust**
+## **stronger motion-aware synthesis and better reprojection in Rust**

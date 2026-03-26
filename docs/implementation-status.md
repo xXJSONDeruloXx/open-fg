@@ -41,6 +41,7 @@ Rust also now has additional next-step backend modes:
 - `blend`
 - `adaptive-blend`
 - `search-blend`
+- `search-adaptive-blend`
 - `multi-blend`
 - `adaptive-multi-blend`
 
@@ -156,7 +157,20 @@ Observed:
 - stable on the Deck 120-frame smoke path
 - demonstrates the first explicit motion-search style heuristic in the Rust implementation
 
-#### 8. `multi-blend` (Rust)
+#### 8. `search-adaptive-blend` (Rust)
+Working as the first combined motion-search + adaptive synthesis step.
+
+Validated with Rust layer on Steam Deck:
+- `vkcube --c 120`
+- full Rust regression suite including `search-adaptive-blend`
+
+Observed:
+- first frame primes history
+- subsequent generated frames perform a small neighborhood search in the previous frame
+- adaptive current-frame weighting is then applied using the matched previous sample
+- stable on the Deck 120-frame smoke path
+
+#### 9. `multi-blend` (Rust)
 Working as the first multi-FG stepping stone.
 
 Validated with Rust layer on Steam Deck:
@@ -172,7 +186,7 @@ Observed:
 - swapchain image count was increased from `3 -> 6` for the validated Deck path
 - stable on Deck through 120-frame, 600-frame, and IMMEDIATE-mode runs
 
-#### 9. `adaptive-multi-blend` (Rust)
+#### 10. `adaptive-multi-blend` (Rust)
 Working as the current richest generated-frame backend in the Rust layer.
 
 Validated with Rust layer on Steam Deck:
@@ -218,6 +232,7 @@ Right now the layer can do:
 - **simple shader-based previous/current frame blending**
 - **difference-aware adaptive blending**
 - **small-neighborhood motion-search blending**
+- **combined motion-search + adaptive blending**
 - **initial multi-FG via two generated frames per real frame**
 - **combined adaptive + multi-FG synthesis**
 
@@ -255,6 +270,7 @@ Rust parity port:
 - `artifacts/steamdeck/rust/vkcube/adaptive-blend-long/ppfg-vkcube-adaptive-long.log`
 - `artifacts/steamdeck/rust/vkcube/adaptive-blend-immediate/ppfg-vkcube-adaptive-immediate.log`
 - `artifacts/steamdeck/rust/vkcube/search-blend/ppfg-vkcube.log`
+- `artifacts/steamdeck/rust/vkcube/search-adaptive-blend/ppfg-vkcube.log`
 - `artifacts/steamdeck/rust/vkcube/multi-blend/ppfg-vkcube.log`
 - `artifacts/steamdeck/rust/vkcube/multi-blend-long/ppfg-vkcube-multi-long.log`
 - `artifacts/steamdeck/rust/vkcube/multi-blend-immediate/ppfg-vkcube-multi-immediate.log`
@@ -303,6 +319,6 @@ Recommended execution model now:
 
 Meaning:
 - keep the current queue/swapchain/present path
-- treat `blend`, `adaptive-blend`, `search-blend`, `multi-blend`, and `adaptive-multi-blend` as shader stepping stones
-- next target **stronger motion-aware synthesis in Rust**
+- treat `blend`, `adaptive-blend`, `search-blend`, `search-adaptive-blend`, `multi-blend`, and `adaptive-multi-blend` as shader stepping stones
+- next target **stronger motion-aware synthesis and better reprojection in Rust**
 - then continue toward stronger adaptive policies and higher-quality multi-FG
