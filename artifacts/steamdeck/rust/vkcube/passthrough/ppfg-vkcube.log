@@ -1,14 +1,14 @@
-[ppfg][info][1774559425376] vkNegotiateLoaderLayerInterfaceVersion ok; mode=passthrough
-[ppfg][info][1774559425378] vkCreateInstance ok; mode=passthrough; app=vkcube; engine=vkcube; apiVersion=1.0.0
-[ppfg][info][1774559425401] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH)
-[ppfg][info][1774559425406] vkCreateSwapchainKHR ok; extent=500x500; format=44; presentMode=FIFO; minImages=3->3; usage=COLOR_ATTACHMENT (0x10) -> COLOR_ATTACHMENT (0x10); images=3; mode=passthrough
-[ppfg][info][1774559425408] vkQueuePresentKHR passthrough frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
-[ppfg][info][1774559425408] vkQueuePresentKHR passthrough frame=2; queueFamily=0; imageIndex=1; waitSemaphores=1
-[ppfg][info][1774559425408] vkQueuePresentKHR passthrough frame=3; queueFamily=0; imageIndex=2; waitSemaphores=1
-[ppfg][info][1774559425414] vkQueuePresentKHR passthrough frame=4; queueFamily=0; imageIndex=0; waitSemaphores=1
-[ppfg][info][1774559425426] vkQueuePresentKHR passthrough frame=5; queueFamily=0; imageIndex=1; waitSemaphores=1
-[ppfg][info][1774559426037] vkQueuePresentKHR passthrough frame=60; queueFamily=0; imageIndex=2; waitSemaphores=1
-[ppfg][info][1774559426704] vkQueuePresentKHR passthrough frame=120; queueFamily=0; imageIndex=2; waitSemaphores=1
-[ppfg][info][1774559426705] vkDestroySwapchainKHR
-[ppfg][info][1774559426715] vkDestroyDevice
-[ppfg][info][1774559426809] vkDestroyInstance
+[ppfg][info][1774563756455] vkNegotiateLoaderLayerInterfaceVersion ok; mode=passthrough
+[ppfg][info][1774563756457] vkCreateInstance ok; mode=passthrough; app=vkcube; engine=vkcube; apiVersion=1.0.0
+[ppfg][info][1774563756479] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH)
+[ppfg][info][1774563756484] vkCreateSwapchainKHR ok; extent=500x500; format=44; presentMode=FIFO; minImages=3->3; usage=COLOR_ATTACHMENT (0x10) -> COLOR_ATTACHMENT (0x10); images=3; mode=passthrough
+[ppfg][info][1774563756486] vkQueuePresentKHR passthrough frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
+[ppfg][info][1774563756487] vkQueuePresentKHR passthrough frame=2; queueFamily=0; imageIndex=1; waitSemaphores=1
+[ppfg][info][1774563756487] vkQueuePresentKHR passthrough frame=3; queueFamily=0; imageIndex=2; waitSemaphores=1
+[ppfg][info][1774563756488] vkQueuePresentKHR passthrough frame=4; queueFamily=0; imageIndex=0; waitSemaphores=1
+[ppfg][info][1774563756500] vkQueuePresentKHR passthrough frame=5; queueFamily=0; imageIndex=1; waitSemaphores=1
+[ppfg][info][1774563757111] vkQueuePresentKHR passthrough frame=60; queueFamily=0; imageIndex=2; waitSemaphores=1
+[ppfg][info][1774563757777] vkQueuePresentKHR passthrough frame=120; queueFamily=0; imageIndex=2; waitSemaphores=1
+[ppfg][info][1774563757779] vkDestroySwapchainKHR
+[ppfg][info][1774563757790] vkDestroyDevice
+[ppfg][info][1774563757868] vkDestroyInstance

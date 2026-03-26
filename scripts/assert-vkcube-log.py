@@ -61,6 +61,16 @@ MODE_MARKERS = {
         "first search adaptive blended generated-frame present succeeded",
         "search adaptive blended frame present=60",
     ],
+    "reproject-blend": [
+        "reproject-blend primed previous frame history",
+        "first reproject blended generated-frame present succeeded",
+        "reproject blended frame present=60",
+    ],
+    "reproject-adaptive-blend": [
+        "reproject-adaptive-blend primed previous frame history",
+        "first reproject adaptive blended generated-frame present succeeded",
+        "reproject adaptive blended frame present=60",
+    ],
 }
 
 
@@ -68,6 +78,12 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Assert expected PPFG vkcube log markers.")
     parser.add_argument("--mode", required=True, choices=sorted(MODE_MARKERS))
     parser.add_argument("--log", required=True)
+    parser.add_argument(
+        "--expect-text",
+        action="append",
+        default=[],
+        help="Additional raw text markers that must appear in the log.",
+    )
     args = parser.parse_args()
 
     log_path = pathlib.Path(args.log)
@@ -76,7 +92,8 @@ def main() -> int:
         return 1
 
     text = log_path.read_text(encoding="utf-8", errors="replace")
-    missing = [marker for marker in COMMON_MARKERS + MODE_MARKERS[args.mode] if marker not in text]
+    expected_markers = COMMON_MARKERS + MODE_MARKERS[args.mode] + args.expect_text
+    missing = [marker for marker in expected_markers if marker not in text]
     if missing:
         print(f"log assertion failed for {log_path}", file=sys.stderr)
         for marker in missing:

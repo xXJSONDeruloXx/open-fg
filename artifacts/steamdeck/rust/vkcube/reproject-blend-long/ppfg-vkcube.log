@@ -1,0 +1,41 @@
+[ppfg][info][1774563856962] vkNegotiateLoaderLayerInterfaceVersion ok; mode=reproject-blend-test
+[ppfg][info][1774563856964] vkCreateInstance ok; mode=reproject-blend-test; app=vkcube; engine=vkcube; apiVersion=1.0.0
+[ppfg][info][1774563856988] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH)
+[ppfg][info][1774563856992] created history image for swapchain
+[ppfg][info][1774563856992] vkCreateSwapchainKHR ok; extent=500x500; format=44; presentMode=FIFO; minImages=3->5; usage=COLOR_ATTACHMENT (0x10) -> TRANSFER_SRC|SAMPLED|COLOR_ATTACHMENT (0x15); images=5; mode=reproject-blend-test
+[ppfg][info][1774563856994] vkQueuePresentKHR frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
+[ppfg][info][1774563856994] initialized injection resources for queue family 0
+[ppfg][info][1774563856995] initialized blend resources for swapchain
+[ppfg][info][1774563856995] reproject-blend primed previous frame history
+[ppfg][info][1774563856995] vkQueuePresentKHR frame=2; queueFamily=0; imageIndex=1; waitSemaphores=1
+[ppfg][info][1774563856999] first reproject blended generated-frame present succeeded
+[ppfg][info][1774563856999] reproject blended frame present=1; generatedImageIndex=2; currentImageIndex=1
+[ppfg][info][1774563856999] vkQueuePresentKHR frame=3; queueFamily=0; imageIndex=3; waitSemaphores=1
+[ppfg][info][1774563857003] reproject blended frame present=2; generatedImageIndex=4; currentImageIndex=3
+[ppfg][info][1774563857003] vkQueuePresentKHR frame=4; queueFamily=0; imageIndex=0; waitSemaphores=1
+[ppfg][info][1774563857012] reproject blended frame present=3; generatedImageIndex=2; currentImageIndex=0
+[ppfg][info][1774563857018] vkQueuePresentKHR frame=5; queueFamily=0; imageIndex=1; waitSemaphores=1
+[ppfg][info][1774563857035] reproject blended frame present=4; generatedImageIndex=4; currentImageIndex=1
+[ppfg][info][1774563857057] reproject blended frame present=5; generatedImageIndex=2; currentImageIndex=3
+[ppfg][info][1774563858241] vkQueuePresentKHR frame=60; queueFamily=0; imageIndex=3; waitSemaphores=1
+[ppfg][info][1774563858279] reproject blended frame present=60; generatedImageIndex=4; currentImageIndex=0
+[ppfg][info][1774563859574] vkQueuePresentKHR frame=120; queueFamily=0; imageIndex=3; waitSemaphores=1
+[ppfg][info][1774563859612] reproject blended frame present=120; generatedImageIndex=4; currentImageIndex=0
+[ppfg][info][1774563860907] vkQueuePresentKHR frame=180; queueFamily=0; imageIndex=3; waitSemaphores=1
+[ppfg][info][1774563860945] reproject blended frame present=180; generatedImageIndex=4; currentImageIndex=0
+[ppfg][info][1774563862241] vkQueuePresentKHR frame=240; queueFamily=0; imageIndex=3; waitSemaphores=1
+[ppfg][info][1774563862279] reproject blended frame present=240; generatedImageIndex=4; currentImageIndex=0
+[ppfg][info][1774563863574] vkQueuePresentKHR frame=300; queueFamily=0; imageIndex=3; waitSemaphores=1
+[ppfg][info][1774563863612] reproject blended frame present=300; generatedImageIndex=4; currentImageIndex=0
+[ppfg][info][1774563864907] vkQueuePresentKHR frame=360; queueFamily=0; imageIndex=3; waitSemaphores=1
+[ppfg][info][1774563864944] reproject blended frame present=360; generatedImageIndex=4; currentImageIndex=0
+[ppfg][info][1774563866240] vkQueuePresentKHR frame=420; queueFamily=0; imageIndex=3; waitSemaphores=1
+[ppfg][info][1774563866278] reproject blended frame present=420; generatedImageIndex=4; currentImageIndex=0
+[ppfg][info][1774563867573] vkQueuePresentKHR frame=480; queueFamily=0; imageIndex=3; waitSemaphores=1
+[ppfg][info][1774563867612] reproject blended frame present=480; generatedImageIndex=4; currentImageIndex=0
+[ppfg][info][1774563868907] vkQueuePresentKHR frame=540; queueFamily=0; imageIndex=3; waitSemaphores=1
+[ppfg][info][1774563868944] reproject blended frame present=540; generatedImageIndex=4; currentImageIndex=0
+[ppfg][info][1774563870240] vkQueuePresentKHR frame=600; queueFamily=0; imageIndex=3; waitSemaphores=1
+[ppfg][info][1774563870257] vkDestroySwapchainKHR
+[ppfg][info][1774563870263] vkDestroyDevice
+[ppfg][info][1774563870299] vkDestroyInstance

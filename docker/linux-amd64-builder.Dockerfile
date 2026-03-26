@@ -9,6 +9,7 @@ RUN apt-get update \
         ninja-build \
         pkg-config \
         libvulkan-dev \
+        glslang-tools \
         ca-certificates \
         python3 \
         cargo \

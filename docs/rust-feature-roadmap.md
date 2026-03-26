@@ -42,6 +42,10 @@ Continue iterating on the Rust implementation until practical feature parity is 
   - `search-blend`
 - First combined motion-search + adaptive synthesis heuristic:
   - `search-adaptive-blend`
+- First stronger symmetric patch-search reprojection heuristic:
+  - `reproject-blend`
+- First adaptive variant of the stronger reprojection heuristic:
+  - `reproject-adaptive-blend`
 - First multi-FG stepping stone:
   - `multi-blend`
 - Adaptive multi-FG synthesis stepping stone:
@@ -86,9 +90,16 @@ Next likely path:
 Goal:
 - move beyond blend-only interpolation
 
-Likely path:
-- frame-difference guided reprojection heuristics
-- lightweight motion estimation experiments
+Current status:
+- `search-blend` and `search-adaptive-blend` established the first local motion-search heuristics
+- `reproject-blend` now adds a stronger symmetric patch-search reprojection step
+- `reproject-adaptive-blend` adds adaptive weighting on top of that reprojection path
+- both reprojection modes are now validated locally, in Linux Docker, and on the Steam Deck through smoke, long, and IMMEDIATE runs
+
+Next likely path:
+- propagate reprojection logic into multi-FG paths
+- improve confidence and disocclusion handling around reprojected samples
+- experiment with larger search windows / better patch metrics
 - eventual optical-flow style pipeline
 
 ### 4. Temporal quality / disocclusion handling
@@ -124,11 +135,12 @@ New capability work should continue following this loop:
 1. add/extend Rust tests
 2. build in Linux Docker
 3. run Steam Deck `vkcube` smoke
-4. capture artifacts/logs
-5. only then move to the next capability
+4. for higher-risk motion-aware changes, run the advanced Deck validation set (`scripts/run-advanced-steamdeck-validation.sh`)
+5. capture artifacts/logs
+6. only then move to the next capability
 
 ## Current practical priority
 
-With `search-blend`, `search-adaptive-blend`, and `adaptive-multi-blend` now working, the next highest-value capability is:
+With `reproject-blend`, `reproject-adaptive-blend`, and `adaptive-multi-blend` now working, the next highest-value capability is:
 
-## **stronger motion-aware synthesis and better reprojection in Rust**
+## **bringing stronger reprojection into higher-quality multi-FG and richer confidence/disocclusion handling**

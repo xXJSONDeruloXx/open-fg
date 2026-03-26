@@ -3,14 +3,28 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 MODE="${PPFG_LAYER_MODE:-passthrough}"
+VKCUBE_COUNT="${PPFG_VKCUBE_COUNT:-120}"
+VKCUBE_TIMEOUT_SEC="${PPFG_VKCUBE_TIMEOUT_SEC:-20}"
+VKCUBE_PRESENT_MODE="${PPFG_VKCUBE_PRESENT_MODE:-}"
+VKCUBE_EXTRA_ARGS="${PPFG_VKCUBE_EXTRA_ARGS:-}"
+ARTIFACT_SUFFIX="${PPFG_VKCUBE_ARTIFACT_SUFFIX:-}"
 
 # shellcheck disable=SC1091
 source "${ROOT_DIR}/scripts/_ppfg_layer_impl.sh"
 
 REMOTE_BASE="${1:-${PPFG_LAYER_REMOTE_BASE_DEFAULT}}"
-ARTIFACT_DIR="${ROOT_DIR}/${PPFG_LAYER_ARTIFACT_ROOT_REL}/vkcube/${MODE}"
+RUN_NAME="${MODE}"
+if [[ -n "${ARTIFACT_SUFFIX}" ]]; then
+  RUN_NAME="${MODE}-${ARTIFACT_SUFFIX}"
+fi
+ARTIFACT_DIR="${ROOT_DIR}/${PPFG_LAYER_ARTIFACT_ROOT_REL}/vkcube/${RUN_NAME}"
 
 mkdir -p "${ARTIFACT_DIR}"
+
+PRESENT_MODE_ARG=""
+if [[ -n "${VKCUBE_PRESENT_MODE}" ]]; then
+  PRESENT_MODE_ARG="--present_mode ${VKCUBE_PRESENT_MODE}"
+fi
 
 REMOTE_SCRIPT=$(cat <<EOF
 set -euo pipefail
@@ -28,8 +42,8 @@ export PPFG_LAYER_MODE=${MODE}
 export PPFG_LAYER_LOG_FILE=${REMOTE_BASE}/ppfg-vkcube.log
 export VK_LAYER_PATH=${REMOTE_BASE}
 export VK_INSTANCE_LAYERS=${PPFG_LAYER_NAME}
-printf 'RUN impl=%s display=%s xauthority=%s mode=%s layer=%s\n' "${PPFG_LAYER_IMPL}" "\$DISPLAY" "\$XAUTHORITY" "\$PPFG_LAYER_MODE" "\$VK_INSTANCE_LAYERS"
-timeout 20s vkcube --c 120 --suppress_popups --wsi xcb > ${REMOTE_BASE}/vkcube.stdout 2>&1 || status=\$?
+printf 'RUN impl=%s display=%s xauthority=%s mode=%s layer=%s count=%s present_mode=%s extra=%s\n' "${PPFG_LAYER_IMPL}" "\$DISPLAY" "\$XAUTHORITY" "\$PPFG_LAYER_MODE" "\$VK_INSTANCE_LAYERS" "${VKCUBE_COUNT}" "${VKCUBE_PRESENT_MODE:-default}" "${VKCUBE_EXTRA_ARGS:-none}"
+timeout ${VKCUBE_TIMEOUT_SEC}s vkcube --c ${VKCUBE_COUNT} --suppress_popups --wsi xcb ${PRESENT_MODE_ARG} ${VKCUBE_EXTRA_ARGS} > ${REMOTE_BASE}/vkcube.stdout 2>&1 || status=\$?
 printf 'VCUBE_STATUS=%s\n' "\${status:-0}"
 ls -lah ${REMOTE_BASE}
 printf '\n--- vkcube.stdout ---\n'

@@ -1,6 +1,8 @@
 #![allow(clippy::missing_safety_doc)]
 
 mod config;
+#[cfg(test)]
+mod heuristics;
 mod layer_defs;
 mod planner;
 
@@ -493,7 +495,11 @@ struct BlendPushConstants {
     alpha: f32,
     adaptive_strength: f32,
     adaptive_bias: f32,
+    confidence_scale: f32,
+    search_radius: u32,
+    patch_radius: u32,
     mode: u32,
+    _reserved: u32,
 }
 
 #[derive(Clone)]
@@ -1883,31 +1889,75 @@ unsafe fn update_blend_descriptor_set(
     true
 }
 
+fn blend_adaptive_strength() -> f32 {
+    env_f32("PPFG_BLEND_ADAPTIVE_STRENGTH", 2.0)
+}
+
+fn blend_adaptive_bias() -> f32 {
+    env_f32("PPFG_BLEND_ADAPTIVE_BIAS", 0.25)
+}
+
+fn search_blend_radius() -> u32 {
+    env_u32("PPFG_SEARCH_BLEND_RADIUS", 1).min(4)
+}
+
+fn reproject_search_radius() -> u32 {
+    env_u32("PPFG_REPROJECT_SEARCH_RADIUS", 2).clamp(1, 4)
+}
+
+fn reproject_patch_radius() -> u32 {
+    env_u32("PPFG_REPROJECT_PATCH_RADIUS", 1).min(2)
+}
+
+fn reproject_confidence_scale() -> f32 {
+    env_f32("PPFG_REPROJECT_CONFIDENCE_SCALE", 4.0)
+}
+
 fn blend_push_constants_for_mode(mode: Mode) -> BlendPushConstants {
     match mode {
         Mode::BlendTest | Mode::MultiBlendTest => BlendPushConstants {
             alpha: 0.5,
-            adaptive_strength: 0.0,
-            adaptive_bias: 0.0,
             mode: 0,
+            ..Default::default()
         },
         Mode::AdaptiveBlendTest | Mode::AdaptiveMultiBlendTest => BlendPushConstants {
             alpha: 0.5,
-            adaptive_strength: 2.0,
-            adaptive_bias: 0.25,
+            adaptive_strength: blend_adaptive_strength(),
+            adaptive_bias: blend_adaptive_bias(),
             mode: 1,
+            ..Default::default()
         },
         Mode::SearchBlendTest => BlendPushConstants {
             alpha: 0.5,
-            adaptive_strength: 0.0,
-            adaptive_bias: 0.0,
+            search_radius: search_blend_radius(),
             mode: 2,
+            ..Default::default()
         },
         Mode::SearchAdaptiveBlendTest => BlendPushConstants {
             alpha: 0.5,
-            adaptive_strength: 2.0,
-            adaptive_bias: 0.25,
+            adaptive_strength: blend_adaptive_strength(),
+            adaptive_bias: blend_adaptive_bias(),
+            search_radius: search_blend_radius(),
             mode: 3,
+            ..Default::default()
+        },
+        Mode::ReprojectBlendTest => BlendPushConstants {
+            alpha: 0.5,
+            confidence_scale: reproject_confidence_scale(),
+            search_radius: reproject_search_radius(),
+            patch_radius: reproject_patch_radius(),
+            mode: 4,
+            ..Default::default()
+        },
+        Mode::ReprojectAdaptiveBlendTest => BlendPushConstants {
+            alpha: 0.5,
+            adaptive_strength: blend_adaptive_strength(),
+            adaptive_bias: blend_adaptive_bias(),
+            confidence_scale: reproject_confidence_scale(),
+            search_radius: reproject_search_radius(),
+            patch_radius: reproject_patch_radius(),
+            mode: 5,
+            ..Default::default()
         },
         _ => BlendPushConstants::default(),
     }
@@ -1925,9 +1975,14 @@ fn multi_blend_push_constants_plan(
             let alpha = index as f32 / (generated_frame_count + 1) as f32;
             BlendPushConstants {
                 alpha,
-                adaptive_strength: if adaptive { 2.0 } else { 0.0 },
-                adaptive_bias: if adaptive { 0.25 } else { 0.0 },
+                adaptive_strength: if adaptive {
+                    blend_adaptive_strength()
+                } else {
+                    0.0
+                },
+                adaptive_bias: if adaptive { blend_adaptive_bias() } else { 0.0 },
                 mode: if adaptive { 1 } else { 0 },
+                ..Default::default()
             }
         })
         .collect()
@@ -1949,6 +2004,16 @@ fn blend_mode_labels(mode: Mode) -> (&'static str, &'static str, &'static str) {
             "search-adaptive-blend primed previous frame history",
             "first search adaptive blended generated-frame present succeeded",
             "search adaptive blended frame present=",
+        ),
+        Mode::ReprojectBlendTest => (
+            "reproject-blend primed previous frame history",
+            "first reproject blended generated-frame present succeeded",
+            "reproject blended frame present=",
+        ),
+        Mode::ReprojectAdaptiveBlendTest => (
+            "reproject-adaptive-blend primed previous frame history",
+            "first reproject adaptive blended generated-frame present succeeded",
+            "reproject adaptive blended frame present=",
         ),
         Mode::MultiBlendTest => (
             "multi-blend primed previous frame history",
@@ -4727,6 +4792,8 @@ unsafe extern "system" fn layer_create_swapchain_khr(
             | Mode::AdaptiveBlendTest
             | Mode::SearchBlendTest
             | Mode::SearchAdaptiveBlendTest
+            | Mode::ReprojectBlendTest
+            | Mode::ReprojectAdaptiveBlendTest
             | Mode::MultiBlendTest
             | Mode::AdaptiveMultiBlendTest
     ) {
@@ -4836,6 +4903,8 @@ unsafe extern "system" fn layer_queue_present_khr(
                         | Mode::AdaptiveBlendTest
                         | Mode::SearchBlendTest
                         | Mode::SearchAdaptiveBlendTest
+                        | Mode::ReprojectBlendTest
+                        | Mode::ReprojectAdaptiveBlendTest
                         | Mode::MultiBlendTest
                         | Mode::AdaptiveMultiBlendTest
                 ) {
@@ -4931,6 +5000,8 @@ unsafe extern "system" fn layer_queue_present_khr(
                             | Mode::AdaptiveBlendTest
                             | Mode::SearchBlendTest
                             | Mode::SearchAdaptiveBlendTest
+                            | Mode::ReprojectBlendTest
+                            | Mode::ReprojectAdaptiveBlendTest
                     ) && have_queue =>
                 {
                     swapchain_state.injection_attempted = true;

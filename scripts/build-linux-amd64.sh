@@ -10,6 +10,8 @@ source "${ROOT_DIR}/scripts/_ppfg_layer_impl.sh"
 BUILD_DIR="${ROOT_DIR}/build/linux-amd64/${PPFG_LAYER_BUILD_SUBDIR}"
 mkdir -p "${BUILD_DIR}"
 
+"${ROOT_DIR}/scripts/compile-rust-shaders.sh"
+
 docker build \
   --platform linux/amd64 \
   -t "${IMAGE_TAG}" \

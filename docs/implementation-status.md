@@ -24,7 +24,9 @@ This is beyond paper architecture at this point.
 - Rust unit tests for mode parsing, swapchain mutation, sequencing, exports, and loader negotiation
 - generic regression harness scripts:
   - `scripts/run-layer-regression-suite.sh`
+  - `scripts/run-advanced-steamdeck-validation.sh`
   - `scripts/assert-vkcube-log.py`
+  - `scripts/compile-rust-shaders.sh`
 
 ### Rust parity status
 
