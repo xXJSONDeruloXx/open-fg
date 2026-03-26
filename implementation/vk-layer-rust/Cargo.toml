@@ -1,0 +1,17 @@
+[package]
+name = "ppfg-vk-layer-rust"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "VkLayer_PPFG_rust"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+ash = "0.38"
+
+[profile.release]
+panic = "abort"
+
+[profile.dev]
+panic = "abort"

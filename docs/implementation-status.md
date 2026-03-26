@@ -2,7 +2,10 @@
 
 ## Summary
 
-We now have a **working Linux Vulkan layer MVP** with successful remote runtime validation on the Steam Deck.
+We now have:
+- a **working Linux Vulkan layer MVP** in C++
+- a **working Rust parity port** for the current MVP scope
+- a repeatable local + Linux + Steam Deck regression harness
 
 This is beyond paper architecture at this point.
 
@@ -16,8 +19,30 @@ This is beyond paper architecture at this point.
 - remote build + deploy loop
 - remote smoke test loop on Steam Deck
 - log capture back into local artifacts
+- Rust unit tests for mode parsing, swapchain mutation, sequencing, exports, and loader negotiation
+- generic regression harness scripts:
+  - `scripts/run-layer-regression-suite.sh`
+  - `scripts/assert-vkcube-log.py`
+
+### Rust parity status
+
+Rust implementation location:
+- `implementation/vk-layer-rust/`
+
+Rust implementation currently has verified parity for the existing MVP feature set:
+- `passthrough`
+- `clear`
+- `copy`
+- `history-copy`
+
+Validated via:
+- local `cargo test --locked`
+- Linux/x86_64 Docker build + test via `PPFG_LAYER_IMPL=rust ./scripts/build-linux-amd64.sh`
+- full Deck smoke suite via `PPFG_LAYER_IMPL=rust ./scripts/run-layer-regression-suite.sh`
 
 ### Verified runtime modes on Steam Deck
+
+The modes below are proven on the Steam Deck in the original C++ implementation, and now also in the Rust parity port for the main `vkcube` smoke path.
 
 #### 1. `passthrough`
 Working.
@@ -111,6 +136,7 @@ So the next major milestone is replacing duplicate copy with:
 ## Artifacts
 
 ### vkcube
+C++ MVP:
 - `artifacts/steamdeck/vkcube/passthrough/ppfg-vkcube.log`
 - `artifacts/steamdeck/vkcube/clear/ppfg-vkcube.log`
 - `artifacts/steamdeck/vkcube/copy/ppfg-vkcube.log`
@@ -119,8 +145,15 @@ So the next major milestone is replacing duplicate copy with:
 - `artifacts/steamdeck/vkcube/history-copy-immediate/ppfg-vkcube-immediate.log`
 - `artifacts/steamdeck/vkcube/history-copy-mailbox/ppfg-vkcube-mailbox.log`
 
+Rust parity port:
+- `artifacts/steamdeck/rust/vkcube/passthrough/ppfg-vkcube.log`
+- `artifacts/steamdeck/rust/vkcube/clear/ppfg-vkcube.log`
+- `artifacts/steamdeck/rust/vkcube/copy/ppfg-vkcube.log`
+- `artifacts/steamdeck/rust/vkcube/history-copy/ppfg-vkcube.log`
+
 ### vkgears
 - `artifacts/steamdeck/vkgears/clear/ppfg-vkgears.log`
+- `artifacts/steamdeck/rust/vkgears/history-copy/ppfg-vkgears.log`
 
 ---
 
@@ -132,6 +165,7 @@ Under the current remote test setup, `vkgears` is not yet a useful validation ta
 Observed behavior:
 - layer negotiation occurs
 - the process times out under the remote harness
+- this remains true for both the C++ MVP and the Rust parity port
 - we do not yet get the same clean create-device / create-swapchain / present trace as `vkcube`
 
 That means `vkcube` is currently the reliable smoke-test target.
@@ -149,6 +183,11 @@ to:
 The next best implementation step is:
 
 ## **add a real generated-frame backend behind the existing `history-copy` / `copy` infrastructure**
+
+Recommended execution model now:
+- keep the C++ layer as the already-proven oracle
+- make the Rust port the primary place for new safety-minded implementation and test growth
+- keep both on the same Deck smoke harness until interpolation parity is achieved
 
 Meaning:
 - keep the current queue/swapchain/present path

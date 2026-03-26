@@ -1,0 +1,24 @@
+[ppfg][info][1774553993251] vkNegotiateLoaderLayerInterfaceVersion ok; mode=history-copy-test
+[ppfg][info][1774553993254] vkCreateInstance ok; mode=history-copy-test; app=vkcube; engine=vkcube; apiVersion=1.0.0
+[ppfg][info][1774553993276] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH)
+[ppfg][info][1774553993281] created history image for swapchain
+[ppfg][info][1774553993281] vkCreateSwapchainKHR ok; extent=500x500; format=44; presentMode=FIFO; minImages=3->5; usage=COLOR_ATTACHMENT (0x10) -> TRANSFER_SRC|TRANSFER_DST|COLOR_ATTACHMENT (0x13); images=5; mode=history-copy-test
+[ppfg][info][1774553993283] vkQueuePresentKHR frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
+[ppfg][info][1774553993283] initialized injection resources for queue family 0
+[ppfg][info][1774553993283] history-copy primed previous frame history
+[ppfg][info][1774553993284] vkQueuePresentKHR frame=2; queueFamily=0; imageIndex=1; waitSemaphores=1
+[ppfg][info][1774553993284] first previous-frame insertion present succeeded
+[ppfg][info][1774553993284] history-copy generated frame present=1; previousFrameSourceStored=1; generatedImageIndex=2; currentImageIndex=1
+[ppfg][info][1774553993284] vkQueuePresentKHR frame=3; queueFamily=0; imageIndex=3; waitSemaphores=1
+[ppfg][info][1774553993284] history-copy generated frame present=2; previousFrameSourceStored=1; generatedImageIndex=4; currentImageIndex=3
+[ppfg][info][1774553993288] vkQueuePresentKHR frame=4; queueFamily=0; imageIndex=0; waitSemaphores=1
+[ppfg][info][1774553993301] history-copy generated frame present=3; previousFrameSourceStored=1; generatedImageIndex=2; currentImageIndex=0
+[ppfg][info][1774553993311] vkQueuePresentKHR frame=5; queueFamily=0; imageIndex=1; waitSemaphores=1
+[ppfg][info][1774553993323] history-copy generated frame present=4; previousFrameSourceStored=1; generatedImageIndex=4; currentImageIndex=1
+[ppfg][info][1774553993345] history-copy generated frame present=5; previousFrameSourceStored=1; generatedImageIndex=2; currentImageIndex=3
+[ppfg][info][1774553994533] vkQueuePresentKHR frame=60; queueFamily=0; imageIndex=3; waitSemaphores=1
+[ppfg][info][1774553994568] history-copy generated frame present=60; previousFrameSourceStored=1; generatedImageIndex=4; currentImageIndex=0
+[ppfg][info][1774553995866] vkQueuePresentKHR frame=120; queueFamily=0; imageIndex=3; waitSemaphores=1
+[ppfg][info][1774553995880] vkDestroySwapchainKHR
+[ppfg][info][1774553995889] vkDestroyDevice
+[ppfg][info][1774553995976] vkDestroyInstance

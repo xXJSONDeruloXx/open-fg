@@ -1,6 +1,6 @@
 # post-proc-fg-research
 
-Research and design work for a **Linux-native, real-time, fully post-process frame generation / interpolation** stack.
+Research and implementation work for a **Linux-native, real-time, fully post-process frame generation / interpolation** stack.
 
 ## Goal
 
@@ -15,6 +15,11 @@ Build toward an open solution that can:
   - NVIDIA Smooth Motion
 
 ## Current recommendation
+
+**Current implementation path:**
+- maintain the working C++ Vulkan-layer MVP as the reference oracle
+- grow a Rust parity port with a stronger regression harness
+- keep validating both against the same Steam Deck smoke targets
 
 **MVP path:**
 - start with a **Vulkan layer / swapchain interception prototype**
@@ -54,8 +59,11 @@ Build toward an open solution that can:
 
 ### Implementation
 - `implementation/vk-layer-mvp/README.md`
-  - current Vulkan-layer MVP
+  - current C++ Vulkan-layer MVP
   - modes, build, deploy, and smoke-test usage
+- `implementation/vk-layer-rust/README.md`
+  - Rust parity port
+  - regression tests and extensible harness
 
 ## Local research assets
 

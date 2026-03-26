@@ -1,0 +1,23 @@
+[ppfg][info][1774553988207] vkNegotiateLoaderLayerInterfaceVersion ok; mode=copy-test
+[ppfg][info][1774553988209] vkCreateInstance ok; mode=copy-test; app=vkcube; engine=vkcube; apiVersion=1.0.0
+[ppfg][info][1774553988231] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH)
+[ppfg][info][1774553988235] vkCreateSwapchainKHR ok; extent=500x500; format=44; presentMode=FIFO; minImages=3->5; usage=COLOR_ATTACHMENT (0x10) -> TRANSFER_SRC|TRANSFER_DST|COLOR_ATTACHMENT (0x13); images=5; mode=copy-test
+[ppfg][info][1774553988238] vkQueuePresentKHR frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
+[ppfg][info][1774553988238] initialized injection resources for queue family 0
+[ppfg][info][1774553988238] first duplicated-frame present succeeded
+[ppfg][info][1774553988238] duplicated frame present=1; sourceImageIndex=0; generatedImageIndex=1
+[ppfg][info][1774553988238] vkQueuePresentKHR frame=2; queueFamily=0; imageIndex=2; waitSemaphores=1
+[ppfg][info][1774553988238] duplicated frame present=2; sourceImageIndex=2; generatedImageIndex=3
+[ppfg][info][1774553988238] vkQueuePresentKHR frame=3; queueFamily=0; imageIndex=4; waitSemaphores=1
+[ppfg][info][1774553988245] duplicated frame present=3; sourceImageIndex=4; generatedImageIndex=0
+[ppfg][info][1774553988256] vkQueuePresentKHR frame=4; queueFamily=0; imageIndex=1; waitSemaphores=1
+[ppfg][info][1774553988268] duplicated frame present=4; sourceImageIndex=1; generatedImageIndex=2
+[ppfg][info][1774553988278] vkQueuePresentKHR frame=5; queueFamily=0; imageIndex=3; waitSemaphores=1
+[ppfg][info][1774553988290] duplicated frame present=5; sourceImageIndex=3; generatedImageIndex=4
+[ppfg][info][1774553989500] vkQueuePresentKHR frame=60; queueFamily=0; imageIndex=3; waitSemaphores=1
+[ppfg][info][1774553989512] duplicated frame present=60; sourceImageIndex=3; generatedImageIndex=4
+[ppfg][info][1774553990833] vkQueuePresentKHR frame=120; queueFamily=0; imageIndex=3; waitSemaphores=1
+[ppfg][info][1774553990846] duplicated frame present=120; sourceImageIndex=3; generatedImageIndex=4
+[ppfg][info][1774553990847] vkDestroySwapchainKHR
+[ppfg][info][1774553990857] vkDestroyDevice
+[ppfg][info][1774553990936] vkDestroyInstance

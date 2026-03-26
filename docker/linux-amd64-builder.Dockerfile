@@ -11,4 +11,6 @@ RUN apt-get update \
         libvulkan-dev \
         ca-certificates \
         python3 \
+        cargo \
+        rustc \
     && rm -rf /var/lib/apt/lists/*

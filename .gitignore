@@ -5,6 +5,7 @@
 build/
 out/
 dist/
+target/
 cmake-build-*/
 compile_commands.json
 
