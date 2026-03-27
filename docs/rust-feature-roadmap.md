@@ -213,7 +213,7 @@ Goal:
 Current status:
 - first timing-aware present instrumentation now exists in the Rust layer
 - the layer can now append and use `VK_KHR_present_id` / `VK_KHR_present_wait` when available
-- Deck smoke validation now confirms successful `present wait` results on injected presents
+- a newer rerun of `scripts/run-present-timing-steamdeck-validation.sh` still confirms successful `present wait` results on injected presents after the recent analytical changes
 - `VK_GOOGLE_display_timing` query hooks are now part of the layer, but the current `vkcube` Deck path still has not yielded useful past-presentation samples
 - current acquire/present wall time under vsync-like Deck runs may simply reflect expected pacing against the active panel cadence, not necessarily wasted compute-side overhead
 

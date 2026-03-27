@@ -453,10 +453,12 @@ Current behavior:
   - `OMFG_PRESENT_TIMING=1`
   - `OMFG_PRESENT_WAIT=1`
   - `OMFG_PRESENT_WAIT_TIMEOUT_NS=<ns>`
-- a Deck smoke run with timing enabled validated successful `present wait` results on injected presents
+- a newer Deck rerun of `scripts/run-present-timing-steamdeck-validation.sh` after the recent analytical changes still validated successful `present wait` results on injected presents
 
 Current known limitation:
-- on the current Deck `vkcube` path, this instrumentation successfully proved the `present_id` / `present_wait` plumbing, but the `VK_GOOGLE_display_timing` query path still did not report active samples through this app path, so stronger panel-side timing proof remains an open follow-up item
+- on the current Deck `vkcube` path, this instrumentation still proves the `present_id` / `present_wait` plumbing, but the `VK_GOOGLE_display_timing` query path still does not report active samples through this app path, so stronger panel-side timing proof remains an open follow-up item
+- current vsync-paced waiting on Deck should still be treated as expected display-paced behavior unless later evidence shows unnecessary waiting beyond correct pacing
+- controller/pacing refactors should therefore remain gated on visible benefit or stronger measurement, not pursued speculatively
 
 Current timing-validation artifact:
 - `artifacts/steamdeck/rust/vkcube/multi-blend-present-timing/omfg-vkcube.log`

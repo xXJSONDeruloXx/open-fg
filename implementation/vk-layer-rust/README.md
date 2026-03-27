@@ -219,6 +219,11 @@ export OMFG_LAYER_IMPL=rust
 ./scripts/run-present-timing-steamdeck-validation.sh
 ```
 
+Current interpretation:
+- successful `present wait result; ... result=0` lines are the main evidence that the timing plumbing is still working on real Deck runs
+- lack of useful `VK_GOOGLE_display_timing` samples on the current `vkcube` path remains a known limitation
+- current wait time under Deck FIFO/vsync-like runs should be treated as expected display-paced behavior unless stronger evidence shows avoidable waiting beyond correct pacing
+
 ### BFI validation
 This validates black-frame insertion behavior, including a reduced-cadence `OMFG_BFI_PERIOD=2` case.
 
