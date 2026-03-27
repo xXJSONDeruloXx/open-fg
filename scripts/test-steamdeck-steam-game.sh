@@ -82,6 +82,52 @@ export DISPLAY=:0
 export XDG_RUNTIME_DIR=/run/user/1000
 xauth=\$(ls -1 /run/user/1000/xauth_* 2>/dev/null | head -1 || true)
 if [ -n "\$xauth" ]; then export XAUTHORITY="\$xauth"; fi
+kill_all_steam_games() {
+  # Broad pre-kill: terminates any running Steam game processes regardless of AppID.
+  # This prevents cross-game contamination when multiple probes run back-to-back.
+  python3 - <<'PY'
+import os, re, subprocess, signal
+self_pid = os.getpid()
+ancestors = {self_pid}
+try:
+    pid = self_pid
+    while True:
+        with open(f'/proc/{pid}/status', 'r', encoding='utf-8', errors='ignore') as f:
+            ppid = None
+            for line in f:
+                if line.startswith('PPid:'):
+                    ppid = int(line.split()[1])
+                    break
+        if not ppid or ppid in ancestors:
+            break
+        ancestors.add(ppid)
+        pid = ppid
+except Exception:
+    pass
+appid_re = re.compile(r'AppId=\d+')
+proton_markers = ('SteamLaunch', 'waitforexitandrun', 'reaper steam', 'wineserver', 'wine64', 'wine ')
+out = subprocess.check_output(['ps', '-eo', 'pid=,args='], text=True, errors='ignore')
+for line in out.splitlines():
+    s = line.strip()
+    if not s:
+        continue
+    parts = s.split(None, 1)
+    if len(parts) != 2:
+        continue
+    pid = int(parts[0])
+    args = parts[1]
+    if pid in ancestors:
+        continue
+    if appid_re.search(args) or any(m in args for m in proton_markers):
+        try:
+            os.kill(pid, signal.SIGKILL)
+            print(f'killed pid={pid} args={args}')
+        except ProcessLookupError:
+            pass
+        except PermissionError:
+            pass
+PY
+}
 cleanup_matches() {
   APPID='${APP_ID}' EXE_REGEX='${EXE_REGEX}' python3 - <<'PY'
 import os, subprocess, signal
@@ -129,6 +175,8 @@ for line in out.splitlines():
             pass
 PY
 }
+kill_all_steam_games || true
+sleep 3
 cleanup_matches || true
 sleep 2
 echo "=== title=${TITLE} appid=${APP_ID} mode=${MODE} run=${RUN_ID} paths ==="
