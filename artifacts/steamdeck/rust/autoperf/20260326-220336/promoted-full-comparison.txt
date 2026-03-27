@@ -1,0 +1,9 @@
+baseline=artifacts/steamdeck/rust/benchmark/extended-20260326-204745/results.csv candidate=artifacts/steamdeck/rust/benchmark/autoperf-20260326-220336-full/results.csv preset=full weightedImprovementPct=1.163 worstRegressionPct=0.354 accepted=1
+label=blend metric=avgCpuTotalMs baseline=12.367 candidate=12.409 delta=+0.042 pct=+0.340% stdev=0.000 weight=1.000
+label=adaptive-blend metric=avgCpuTotalMs baseline=12.417 candidate=12.461 delta=+0.044 pct=+0.354% stdev=0.000 weight=1.000
+label=search-blend-r1 metric=avgCpuTotalMs baseline=12.420 candidate=12.376 delta=-0.044 pct=-0.354% stdev=0.000 weight=1.000
+label=reproject-blend-default metric=avgCpuTotalMs baseline=16.119 candidate=15.983 delta=-0.136 pct=-0.844% stdev=0.000 weight=1.500
+label=multi-blend-count2 metric=avgCpuPerGeneratedFrameMs baseline=12.068 candidate=11.785 delta=-0.283 pct=-2.345% stdev=0.000 weight=2.000
+label=multi-blend-count3 metric=avgCpuPerGeneratedFrameMs baseline=11.746 candidate=11.610 delta=-0.136 pct=-1.158% stdev=0.000 weight=3.000
+label=adaptive-multi-default metric=avgCpuPerGeneratedFrameMs baseline=12.175 candidate=11.863 delta=-0.312 pct=-2.563% stdev=0.000 weight=2.000
+label=adaptive-multi-target180 metric=avgCpuPerGeneratedFrameMs baseline=12.122 candidate=12.015 delta=-0.107 pct=-0.883% stdev=0.000 weight=3.000

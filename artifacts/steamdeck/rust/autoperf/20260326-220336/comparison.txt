@@ -1,0 +1,5 @@
+baseline=/Users/dhimebauch/Developer/personal/post-proc-fg-research/artifacts/steamdeck/rust/benchmark/extended-20260326-204745/results.csv candidate=/Users/dhimebauch/Developer/personal/post-proc-fg-research/artifacts/steamdeck/rust/autoperf/20260326-220336/aggregate.csv preset=decision weightedImprovementPct=0.902 worstRegressionPct=0.000 accepted=1
+label=blend metric=avgCpuTotalMs baseline=12.367 candidate=12.359 delta=-0.008 pct=-0.065% stdev=0.036 weight=1.000
+label=reproject-blend-default metric=avgCpuTotalMs baseline=16.119 candidate=16.051 delta=-0.068 pct=-0.424% stdev=0.027 weight=1.500
+label=multi-blend-count3 metric=avgCpuPerGeneratedFrameMs baseline=11.746 candidate=11.629 delta=-0.117 pct=-0.993% stdev=0.013 weight=3.000
+label=adaptive-multi-target180 metric=avgCpuPerGeneratedFrameMs baseline=12.122 candidate=11.961 delta=-0.161 pct=-1.328% stdev=0.031 weight=3.000

@@ -1,0 +1,12 @@
+runId=20260326-220336
+layerImpl=rust
+benchmarkPreset=decision
+comparePreset=decision
+repetitions=3
+baseline=/Users/dhimebauch/Developer/personal/post-proc-fg-research/artifacts/steamdeck/rust/benchmark/extended-20260326-204745
+runFullOnAccept=1
+benchmarkCount=120
+benchmarkTimeoutSec=30
+accepted=1
+promotedFullRun=/Users/dhimebauch/Developer/personal/post-proc-fg-research/artifacts/steamdeck/rust/benchmark/autoperf-20260326-220336-full
+promotedFullAccepted=1

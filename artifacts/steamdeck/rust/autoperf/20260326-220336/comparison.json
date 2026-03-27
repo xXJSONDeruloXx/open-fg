@@ -1,0 +1,56 @@
+{
+  "baseline": "/Users/dhimebauch/Developer/personal/post-proc-fg-research/artifacts/steamdeck/rust/benchmark/extended-20260326-204745/results.csv",
+  "candidate": "/Users/dhimebauch/Developer/personal/post-proc-fg-research/artifacts/steamdeck/rust/autoperf/20260326-220336/aggregate.csv",
+  "preset": "decision",
+  "comparisons": [
+    {
+      "label": "blend",
+      "metric": "avgCpuTotalMs",
+      "weight": 1.0,
+      "baseline": 12.367,
+      "candidate": 12.359,
+      "delta": -0.008000000000000895,
+      "pct": -0.06468828333468823,
+      "improvementPct": 0.06468828333468823,
+      "candidateStdev": 0.03592584956082034
+    },
+    {
+      "label": "reproject-blend-default",
+      "metric": "avgCpuTotalMs",
+      "weight": 1.5,
+      "baseline": 16.119,
+      "candidate": 16.050666666666665,
+      "delta": -0.06833333333333513,
+      "pct": -0.4239303513452145,
+      "improvementPct": 0.4239303513452145,
+      "candidateStdev": 0.027475241379992753
+    },
+    {
+      "label": "multi-blend-count3",
+      "metric": "avgCpuPerGeneratedFrameMs",
+      "weight": 3.0,
+      "baseline": 11.746,
+      "candidate": 11.629333333333333,
+      "delta": -0.11666666666666714,
+      "pct": -0.9932459276917004,
+      "improvementPct": 0.9932459276917004,
+      "candidateStdev": 0.01319932658214887
+    },
+    {
+      "label": "adaptive-multi-target180",
+      "metric": "avgCpuPerGeneratedFrameMs",
+      "weight": 3.0,
+      "baseline": 12.122,
+      "candidate": 11.961,
+      "delta": -0.1609999999999996,
+      "pct": -1.3281636693614882,
+      "improvementPct": 1.3281636693614882,
+      "candidateStdev": 0.031123410267299794
+    }
+  ],
+  "weightedImprovementPct": 0.9017426590014207,
+  "worstRegressionPct": 0.0,
+  "maxRegressionPct": 0.5,
+  "minWeightedImprovementPct": 0.25,
+  "accepted": true
+}

@@ -29,6 +29,10 @@ This is beyond paper architecture at this point.
   - `scripts/run-target-fps-steamdeck-validation.sh`
   - `scripts/run-bfi-steamdeck-validation.sh`
   - `scripts/collect-steamdeck-display-info.sh`
+  - `scripts/run-steamdeck-benchmark-suite.sh`
+  - `scripts/run-autoperf-loop.sh`
+  - `scripts/aggregate-benchmark-results.py`
+  - `scripts/compare-benchmark-results.py`
   - `scripts/assert-vkcube-log.py`
   - `scripts/compile-rust-shaders.sh`
 
@@ -251,6 +255,49 @@ Observed on the current Deck test target:
   - `VK_KHR_present_wait`
 
 That means we can now confirm the **active panel mode** on the Linux target, but we still have **not** yet wired end-to-end past-presentation timing into the layer itself, so panel-level pacing/scanout confirmation is still weaker than the layer's own present logs.
+
+---
+
+## Benchmark / autoperf status
+
+We now also have a first repo-specific **autoperf loop** for repeated Deck benchmarking.
+
+Current pieces:
+- `scripts/run-steamdeck-benchmark-suite.sh`
+  - supports both `PPFG_BENCHMARK_PRESET=full` and `PPFG_BENCHMARK_PRESET=decision`
+- `scripts/aggregate-benchmark-results.py`
+  - aggregates repeated benchmark runs into mean / stdev summaries
+- `scripts/compare-benchmark-results.py`
+  - compares baseline vs candidate with weighted accept / reject logic
+- `scripts/run-autoperf-loop.sh`
+  - orchestrates repeated decision-subset runs, aggregation, comparison, and optional full-suite promotion
+- `experiments/program.md`
+  - records the current fast subset and acceptance rules
+
+The current fast decision subset is:
+- `blend`
+- `reproject-blend-default`
+- `multi-blend-count3`
+- `adaptive-multi-target180`
+
+First validated autoperf run:
+- autoperf artifact root:
+  - `artifacts/steamdeck/rust/autoperf/20260326-220336/`
+- repeated decision runs:
+  - `3`
+- baseline:
+  - `artifacts/steamdeck/rust/benchmark/extended-20260326-204745/`
+- result:
+  - `accepted=1`
+  - weighted improvement `0.902%`
+  - worst tracked regression `0.000%`
+- promoted full-suite benchmark:
+  - `artifacts/steamdeck/rust/benchmark/autoperf-20260326-220336-full/`
+- promoted full-suite comparison:
+  - `artifacts/steamdeck/rust/autoperf/20260326-220336/promoted-full-comparison.txt`
+  - accepted with weighted improvement `1.163%`
+
+This is intended to make future pacing / synchronization experiments much cheaper to validate before paying for the full Deck benchmark matrix.
 
 ---
 

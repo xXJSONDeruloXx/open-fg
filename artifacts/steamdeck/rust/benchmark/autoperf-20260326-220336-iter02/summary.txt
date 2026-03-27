@@ -1,0 +1,4 @@
+label=blend mode=blend-test samples=119 generatedFrames=119 avgCpuTotalMs=12.403 avgCpuPerGeneratedFrameMs=12.403 avgGpuCmdMs=0.217 avgGpuPerGeneratedFrameMs=0.217 maxCpuTotalMs=13.477 maxGpuCmdMs=0.287
+label=reproject-blend-default mode=reproject-blend-test samples=119 generatedFrames=119 avgCpuTotalMs=16.037 avgCpuPerGeneratedFrameMs=16.037 avgGpuCmdMs=3.812 avgGpuPerGeneratedFrameMs=3.812 maxCpuTotalMs=17.114 maxGpuCmdMs=3.841
+label=multi-blend-count3 mode=multi-blend-test samples=119 generatedFrames=357 avgCpuTotalMs=34.931 avgCpuPerGeneratedFrameMs=11.644 avgGpuCmdMs=0.493 avgGpuPerGeneratedFrameMs=0.164 maxCpuTotalMs=36.052 maxGpuCmdMs=0.533
+label=adaptive-multi-target180 mode=adaptive-multi-blend-test samples=109 generatedFrames=215 avgCpuTotalMs=23.507 avgCpuPerGeneratedFrameMs=11.917 avgGpuCmdMs=0.345 avgGpuPerGeneratedFrameMs=0.175 maxCpuTotalMs=24.607 maxGpuCmdMs=0.391

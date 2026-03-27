@@ -52,6 +52,11 @@ Continue iterating on the Rust implementation until practical feature parity is 
   - `multi-blend`
 - Adaptive multi-FG synthesis stepping stone:
   - `adaptive-multi-blend`
+- First repo-specific autoperf harness:
+  - fast decision benchmark subset
+  - repeated-run aggregation
+  - weighted baseline-vs-candidate comparison
+  - optional full-suite promotion path
 
 ## Next implementation ladder
 
@@ -123,6 +128,7 @@ Goal:
 - validate actual present pacing against display-side timing where possible
 
 Likely path:
+- use the new autoperf loop as the gate for pacing experiments before promoting to the full Deck suite
 - reduce `vkQueueWaitIdle` dependence
 - improve semaphore/fence lifetime strategy
 - explore pacing thread / scheduling logic

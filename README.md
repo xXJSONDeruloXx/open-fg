@@ -60,6 +60,9 @@ Build toward an open solution that can:
 - `docs/rust-feature-roadmap.md`
   - Rust-first implementation ladder
   - parity goals and next capability targets
+- `experiments/program.md`
+  - current autoperf benchmark subset
+  - acceptance rules for pacing/synchronization changes
 
 ### Implementation
 - `implementation/vk-layer-mvp/README.md`

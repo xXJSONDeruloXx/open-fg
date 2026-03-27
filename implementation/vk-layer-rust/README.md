@@ -159,6 +159,32 @@ export STEAMDECK_PASS='...'
 ./scripts/collect-steamdeck-display-info.sh bfi-validation
 ```
 
+### Benchmark suite
+This runs the Steam Deck benchmark matrix and writes per-run CSV/summary artifacts.
+
+```bash
+export STEAMDECK_PASS='...'
+export PPFG_LAYER_IMPL=rust
+./scripts/run-steamdeck-benchmark-suite.sh
+
+# Fast decision subset only
+PPFG_BENCHMARK_PRESET=decision ./scripts/run-steamdeck-benchmark-suite.sh
+```
+
+### Autoperf loop
+This repeatedly runs the fast decision subset, aggregates the results, compares them against a baseline, and can optionally promote winners to the full benchmark suite.
+
+```bash
+export STEAMDECK_PASS='...'
+export PPFG_LAYER_IMPL=rust
+./scripts/run-autoperf-loop.sh
+
+# Optional full-suite promotion on acceptance
+PPFG_AUTOPERF_RUN_FULL_ON_ACCEPT=1 ./scripts/run-autoperf-loop.sh
+```
+
+See `experiments/program.md` for the current subset, weights, and accept/reject rules.
+
 ## Design notes
 
 The Rust port intentionally separates:
