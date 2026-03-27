@@ -982,4 +982,255 @@ mod tests {
         assert_eq!(bfi_state.generated_present_count, 1);
         assert!(bfi_state.injection_works);
     }
+
+    // ---- mutate_swapchain: no cap (None) and zero cap (Some(0)) ----
+
+    #[test]
+    fn clear_mode_with_no_cap_expands_freely() {
+        let result = mutate_swapchain(
+            Mode::ClearTest,
+            3,
+            vk::ImageUsageFlags::COLOR_ATTACHMENT,
+            None,
+        );
+        assert_eq!(result.modified_min_image_count, 4);
+        assert!(result.modified_usage.contains(vk::ImageUsageFlags::TRANSFER_DST));
+    }
+
+    #[test]
+    fn bfi_mode_with_no_cap_expands_freely() {
+        let result = mutate_swapchain(
+            Mode::BfiTest,
+            3,
+            vk::ImageUsageFlags::COLOR_ATTACHMENT,
+            None,
+        );
+        assert_eq!(result.modified_min_image_count, 4);
+    }
+
+    #[test]
+    fn copy_mode_with_no_cap_expands_freely() {
+        let result = mutate_swapchain(
+            Mode::CopyTest,
+            3,
+            vk::ImageUsageFlags::COLOR_ATTACHMENT,
+            None,
+        );
+        assert_eq!(result.modified_min_image_count, 5);
+    }
+
+    #[test]
+    fn history_copy_with_no_cap_expands_freely() {
+        let result = mutate_swapchain(
+            Mode::HistoryCopyTest,
+            3,
+            vk::ImageUsageFlags::COLOR_ATTACHMENT,
+            None,
+        );
+        assert_eq!(result.modified_min_image_count, 5);
+    }
+
+    #[test]
+    fn blend_modes_with_no_cap_expand_freely() {
+        for mode in [
+            Mode::BlendTest,
+            Mode::AdaptiveBlendTest,
+            Mode::SearchBlendTest,
+            Mode::SearchAdaptiveBlendTest,
+            Mode::ReprojectBlendTest,
+            Mode::ReprojectAdaptiveBlendTest,
+            Mode::OptFlowBlendTest,
+            Mode::OptFlowAdaptiveBlendTest,
+        ] {
+            let result = mutate_swapchain(mode, 3, vk::ImageUsageFlags::COLOR_ATTACHMENT, None);
+            assert_eq!(result.modified_min_image_count, 5, "mode {:?}", mode);
+            assert!(result.modified_usage.contains(vk::ImageUsageFlags::TRANSFER_SRC));
+            assert!(result.modified_usage.contains(vk::ImageUsageFlags::SAMPLED));
+        }
+    }
+
+    #[test]
+    fn multi_modes_with_no_cap_expand_freely() {
+        for mode in [
+            Mode::MultiBlendTest,
+            Mode::AdaptiveMultiBlendTest,
+            Mode::ReprojectMultiBlendTest,
+            Mode::ReprojectAdaptiveMultiBlendTest,
+            Mode::OptFlowMultiBlendTest,
+            Mode::OptFlowAdaptiveMultiBlendTest,
+        ] {
+            let result = mutate_swapchain(mode, 3, vk::ImageUsageFlags::COLOR_ATTACHMENT, None);
+            assert_eq!(result.modified_min_image_count, 6, "mode {:?}", mode);
+        }
+    }
+
+    #[test]
+    fn zero_max_image_count_treated_as_uncapped() {
+        // Some(0) means the surface has no explicit upper limit — treat as uncapped.
+        let result = mutate_swapchain(
+            Mode::BlendTest,
+            3,
+            vk::ImageUsageFlags::COLOR_ATTACHMENT,
+            Some(0),
+        );
+        assert_eq!(result.modified_min_image_count, 5);
+    }
+
+    #[test]
+    fn multi_zero_max_image_count_treated_as_uncapped() {
+        let result = mutate_swapchain(
+            Mode::MultiBlendTest,
+            3,
+            vk::ImageUsageFlags::COLOR_ATTACHMENT,
+            Some(0),
+        );
+        assert_eq!(result.modified_min_image_count, 6);
+    }
+
+    // ---- mark_injection_result: failed injection does not advance counts ----
+
+    #[test]
+    fn passthrough_mark_injection_result_never_mutates_state() {
+        let mut state = SimulatedPresentState::default();
+        mark_injection_result(Mode::PassThrough, &mut state, true);
+        assert_eq!(state.generated_present_count, 0);
+        assert!(!state.injection_works);
+        assert!(!state.history_valid);
+        mark_injection_result(Mode::PassThrough, &mut state, false);
+        assert_eq!(state.generated_present_count, 0);
+        assert!(!state.injection_works);
+        assert!(!state.history_valid);
+    }
+
+    #[test]
+    fn copy_clear_bfi_failed_injection_does_not_count() {
+        for mode in [Mode::CopyTest, Mode::ClearTest, Mode::BfiTest] {
+            let mut state = SimulatedPresentState::default();
+            mark_injection_result(mode, &mut state, false);
+            assert_eq!(state.generated_present_count, 0, "mode {:?}", mode);
+            assert!(!state.injection_works, "mode {:?}", mode);
+        }
+    }
+
+    #[test]
+    fn blend_failed_injection_after_prime_does_not_count() {
+        for mode in [
+            Mode::BlendTest,
+            Mode::AdaptiveBlendTest,
+            Mode::SearchBlendTest,
+            Mode::SearchAdaptiveBlendTest,
+            Mode::ReprojectBlendTest,
+            Mode::ReprojectAdaptiveBlendTest,
+            Mode::OptFlowBlendTest,
+            Mode::OptFlowAdaptiveBlendTest,
+        ] {
+            let mut state = SimulatedPresentState::default();
+            // prime history
+            mark_injection_result(mode, &mut state, true);
+            assert!(state.history_valid, "mode {:?}", mode);
+            assert_eq!(state.generated_present_count, 0, "mode {:?}", mode);
+            // failed injection while history valid
+            mark_injection_result(mode, &mut state, false);
+            assert_eq!(
+                state.generated_present_count, 0,
+                "mode {:?} failed inject should not count",
+                mode
+            );
+            assert!(
+                !state.injection_works,
+                "mode {:?} injection_works should stay false after failure",
+                mode
+            );
+        }
+    }
+
+    #[test]
+    fn multi_failed_injection_after_prime_does_not_count() {
+        for mode in [
+            Mode::MultiBlendTest,
+            Mode::AdaptiveMultiBlendTest,
+            Mode::ReprojectMultiBlendTest,
+            Mode::ReprojectAdaptiveMultiBlendTest,
+            Mode::OptFlowMultiBlendTest,
+            Mode::OptFlowAdaptiveMultiBlendTest,
+        ] {
+            let mut state = SimulatedPresentState::default();
+            mark_injection_result(mode, &mut state, true);
+            assert!(state.history_valid, "mode {:?}", mode);
+            mark_injection_result(mode, &mut state, false);
+            assert_eq!(
+                state.generated_present_count, 0,
+                "mode {:?} failed inject should not count",
+                mode
+            );
+            assert!(
+                !state.injection_works,
+                "mode {:?} injection_works should stay false after failure",
+                mode
+            );
+        }
+    }
+
+    // ---- determine_target_generated_frame_count edge cases ----
+
+    #[test]
+    fn target_generated_frame_count_with_no_interval_falls_back_to_min_count() {
+        let decision = determine_target_generated_frame_count(None, 120.0, 0, 2, 0.0);
+        assert_eq!(decision.emitted_generated_frames, 0);
+        assert_eq!(decision.base_fps, 0.0);
+
+        let decision_min1 = determine_target_generated_frame_count(None, 120.0, 1, 3, 0.5);
+        assert_eq!(decision_min1.emitted_generated_frames, 1);
+    }
+
+    #[test]
+    fn target_generated_frame_count_enforces_min_count() {
+        // Base is 60 fps, target 80 fps — desired ~0.33 generated frames.
+        // With min_count=1, should still emit 1.
+        let decision =
+            determine_target_generated_frame_count(Some(1000.0 / 60.0), 80.0, 1, 3, 0.0);
+        assert_eq!(decision.emitted_generated_frames, 1);
+    }
+
+    // ---- determine_adaptive_generated_frame_count edge cases ----
+
+    #[test]
+    fn adaptive_frame_count_when_min_equals_max_always_returns_that_value() {
+        for interval in [None, Some(1.0), Some(5.0), Some(100.0)] {
+            assert_eq!(
+                determine_adaptive_generated_frame_count(interval, 5.0, 2, 2),
+                2,
+                "interval {:?}",
+                interval
+            );
+        }
+    }
+
+    #[test]
+    fn adaptive_frame_count_with_zero_threshold_clamps_high() {
+        // threshold_ms = 0.001 minimum applied internally
+        assert_eq!(
+            determine_adaptive_generated_frame_count(Some(50.0), 0.0, 1, 4),
+            4
+        );
+    }
+
+    // ---- smooth_present_interval edge cases ----
+
+    #[test]
+    fn smooth_present_interval_with_zero_alpha_ignores_new_sample() {
+        assert_eq!(
+            smooth_present_interval_ms(Some(20.0), Some(10.0), 0.0),
+            Some(20.0)
+        );
+    }
+
+    #[test]
+    fn smooth_present_interval_clamps_negative_alpha() {
+        // Negative alpha should behave as 0.0 (clamped)
+        assert_eq!(
+            smooth_present_interval_ms(Some(20.0), Some(10.0), -1.0),
+            Some(20.0)
+        );
+    }
 }

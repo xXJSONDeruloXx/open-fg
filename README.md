@@ -14,6 +14,25 @@ Build toward an open solution that can:
   - AMD AFMF
   - NVIDIA Smooth Motion
 
+## Running the regression suite
+
+```bash
+# One-time: copy the example and set STEAMDECK_PASS
+cp .env.steamdeck.local.example .env.steamdeck.local
+# edit .env.steamdeck.local
+
+# Run unit tests + full Deck hardware smoke suite (all 19 modes)
+OMFG_LAYER_IMPL=rust bash scripts/run-layer-regression-suite.sh
+```
+
+The script sources `.env.steamdeck.local` automatically. With credentials present it:
+builds a `linux/amd64` `.so` via Docker, deploys to the Deck, runs `vkcube` for every
+mode, and asserts log markers. Without credentials it runs unit tests only and exits cleanly.
+
+See `docs/testing-strategy.md` for full details.
+
+---
+
 ## Current recommendation
 
 **Current implementation path:**

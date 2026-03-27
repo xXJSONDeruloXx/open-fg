@@ -2,6 +2,9 @@
 .env*.local
 *.log
 !artifacts/**/*.log
+*.stdout
+__pycache__/
+*.py[cod]
 build/
 out/
 dist/

@@ -142,6 +142,33 @@ We now have a confirmed native Linux test target available remotely:
 - Steam Deck / SteamOS
 - see `docs/targets/steamdeck.md`
 
+#### Running the full hardware regression suite
+
+The regression suite is fully automated. To run it:
+
+1. **Copy and fill in credentials** (one-time):
+   ```bash
+   cp .env.steamdeck.local.example .env.steamdeck.local
+   # edit .env.steamdeck.local — set STEAMDECK_PASS
+   ```
+   The file is gitignored. If it exists and `STEAMDECK_PASS` is non-empty,
+   the suite runs all hardware stages automatically.
+
+2. **Run the suite:**
+   ```bash
+   OMFG_LAYER_IMPL=rust bash scripts/run-layer-regression-suite.sh
+   ```
+
+What it does end-to-end:
+- Runs `cargo test --locked` (115 unit tests, runs locally)
+- Builds `libVkLayer_OMFG_rust.so` via Docker (`linux/amd64`) — no native Linux host needed
+- Deploys the `.so` + manifest to the Deck over SSH/SCP
+- Runs `vkcube --c 120` for **all 19 modes** on the Deck's AMD RADV GPU
+- Pulls the layer log back and asserts expected markers via `scripts/assert-vkcube-log.py`
+- Prints `Regression suite passed for rust` on success
+
+If `STEAMDECK_PASS` is not set, the script exits after unit tests with a clear message — no partial or silent failure.
+
 ### Best matrix
 #### Linux box A — AMD / RADV
 Best for:

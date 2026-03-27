@@ -7434,4 +7434,523 @@ mod tests {
 
         std::env::remove_var("OMFG_DEBUG_VIEW");
     }
+
+    // ---- blend_push_constants_for_mode: per-mode correctness ----
+
+    #[test]
+    fn blend_test_push_constants_use_mode_zero_with_half_alpha() {
+        let _guard = env_test_lock().lock().expect("env test mutex poisoned");
+        // No env vars set — pure defaults
+        let push = blend_push_constants_for_mode(Mode::BlendTest);
+        assert_eq!(push.mode, 0, "BlendTest must use shader mode 0");
+        assert!((push.alpha - 0.5).abs() < 1e-6);
+        assert_eq!(push.adaptive_strength, 0.0);
+        assert_eq!(push.adaptive_bias, 0.0);
+        assert_eq!(push.search_radius, 0);
+        assert_eq!(push.confidence_scale, 0.0);
+        assert_eq!(push.debug_view, DebugView::Off.shader_code());
+    }
+
+    #[test]
+    fn adaptive_blend_test_push_constants_use_mode_one_with_adaptive_fields() {
+        let _guard = env_test_lock().lock().expect("env test mutex poisoned");
+        std::env::set_var("OMFG_BLEND_ADAPTIVE_STRENGTH", "3.0");
+        std::env::set_var("OMFG_BLEND_ADAPTIVE_BIAS", "0.5");
+
+        let push = blend_push_constants_for_mode(Mode::AdaptiveBlendTest);
+        assert_eq!(push.mode, 1, "AdaptiveBlendTest must use shader mode 1");
+        assert!((push.alpha - 0.5).abs() < 1e-6);
+        assert_eq!(push.adaptive_strength, 3.0);
+        assert_eq!(push.adaptive_bias, 0.5);
+        // search and reproject fields should be zero
+        assert_eq!(push.search_radius, 0);
+        assert_eq!(push.confidence_scale, 0.0);
+
+        std::env::remove_var("OMFG_BLEND_ADAPTIVE_STRENGTH");
+        std::env::remove_var("OMFG_BLEND_ADAPTIVE_BIAS");
+    }
+
+    #[test]
+    fn search_blend_test_push_constants_use_mode_two_with_search_radius() {
+        let _guard = env_test_lock().lock().expect("env test mutex poisoned");
+        std::env::set_var("OMFG_SEARCH_BLEND_RADIUS", "3");
+
+        let push = blend_push_constants_for_mode(Mode::SearchBlendTest);
+        assert_eq!(push.mode, 2, "SearchBlendTest must use shader mode 2");
+        assert!((push.alpha - 0.5).abs() < 1e-6);
+        assert_eq!(push.search_radius, 3);
+        assert_eq!(push.adaptive_strength, 0.0);
+        assert_eq!(push.confidence_scale, 0.0);
+
+        std::env::remove_var("OMFG_SEARCH_BLEND_RADIUS");
+    }
+
+    #[test]
+    fn search_adaptive_blend_test_push_constants_use_mode_three() {
+        let _guard = env_test_lock().lock().expect("env test mutex poisoned");
+        std::env::set_var("OMFG_SEARCH_BLEND_RADIUS", "2");
+        std::env::set_var("OMFG_BLEND_ADAPTIVE_STRENGTH", "1.5");
+        std::env::set_var("OMFG_BLEND_ADAPTIVE_BIAS", "0.3");
+
+        let push = blend_push_constants_for_mode(Mode::SearchAdaptiveBlendTest);
+        assert_eq!(push.mode, 3, "SearchAdaptiveBlendTest must use shader mode 3");
+        assert!((push.alpha - 0.5).abs() < 1e-6);
+        assert_eq!(push.search_radius, 2);
+        assert_eq!(push.adaptive_strength, 1.5);
+        assert_eq!(push.adaptive_bias, 0.3);
+
+        std::env::remove_var("OMFG_SEARCH_BLEND_RADIUS");
+        std::env::remove_var("OMFG_BLEND_ADAPTIVE_STRENGTH");
+        std::env::remove_var("OMFG_BLEND_ADAPTIVE_BIAS");
+    }
+
+    #[test]
+    fn reproject_blend_test_push_constants_use_mode_four() {
+        let _guard = env_test_lock().lock().expect("env test mutex poisoned");
+        std::env::remove_var("OMFG_DEBUG_VIEW");
+
+        let push = blend_push_constants_for_mode(Mode::ReprojectBlendTest);
+        assert_eq!(push.mode, 4, "ReprojectBlendTest must use shader mode 4");
+        assert!((push.alpha - 0.5).abs() < 1e-6);
+        // reproject fields filled from defaults
+        assert!(push.confidence_scale > 0.0);
+        assert!(push.disocclusion_scale > 0.0);
+        assert!(push.hole_fill_strength > 0.0);
+    }
+
+    #[test]
+    fn reproject_adaptive_blend_test_push_constants_use_mode_five_with_debug_view_forwarded() {
+        let _guard = env_test_lock().lock().expect("env test mutex poisoned");
+        std::env::set_var("OMFG_DEBUG_VIEW", "disocclusion");
+        std::env::set_var("OMFG_BLEND_ADAPTIVE_STRENGTH", "2.5");
+
+        let push = blend_push_constants_for_mode(Mode::ReprojectAdaptiveBlendTest);
+        assert_eq!(push.mode, 5, "ReprojectAdaptiveBlendTest must use shader mode 5");
+        assert!((push.alpha - 0.5).abs() < 1e-6);
+        assert_eq!(push.adaptive_strength, 2.5);
+        assert!(push.confidence_scale > 0.0);
+        assert_eq!(push.debug_view, DebugView::Disocclusion.shader_code());
+
+        std::env::remove_var("OMFG_DEBUG_VIEW");
+        std::env::remove_var("OMFG_BLEND_ADAPTIVE_STRENGTH");
+    }
+
+    #[test]
+    fn unhandled_modes_return_zeroed_push_constants() {
+        let _guard = env_test_lock().lock().expect("env test mutex poisoned");
+        for mode in [
+            Mode::PassThrough,
+            Mode::ClearTest,
+            Mode::BfiTest,
+            Mode::CopyTest,
+            Mode::HistoryCopyTest,
+        ] {
+            let push = blend_push_constants_for_mode(mode);
+            assert_eq!(push.alpha, 0.0, "mode {:?} should have alpha=0", mode);
+            assert_eq!(push.mode, 0, "mode {:?} should have shader-mode=0", mode);
+            assert_eq!(push.search_radius, 0);
+            assert_eq!(push.confidence_scale, 0.0);
+        }
+    }
+
+    // ---- multi_blend_push_constants_plan: alpha distribution and mode codes ----
+
+    #[test]
+    fn multi_blend_test_plan_distributes_alpha_evenly() {
+        let _guard = env_test_lock().lock().expect("env test mutex poisoned");
+        let plan = multi_blend_push_constants_plan(Mode::MultiBlendTest, 3);
+        assert_eq!(plan.len(), 3);
+        // Frames at 1/4, 2/4, 3/4
+        assert!((plan[0].alpha - 0.25).abs() < 0.01);
+        assert!((plan[1].alpha - 0.50).abs() < 0.01);
+        assert!((plan[2].alpha - 0.75).abs() < 0.01);
+        for push in &plan {
+            assert_eq!(push.mode, 0, "MultiBlendTest per-frame mode must be 0");
+            assert_eq!(push.adaptive_strength, 0.0);
+        }
+    }
+
+    #[test]
+    fn adaptive_multi_blend_test_plan_uses_mode_one_per_frame() {
+        let _guard = env_test_lock().lock().expect("env test mutex poisoned");
+        std::env::set_var("OMFG_BLEND_ADAPTIVE_STRENGTH", "4.0");
+        std::env::set_var("OMFG_BLEND_ADAPTIVE_BIAS", "0.2");
+
+        let plan = multi_blend_push_constants_plan(Mode::AdaptiveMultiBlendTest, 2);
+        assert_eq!(plan.len(), 2);
+        for push in &plan {
+            assert_eq!(push.mode, 1, "AdaptiveMultiBlendTest per-frame mode must be 1");
+            assert_eq!(push.adaptive_strength, 4.0);
+            assert_eq!(push.adaptive_bias, 0.2);
+        }
+
+        std::env::remove_var("OMFG_BLEND_ADAPTIVE_STRENGTH");
+        std::env::remove_var("OMFG_BLEND_ADAPTIVE_BIAS");
+    }
+
+    #[test]
+    fn multi_blend_push_constants_plan_returns_empty_for_zero_count() {
+        let _guard = env_test_lock().lock().expect("env test mutex poisoned");
+        let plan = multi_blend_push_constants_plan(Mode::MultiBlendTest, 0);
+        assert!(plan.is_empty());
+        let plan2 = multi_blend_push_constants_plan(Mode::ReprojectMultiBlendTest, 0);
+        assert!(plan2.is_empty());
+    }
+
+    #[test]
+    fn reproject_multi_blend_test_plan_uses_mode_four_per_frame() {
+        let _guard = env_test_lock().lock().expect("env test mutex poisoned");
+        std::env::remove_var("OMFG_DEBUG_VIEW");
+
+        let plan = multi_blend_push_constants_plan(Mode::ReprojectMultiBlendTest, 2);
+        assert_eq!(plan.len(), 2);
+        for push in &plan {
+            assert_eq!(push.mode, 4, "ReprojectMultiBlendTest per-frame mode must be 4");
+            assert!(push.confidence_scale > 0.0);
+        }
+    }
+
+    // ---- maybe_expand_multi_swapchain_min_image_count: non-multi modes unchanged ----
+
+    #[test]
+    fn passthrough_does_not_expand_multi_swapchain_headroom() {
+        let _guard = env_test_lock().lock().expect("env test mutex poisoned");
+        let result =
+            maybe_expand_multi_swapchain_min_image_count(Mode::PassThrough, 3, 5, None);
+        assert_eq!(result, 5);
+    }
+
+    #[test]
+    fn single_blend_modes_do_not_expand_multi_swapchain_headroom() {
+        let _guard = env_test_lock().lock().expect("env test mutex poisoned");
+        for mode in [
+            Mode::BlendTest,
+            Mode::AdaptiveBlendTest,
+            Mode::SearchBlendTest,
+            Mode::SearchAdaptiveBlendTest,
+            Mode::ReprojectBlendTest,
+            Mode::ReprojectAdaptiveBlendTest,
+            Mode::OptFlowBlendTest,
+            Mode::OptFlowAdaptiveBlendTest,
+        ] {
+            let result =
+                maybe_expand_multi_swapchain_min_image_count(mode, 3, 5, None);
+            assert_eq!(result, 5, "mode {:?} should not expand", mode);
+        }
+    }
+
+    #[test]
+    fn optflow_multi_blend_mode_expands_swapchain_headroom() {
+        let _guard = env_test_lock().lock().expect("env test mutex poisoned");
+        std::env::set_var("OMFG_MULTI_BLEND_COUNT", "4");
+        std::env::remove_var("OMFG_MULTI_SWAPCHAIN_MAX_GENERATED_FRAMES");
+
+        // current=6, requested=4: desired = 6.max(3.max(4+1)) = 6.max(5) = 6 (already large)
+        let result =
+            maybe_expand_multi_swapchain_min_image_count(Mode::OptFlowMultiBlendTest, 3, 6, None);
+        assert_eq!(result, 6);
+
+        // current=3, requested=4: desired = 3.max(3.max(5)) = 5 (expansion needed)
+        let result2 =
+            maybe_expand_multi_swapchain_min_image_count(Mode::OptFlowMultiBlendTest, 3, 3, None);
+        assert_eq!(result2, 5);
+
+        std::env::remove_var("OMFG_MULTI_BLEND_COUNT");
+    }
+
+    #[test]
+    fn optflow_adaptive_multi_blend_mode_expands_swapchain_headroom() {
+        let _guard = env_test_lock().lock().expect("env test mutex poisoned");
+        std::env::set_var("OMFG_ADAPTIVE_MULTI_MAX_GENERATED_FRAMES", "3");
+        std::env::remove_var("OMFG_ADAPTIVE_MULTI_TARGET_FPS");
+
+        let result = maybe_expand_multi_swapchain_min_image_count(
+            Mode::OptFlowAdaptiveMultiBlendTest,
+            3,
+            3,
+            None,
+        );
+        // requested=3, desired=3.max(3.max(3+1))=3.max(4)=4
+        assert_eq!(result, 4);
+
+        std::env::remove_var("OMFG_ADAPTIVE_MULTI_MAX_GENERATED_FRAMES");
+    }
+
+    // ---- effective_debug_view: mode isolation ----
+
+    #[test]
+    fn effective_debug_view_returns_off_for_non_reproject_optflow_modes() {
+        let _guard = env_test_lock().lock().expect("env test mutex poisoned");
+        std::env::set_var("OMFG_DEBUG_VIEW", "confidence");
+
+        for mode in [
+            Mode::PassThrough,
+            Mode::ClearTest,
+            Mode::BfiTest,
+            Mode::CopyTest,
+            Mode::HistoryCopyTest,
+            Mode::BlendTest,
+            Mode::AdaptiveBlendTest,
+            Mode::SearchBlendTest,
+            Mode::SearchAdaptiveBlendTest,
+            Mode::MultiBlendTest,
+            Mode::AdaptiveMultiBlendTest,
+        ] {
+            assert_eq!(
+                effective_debug_view(mode),
+                DebugView::Off,
+                "mode {:?} should always return Off",
+                mode
+            );
+        }
+
+        std::env::remove_var("OMFG_DEBUG_VIEW");
+    }
+
+    #[test]
+    fn effective_debug_view_forwards_for_reproject_modes() {
+        let _guard = env_test_lock().lock().expect("env test mutex poisoned");
+        std::env::set_var("OMFG_DEBUG_VIEW", "hole-fill");
+
+        for mode in [
+            Mode::ReprojectBlendTest,
+            Mode::ReprojectAdaptiveBlendTest,
+            Mode::ReprojectMultiBlendTest,
+            Mode::ReprojectAdaptiveMultiBlendTest,
+        ] {
+            assert_eq!(
+                effective_debug_view(mode),
+                DebugView::HoleFill,
+                "mode {:?} should forward debug view",
+                mode
+            );
+        }
+
+        std::env::remove_var("OMFG_DEBUG_VIEW");
+    }
+
+    #[test]
+    fn effective_debug_view_forwards_for_optflow_modes() {
+        let _guard = env_test_lock().lock().expect("env test mutex poisoned");
+        std::env::set_var("OMFG_DEBUG_VIEW", "ambiguity");
+
+        for mode in [
+            Mode::OptFlowBlendTest,
+            Mode::OptFlowAdaptiveBlendTest,
+            Mode::OptFlowMultiBlendTest,
+            Mode::OptFlowAdaptiveMultiBlendTest,
+        ] {
+            assert_eq!(
+                effective_debug_view(mode),
+                DebugView::Ambiguity,
+                "mode {:?} should forward debug view",
+                mode
+            );
+        }
+
+        std::env::remove_var("OMFG_DEBUG_VIEW");
+    }
+
+    // ---- Game-context configuration simulations ----
+
+    #[test]
+    fn vkcube_passthrough_has_sane_defaults() {
+        let _guard = env_test_lock().lock().expect("env test mutex poisoned");
+        // No OMFG env vars set — passthrough + negotiation
+        let push = blend_push_constants_for_mode(Mode::PassThrough);
+        // Passthrough returns Default, all zeros — nothing applied to frames
+        assert_eq!(push.mode, 0);
+        assert_eq!(push.alpha, 0.0);
+    }
+
+    /// Stellar Blade simulation: optflow-adaptive-blend with aggressive coarse-to-fine
+    /// and disocclusion suppression. Verifies push constants carry through to the shader.
+    #[test]
+    fn stellar_blade_optflow_adaptive_blend_config() {
+        let _guard = env_test_lock().lock().expect("env test mutex poisoned");
+        std::env::set_var("OMFG_OPTICAL_FLOW_SEARCH_RADIUS", "4");
+        std::env::set_var("OMFG_OPTICAL_FLOW_PATCH_RADIUS", "2");
+        std::env::set_var("OMFG_OPTICAL_FLOW_LEVELS", "4");
+        std::env::set_var("OMFG_OPTICAL_FLOW_CONFIDENCE_SCALE", "6.0");
+        std::env::set_var("OMFG_OPTICAL_FLOW_MOTION_PENALTY", "0.005");
+        std::env::set_var("OMFG_BLEND_ADAPTIVE_STRENGTH", "2.5");
+        std::env::set_var("OMFG_BLEND_ADAPTIVE_BIAS", "0.3");
+        std::env::set_var("OMFG_REPROJECT_DISOCCLUSION_SCALE", "2.0");
+        std::env::set_var("OMFG_DEBUG_VIEW", "off");
+
+        let push = blend_push_constants_for_mode(Mode::OptFlowAdaptiveBlendTest);
+        assert_eq!(push.mode, 7);
+        assert_eq!(push.search_radius, 4);
+        assert_eq!(push.patch_radius, 2);
+        assert_eq!(push.optflow_levels, 4);
+        assert_eq!(push.confidence_scale, 6.0);
+        assert_eq!(push.optflow_motion_penalty, 0.005);
+        assert_eq!(push.adaptive_strength, 2.5);
+        assert_eq!(push.adaptive_bias, 0.3);
+        assert_eq!(push.disocclusion_scale, 2.0);
+        assert_eq!(push.debug_view, DebugView::Off.shader_code());
+        assert!((push.alpha - 0.5).abs() < 1e-6);
+
+        // Verify mode also works in multi-frame plan
+        let plan = multi_blend_push_constants_plan(Mode::OptFlowAdaptiveMultiBlendTest, 2);
+        assert_eq!(plan.len(), 2);
+        for frame in &plan {
+            assert_eq!(frame.mode, 7);
+            assert_eq!(frame.search_radius, 4);
+            assert_eq!(frame.optflow_levels, 4);
+            assert_eq!(frame.adaptive_strength, 2.5);
+        }
+
+        std::env::remove_var("OMFG_OPTICAL_FLOW_SEARCH_RADIUS");
+        std::env::remove_var("OMFG_OPTICAL_FLOW_PATCH_RADIUS");
+        std::env::remove_var("OMFG_OPTICAL_FLOW_LEVELS");
+        std::env::remove_var("OMFG_OPTICAL_FLOW_CONFIDENCE_SCALE");
+        std::env::remove_var("OMFG_OPTICAL_FLOW_MOTION_PENALTY");
+        std::env::remove_var("OMFG_BLEND_ADAPTIVE_STRENGTH");
+        std::env::remove_var("OMFG_BLEND_ADAPTIVE_BIAS");
+        std::env::remove_var("OMFG_REPROJECT_DISOCCLUSION_SCALE");
+        std::env::remove_var("OMFG_DEBUG_VIEW");
+    }
+
+    /// RE Village simulation: reproject-adaptive-multi-blend with all quality knobs maxed,
+    /// debug view set to confidence for analysis.
+    #[test]
+    fn re_village_reproject_adaptive_multi_blend_config() {
+        let _guard = env_test_lock().lock().expect("env test mutex poisoned");
+        std::env::set_var("OMFG_REPROJECT_SEARCH_RADIUS", "4");
+        std::env::set_var("OMFG_REPROJECT_PATCH_RADIUS", "2");
+        std::env::set_var("OMFG_REPROJECT_CONFIDENCE_SCALE", "8.0");
+        std::env::set_var("OMFG_REPROJECT_DISOCCLUSION_SCALE", "3.0");
+        std::env::set_var("OMFG_REPROJECT_HOLE_FILL_STRENGTH", "1.0");
+        std::env::set_var("OMFG_REPROJECT_HOLE_FILL_RADIUS", "2");
+        std::env::set_var("OMFG_REPROJECT_DISOCCLUSION_CURRENT_BIAS", "0.9");
+        std::env::set_var("OMFG_REPROJECT_GRADIENT_CONFIDENCE_WEIGHT", "16.0");
+        std::env::set_var("OMFG_REPROJECT_CHROMA_WEIGHT", "0.7");
+        std::env::set_var("OMFG_REPROJECT_AMBIGUITY_SCALE", "10.0");
+        std::env::set_var("OMFG_ADAPTIVE_MULTI_MAX_GENERATED_FRAMES", "3");
+        std::env::set_var("OMFG_DEBUG_VIEW", "confidence");
+
+        let plan = multi_blend_push_constants_plan(Mode::ReprojectAdaptiveMultiBlendTest, 3);
+        assert_eq!(plan.len(), 3);
+        for (i, push) in plan.iter().enumerate() {
+            // mode 5 = reproject-adaptive-blend per frame
+            assert_eq!(push.mode, 5, "frame {}", i);
+            assert_eq!(push.search_radius, 4);
+            assert_eq!(push.patch_radius, 2);
+            assert_eq!(push.confidence_scale, 8.0);
+            assert_eq!(push.disocclusion_scale, 3.0);
+            assert_eq!(push.hole_fill_strength, 1.0);
+            assert_eq!(push.hole_fill_radius, 2);
+            assert_eq!(push.disocclusion_current_bias, 0.9);
+            assert_eq!(push.gradient_confidence_weight, 16.0);
+            assert_eq!(push.chroma_weight, 0.7);
+            assert_eq!(push.ambiguity_scale, 10.0);
+            assert_eq!(push.debug_view, DebugView::Confidence.shader_code());
+        }
+        // Alpha distributes across frames: 1/4, 2/4, 3/4
+        assert!((plan[0].alpha - 0.25).abs() < 0.01);
+        assert!((plan[1].alpha - 0.50).abs() < 0.01);
+        assert!((plan[2].alpha - 0.75).abs() < 0.01);
+
+        std::env::remove_var("OMFG_REPROJECT_SEARCH_RADIUS");
+        std::env::remove_var("OMFG_REPROJECT_PATCH_RADIUS");
+        std::env::remove_var("OMFG_REPROJECT_CONFIDENCE_SCALE");
+        std::env::remove_var("OMFG_REPROJECT_DISOCCLUSION_SCALE");
+        std::env::remove_var("OMFG_REPROJECT_HOLE_FILL_STRENGTH");
+        std::env::remove_var("OMFG_REPROJECT_HOLE_FILL_RADIUS");
+        std::env::remove_var("OMFG_REPROJECT_DISOCCLUSION_CURRENT_BIAS");
+        std::env::remove_var("OMFG_REPROJECT_GRADIENT_CONFIDENCE_WEIGHT");
+        std::env::remove_var("OMFG_REPROJECT_CHROMA_WEIGHT");
+        std::env::remove_var("OMFG_REPROJECT_AMBIGUITY_SCALE");
+        std::env::remove_var("OMFG_ADAPTIVE_MULTI_MAX_GENERATED_FRAMES");
+        std::env::remove_var("OMFG_DEBUG_VIEW");
+    }
+
+    /// Beyond Two Souls simulation: adaptive-multi-blend using target-fps credit accumulation.
+    /// Validates credit-carry logic: 30fps base → 60fps target → alternating 1/2 frames.
+    #[test]
+    fn beyond_two_souls_adaptive_multi_blend_target_fps_credit_accumulation() {
+        use planner::{determine_target_generated_frame_count, smooth_present_interval_ms};
+
+        // BTS runs ~30fps, player wants 60fps → 1 generated frame per real frame
+        let interval_30fps = 1000.0 / 30.0; // ~33.3ms
+        let mut carry = 0.0_f32;
+        let mut emitted = Vec::new();
+        for _ in 0..6 {
+            let decision = determine_target_generated_frame_count(
+                Some(interval_30fps),
+                60.0,
+                0,
+                2,
+                carry,
+            );
+            emitted.push(decision.emitted_generated_frames);
+            carry = decision.next_credit;
+        }
+        // 30fps→60fps means exactly 1 generated frame, credit stays near 0
+        assert!(
+            emitted.iter().all(|&n| n == 1),
+            "BTS 30→60fps should emit exactly 1 frame each time, got {:?}",
+            emitted
+        );
+
+        // Smoothed interval blending: jittery 30fps converges
+        let smoothed = smooth_present_interval_ms(None, Some(interval_30fps), 0.25);
+        assert!((smoothed.unwrap() - interval_30fps).abs() < 1e-4);
+        let smoothed2 = smooth_present_interval_ms(smoothed, Some(interval_30fps * 1.1), 0.25);
+        assert!(smoothed2.unwrap() > interval_30fps);
+    }
+
+    /// Multi-game swapchain cap enforcement: different games use different min_image_count
+    /// limits. The cap from surface capabilities must always be respected.
+    #[test]
+    fn multi_game_swapchain_cap_varies_per_game_surface() {
+        let _guard = env_test_lock().lock().expect("env test mutex poisoned");
+        // Use OMFG_MULTI_BLEND_COUNT=4 for non-adaptive modes.
+        // AdaptiveMultiBlendTest uses OMFG_ADAPTIVE_MULTI_MAX_GENERATED_FRAMES instead.
+        std::env::set_var("OMFG_MULTI_BLEND_COUNT", "4");
+        std::env::set_var("OMFG_ADAPTIVE_MULTI_MAX_GENERATED_FRAMES", "4");
+        std::env::remove_var("OMFG_ADAPTIVE_MULTI_TARGET_FPS");
+        std::env::remove_var("OMFG_MULTI_SWAPCHAIN_MAX_GENERATED_FRAMES");
+
+        // vkcube: surface allows up to 8 images — full expansion, 4 gen frames → need 5 total
+        let vkcube_result =
+            maybe_expand_multi_swapchain_min_image_count(Mode::MultiBlendTest, 3, 3, Some(8));
+        // requested=4, desired = 3.max(3.max(5))=5, cap=8 → 5
+        assert_eq!(vkcube_result, 5);
+
+        // Stellar Blade: surface max = 4, can't provide 5 → clamped to 4
+        let stellar_result =
+            maybe_expand_multi_swapchain_min_image_count(Mode::MultiBlendTest, 3, 3, Some(4));
+        // desired=5 but cap=4 → 4
+        assert_eq!(stellar_result, 4);
+
+        // RE Village: surface max = 6, 5 fits within the cap
+        let rev_result =
+            maybe_expand_multi_swapchain_min_image_count(Mode::MultiBlendTest, 3, 3, Some(6));
+        // desired=5, cap=6 → 5
+        assert_eq!(rev_result, 5);
+
+        // BTS with adaptive multi: OMFG_ADAPTIVE_MULTI_MAX_GENERATED_FRAMES=4 → same logic
+        let bts_result = maybe_expand_multi_swapchain_min_image_count(
+            Mode::AdaptiveMultiBlendTest,
+            3,
+            3,
+            Some(8),
+        );
+        // requested=4, desired=5, cap=8 → 5
+        assert_eq!(bts_result, 5);
+
+        // BTS capped surface: max=4 limits expansion
+        let bts_capped = maybe_expand_multi_swapchain_min_image_count(
+            Mode::AdaptiveMultiBlendTest,
+            3,
+            3,
+            Some(4),
+        );
+        assert_eq!(bts_capped, 4);
+
+        std::env::remove_var("OMFG_MULTI_BLEND_COUNT");
+        std::env::remove_var("OMFG_ADAPTIVE_MULTI_MAX_GENERATED_FRAMES");
+    }
 }
