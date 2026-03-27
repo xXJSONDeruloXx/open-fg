@@ -74,6 +74,48 @@ fn symmetric_patch_error(
     error
 }
 
+pub fn mixed_patch_error(luma_diff: f32, rgb_diff: f32, chroma_weight: f32) -> f32 {
+    let chroma_weight = chroma_weight.clamp(0.0, 1.0);
+    luma_diff + (rgb_diff - luma_diff) * chroma_weight
+}
+
+pub fn apply_gradient_weighted_confidence(
+    confidence: f32,
+    gradient_mag: f32,
+    gradient_confidence_weight: f32,
+) -> f32 {
+    let confidence = confidence.clamp(0.0, 1.0);
+    if gradient_confidence_weight <= 0.0 {
+        return confidence;
+    }
+
+    let gradient_factor = (gradient_mag * gradient_confidence_weight).clamp(0.0, 1.0);
+    confidence * (0.25 + 0.75 * gradient_factor)
+}
+
+pub fn apply_ambiguity_weighted_confidence(
+    confidence: f32,
+    best_error: f32,
+    second_best_error: Option<f32>,
+    ambiguity_scale: f32,
+) -> f32 {
+    let confidence = confidence.clamp(0.0, 1.0);
+    if ambiguity_scale <= 0.0 {
+        return confidence;
+    }
+
+    let Some(second_best_error) = second_best_error else {
+        return confidence;
+    };
+    if !second_best_error.is_finite() {
+        return confidence;
+    }
+
+    let ambiguity_margin = (second_best_error - best_error).max(0.0);
+    let ambiguity_factor = (ambiguity_margin * ambiguity_scale).clamp(0.0, 1.0);
+    confidence * (0.2 + 0.8 * ambiguity_factor)
+}
+
 pub fn estimate_symmetric_motion_offset(
     prev: &[f32],
     curr: &[f32],
@@ -129,7 +171,10 @@ pub fn estimate_symmetric_motion_offset(
 
 #[cfg(test)]
 mod tests {
-    use super::{estimate_symmetric_motion_offset, SymmetricSearchConfig};
+    use super::{
+        apply_ambiguity_weighted_confidence, apply_gradient_weighted_confidence,
+        estimate_symmetric_motion_offset, mixed_patch_error, SymmetricSearchConfig,
+    };
 
     #[test]
     fn identical_frames_fall_back_to_zero_motion() {
@@ -188,5 +233,36 @@ mod tests {
         );
         assert_eq!((result.offset_x, result.offset_y), (0, 0));
         assert_eq!(result.confidence, 0.0);
+    }
+
+    #[test]
+    fn mixed_patch_error_interpolates_between_luma_and_rgb() {
+        assert_eq!(mixed_patch_error(0.25, 1.0, 0.0), 0.25);
+        assert_eq!(mixed_patch_error(0.25, 1.0, 1.0), 1.0);
+        assert!((mixed_patch_error(0.25, 1.0, 0.5) - 0.625).abs() < 1e-6);
+    }
+
+    #[test]
+    fn gradient_weighted_confidence_penalizes_flat_regions() {
+        let confidence = apply_gradient_weighted_confidence(1.0, 0.0, 8.0);
+        assert!((confidence - 0.25).abs() < 1e-6);
+    }
+
+    #[test]
+    fn gradient_weighted_confidence_preserves_textured_regions() {
+        let confidence = apply_gradient_weighted_confidence(0.8, 0.25, 8.0);
+        assert!((confidence - 0.8).abs() < 1e-6);
+    }
+
+    #[test]
+    fn ambiguity_weighted_confidence_penalizes_near_ties() {
+        let confidence = apply_ambiguity_weighted_confidence(1.0, 1.0, Some(1.01), 6.0);
+        assert!(confidence < 0.3);
+    }
+
+    #[test]
+    fn ambiguity_weighted_confidence_preserves_clear_winners() {
+        let confidence = apply_ambiguity_weighted_confidence(0.9, 1.0, Some(1.5), 6.0);
+        assert!((confidence - 0.9).abs() < 1e-6);
     }
 }
