@@ -1,0 +1,9 @@
+label,mode,samples,generatedFrames,gpuSamples,avgCpuAcquireMs,avgCpuSetupMs,avgCpuRecordMs,avgCpuSubmitMs,avgCpuSubmitWaitMs,avgCpuGeneratedPresentMs,avgCpuOriginalPresentMs,avgCpuQueueIdleMs,avgCpuTotalMs,avgCpuPerGeneratedFrameMs,maxCpuTotalMs,avgGpuCmdMs,avgGpuPerGeneratedFrameMs,maxGpuCmdMs
+reproject-blend-default,reproject-blend-test,119,119,119,10.754,0.014,0.098,0.097,0.0,0.075,0.057,5.119,16.214,16.214,17.21,3.935,3.935,3.967
+reproject-blend-no-gradient,reproject-blend-test,119,119,119,10.771,0.015,0.105,0.102,0.0,0.085,0.063,4.991,16.133,16.133,17.137,3.906,3.906,3.942
+reproject-blend-no-chroma,reproject-blend-test,119,119,119,10.806,0.015,0.105,0.094,0.0,0.077,0.055,5.045,16.196,16.196,17.17,3.939,3.939,3.972
+reproject-blend-no-ambiguity,reproject-blend-test,119,119,119,10.766,0.015,0.106,0.104,0.0,0.084,0.062,5.008,16.145,16.145,17.097,3.943,3.943,3.972
+reproject-multi-count3-default,reproject-multi-blend-test,119,357,119,30.282,0.003,0.119,0.116,13.039,0.28,0.04,0.0,43.879,14.626,44.965,11.638,3.879,11.689
+reproject-multi-count3-no-ambiguity,reproject-multi-blend-test,119,357,119,30.257,0.004,0.119,0.126,12.981,0.284,0.043,0.0,43.813,14.604,44.916,11.632,3.877,11.684
+reproject-adaptive-multi-target180-default,reproject-adaptive-multi-blend-test,109,216,109,21.82,0.003,0.111,0.107,9.091,0.189,0.044,0.0,31.366,15.828,32.288,7.741,3.907,7.837
+reproject-adaptive-multi-target180-no-ambiguity,reproject-adaptive-multi-blend-test,109,216,109,22.031,0.003,0.117,0.125,9.144,0.179,0.046,0.0,31.644,15.968,32.356,7.743,3.907,7.856
