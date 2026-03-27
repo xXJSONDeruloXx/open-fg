@@ -1085,8 +1085,25 @@ fn append_timing_features_enabled() -> bool {
     env_bool("OMFG_CREATE_DEVICE_APPEND_TIMING_FEATURES", false)
 }
 
+fn swapchain_image_bump_override() -> Option<u32> {
+    env_string("OMFG_SWAPCHAIN_IMAGE_BUMP_OVERRIDE")
+        .and_then(|value| value.parse::<u32>().ok())
+}
+
 fn benchmark_enabled() -> bool {
     env_bool("OMFG_BENCHMARK", false)
+}
+
+fn history_copy_freeze_history_enabled() -> bool {
+    env_bool("OMFG_HISTORY_COPY_FREEZE_HISTORY", false)
+}
+
+fn copy_original_present_first_enabled() -> bool {
+    env_bool("OMFG_COPY_ORIGINAL_PRESENT_FIRST", false)
+}
+
+fn generated_acquire_timeout_ns() -> u64 {
+    env_u64("OMFG_GENERATED_ACQUIRE_TIMEOUT_NS", 20_000_000)
 }
 
 fn present_timing_enabled() -> bool {
@@ -3271,7 +3288,7 @@ unsafe fn try_present_blend_frame(
         let acquire_result = acquire_next_image(
             device_info.device,
             state.handle,
-            20_000_000,
+            generated_acquire_timeout_ns(),
             state.inject.acquire_semaphore,
             vk::Fence::null(),
             &mut generated_image_index,
@@ -4026,7 +4043,7 @@ unsafe fn try_present_multi_blend_frame(
             let acquire_result = acquire_next_image(
                 device_info.device,
                 state.handle,
-                20_000_000,
+                generated_acquire_timeout_ns(),
                 acquire_semaphore,
                 acquire_fence,
                 &mut generated_image_index,
@@ -4632,6 +4649,28 @@ unsafe fn try_present_copy_frame(
         return false;
     }
 
+    let copy_original_first = copy_original_present_first_enabled();
+    if copy_original_first {
+        let Some(queue_present) = device_info.dispatch.queue_present_khr else {
+            return false;
+        };
+        let original_result = queue_present(queue, present_info);
+        if original_result != vk::Result::SUCCESS && original_result != vk::Result::SUBOPTIMAL_KHR {
+            log_warn(format!(
+                "original QueuePresentKHR failed in copy original-first mode: {}",
+                original_result.as_raw()
+            ));
+            return false;
+        }
+        let Some(queue_wait_idle) = device_info.dispatch.queue_wait_idle else {
+            return false;
+        };
+        if queue_wait_idle(queue) != vk::Result::SUCCESS {
+            log_warn("QueueWaitIdle failed after original present in copy original-first mode");
+            return false;
+        }
+    }
+
     let Some(acquire_next_image) = device_info.dispatch.acquire_next_image_khr else {
         return false;
     };
@@ -4639,7 +4678,7 @@ unsafe fn try_present_copy_frame(
     let acquire_result = acquire_next_image(
         device_info.device,
         state.handle,
-        20_000_000,
+        generated_acquire_timeout_ns(),
         state.inject.acquire_semaphore,
         vk::Fence::null(),
         &mut generated_image_index,
@@ -4815,19 +4854,31 @@ unsafe fn try_present_copy_frame(
         return false;
     }
 
-    let mut wait_semaphores = Vec::with_capacity(present_info.wait_semaphore_count as usize + 1);
-    let mut wait_stages = Vec::with_capacity(present_info.wait_semaphore_count as usize + 1);
-    for index in 0..present_info.wait_semaphore_count as usize {
-        wait_semaphores.push(*present_info.p_wait_semaphores.add(index));
-        wait_stages.push(vk::PipelineStageFlags::TRANSFER);
+    let mut wait_semaphores = Vec::with_capacity(
+        if copy_original_first {
+            1
+        } else {
+            present_info.wait_semaphore_count as usize + 1
+        },
+    );
+    let mut wait_stages = Vec::with_capacity(wait_semaphores.capacity());
+    if !copy_original_first {
+        for index in 0..present_info.wait_semaphore_count as usize {
+            wait_semaphores.push(*present_info.p_wait_semaphores.add(index));
+            wait_stages.push(vk::PipelineStageFlags::TRANSFER);
+        }
     }
     wait_semaphores.push(state.inject.acquire_semaphore);
     wait_stages.push(vk::PipelineStageFlags::TRANSFER);
 
-    let signal_semaphores = [
-        state.inject.ready_original_semaphore,
-        state.inject.ready_generated_semaphore,
-    ];
+    let signal_semaphores = if copy_original_first {
+        vec![state.inject.ready_generated_semaphore]
+    } else {
+        vec![
+            state.inject.ready_original_semaphore,
+            state.inject.ready_generated_semaphore,
+        ]
+    };
     let submit_info = SubmitInfo {
         s_type: vk::StructureType::SUBMIT_INFO,
         wait_semaphore_count: wait_semaphores.len() as u32,
@@ -4854,23 +4905,25 @@ unsafe fn try_present_copy_frame(
         return false;
     }
 
-    let mut original_present = *present_info;
-    original_present.wait_semaphore_count = 1;
-    original_present.p_wait_semaphores = &state.inject.ready_original_semaphore;
-    let original_result = queue_present_with_timing(
-        state,
-        device_info,
-        queue_present,
-        queue,
-        &original_present,
-        "copy-original",
-    );
-    if original_result != vk::Result::SUCCESS && original_result != vk::Result::SUBOPTIMAL_KHR {
-        log_warn(format!(
-            "original QueuePresentKHR failed in copy mode: {}",
-            original_result.as_raw()
-        ));
-        return false;
+    if !copy_original_first {
+        let mut original_present = *present_info;
+        original_present.wait_semaphore_count = 1;
+        original_present.p_wait_semaphores = &state.inject.ready_original_semaphore;
+        let original_result = queue_present_with_timing(
+            state,
+            device_info,
+            queue_present,
+            queue,
+            &original_present,
+            "copy-original",
+        );
+        if original_result != vk::Result::SUCCESS && original_result != vk::Result::SUBOPTIMAL_KHR {
+            log_warn(format!(
+                "original QueuePresentKHR failed in copy mode: {}",
+                original_result.as_raw()
+            ));
+            return false;
+        }
     }
 
     let generated_present = PresentInfoKHR {
@@ -4906,12 +4959,15 @@ unsafe fn try_present_copy_frame(
     state.injection_works = true;
     state.generated_present_count += 1;
     if first_success {
+        if copy_original_first {
+            log_info("copy original-first mode enabled");
+        }
         log_info("first duplicated-frame present succeeded");
     }
     if state.generated_present_count <= 5 || state.generated_present_count % 60 == 0 {
         log_info(format!(
-            "duplicated frame present={}; sourceImageIndex={}; generatedImageIndex={}",
-            state.generated_present_count, source_index, generated_image_index
+            "duplicated frame present={}; sourceImageIndex={}; generatedImageIndex={}; originalFirst={}",
+            state.generated_present_count, source_index, generated_image_index, copy_original_first as u32
         ));
     }
     true
@@ -4995,12 +5051,13 @@ unsafe fn try_present_history_copy_frame(
     let source_image = state.images[source_index as usize];
 
     let have_generated = state.history_valid;
+    let freeze_history_refresh = have_generated && history_copy_freeze_history_enabled();
     let mut generated_image_index = 0;
     if have_generated {
         let acquire_result = acquire_next_image(
             device_info.device,
             state.handle,
-            20_000_000,
+            generated_acquire_timeout_ns(),
             state.inject.acquire_semaphore,
             vk::Fence::null(),
             &mut generated_image_index,
@@ -5045,13 +5102,15 @@ unsafe fn try_present_history_copy_frame(
     }
 
     let mut barriers_before = Vec::with_capacity(3);
-    barriers_before.push(image_barrier(
-        source_image,
-        vk::AccessFlags::MEMORY_READ,
-        vk::AccessFlags::TRANSFER_READ,
-        vk::ImageLayout::PRESENT_SRC_KHR,
-        vk::ImageLayout::TRANSFER_SRC_OPTIMAL,
-    ));
+    if !freeze_history_refresh {
+        barriers_before.push(image_barrier(
+            source_image,
+            vk::AccessFlags::MEMORY_READ,
+            vk::AccessFlags::TRANSFER_READ,
+            vk::ImageLayout::PRESENT_SRC_KHR,
+            vk::ImageLayout::TRANSFER_SRC_OPTIMAL,
+        ));
+    }
     if have_generated {
         barriers_before.push(image_barrier(
             state.history_image,
@@ -5113,79 +5172,83 @@ unsafe fn try_present_history_copy_frame(
         );
     }
 
-    let history_to_dst = image_barrier(
-        state.history_image,
-        if have_generated {
-            vk::AccessFlags::TRANSFER_READ
-        } else {
-            vk::AccessFlags::empty()
-        },
-        vk::AccessFlags::TRANSFER_WRITE,
-        if state.history_valid {
-            vk::ImageLayout::TRANSFER_SRC_OPTIMAL
-        } else {
-            vk::ImageLayout::UNDEFINED
-        },
-        vk::ImageLayout::TRANSFER_DST_OPTIMAL,
-    );
-    cmd_pipeline_barrier(
-        state.inject.command_buffer,
-        vk::PipelineStageFlags::TRANSFER,
-        vk::PipelineStageFlags::TRANSFER,
-        vk::DependencyFlags::empty(),
-        0,
-        ptr::null(),
-        0,
-        ptr::null(),
-        1,
-        &history_to_dst,
-    );
+    if !freeze_history_refresh {
+        let history_to_dst = image_barrier(
+            state.history_image,
+            if have_generated {
+                vk::AccessFlags::TRANSFER_READ
+            } else {
+                vk::AccessFlags::empty()
+            },
+            vk::AccessFlags::TRANSFER_WRITE,
+            if state.history_valid {
+                vk::ImageLayout::TRANSFER_SRC_OPTIMAL
+            } else {
+                vk::ImageLayout::UNDEFINED
+            },
+            vk::ImageLayout::TRANSFER_DST_OPTIMAL,
+        );
+        cmd_pipeline_barrier(
+            state.inject.command_buffer,
+            vk::PipelineStageFlags::TRANSFER,
+            vk::PipelineStageFlags::TRANSFER,
+            vk::DependencyFlags::empty(),
+            0,
+            ptr::null(),
+            0,
+            ptr::null(),
+            1,
+            &history_to_dst,
+        );
 
-    let current_to_history = vk::ImageCopy {
-        src_subresource: vk::ImageSubresourceLayers {
-            aspect_mask: vk::ImageAspectFlags::COLOR,
-            mip_level: 0,
-            base_array_layer: 0,
-            layer_count: 1,
-        },
-        dst_subresource: vk::ImageSubresourceLayers {
-            aspect_mask: vk::ImageAspectFlags::COLOR,
-            mip_level: 0,
-            base_array_layer: 0,
-            layer_count: 1,
-        },
-        extent: vk::Extent3D {
-            width: state.extent.width,
-            height: state.extent.height,
-            depth: 1,
-        },
-        ..Default::default()
-    };
-    cmd_copy_image(
-        state.inject.command_buffer,
-        source_image,
-        vk::ImageLayout::TRANSFER_SRC_OPTIMAL,
-        state.history_image,
-        vk::ImageLayout::TRANSFER_DST_OPTIMAL,
-        1,
-        &current_to_history,
-    );
+        let current_to_history = vk::ImageCopy {
+            src_subresource: vk::ImageSubresourceLayers {
+                aspect_mask: vk::ImageAspectFlags::COLOR,
+                mip_level: 0,
+                base_array_layer: 0,
+                layer_count: 1,
+            },
+            dst_subresource: vk::ImageSubresourceLayers {
+                aspect_mask: vk::ImageAspectFlags::COLOR,
+                mip_level: 0,
+                base_array_layer: 0,
+                layer_count: 1,
+            },
+            extent: vk::Extent3D {
+                width: state.extent.width,
+                height: state.extent.height,
+                depth: 1,
+            },
+            ..Default::default()
+        };
+        cmd_copy_image(
+            state.inject.command_buffer,
+            source_image,
+            vk::ImageLayout::TRANSFER_SRC_OPTIMAL,
+            state.history_image,
+            vk::ImageLayout::TRANSFER_DST_OPTIMAL,
+            1,
+            &current_to_history,
+        );
+    }
 
     let mut barriers_after = Vec::with_capacity(3);
-    barriers_after.push(image_barrier(
-        source_image,
-        vk::AccessFlags::TRANSFER_READ,
-        vk::AccessFlags::MEMORY_READ,
-        vk::ImageLayout::TRANSFER_SRC_OPTIMAL,
-        vk::ImageLayout::PRESENT_SRC_KHR,
-    ));
-    barriers_after.push(image_barrier(
-        state.history_image,
-        vk::AccessFlags::TRANSFER_WRITE,
-        vk::AccessFlags::MEMORY_READ,
-        vk::ImageLayout::TRANSFER_DST_OPTIMAL,
-        vk::ImageLayout::TRANSFER_SRC_OPTIMAL,
-    ));
+    if !freeze_history_refresh {
+        barriers_after.push(image_barrier(
+            source_image,
+            vk::AccessFlags::TRANSFER_READ,
+            vk::AccessFlags::MEMORY_READ,
+            vk::ImageLayout::TRANSFER_SRC_OPTIMAL,
+            vk::ImageLayout::PRESENT_SRC_KHR,
+        ));
+        barriers_after.push(image_barrier(
+            state.history_image,
+            vk::AccessFlags::TRANSFER_WRITE,
+            vk::AccessFlags::MEMORY_READ,
+            vk::ImageLayout::TRANSFER_DST_OPTIMAL,
+            vk::ImageLayout::TRANSFER_SRC_OPTIMAL,
+        ));
+    }
     if have_generated {
         barriers_after.push(image_barrier(
             state.images[generated_image_index as usize],
@@ -5322,12 +5385,15 @@ unsafe fn try_present_history_copy_frame(
     if have_generated {
         state.generated_present_count += 1;
         if first_success {
+            if freeze_history_refresh {
+                log_info("history-copy freeze-history enabled");
+            }
             log_info("first previous-frame insertion present succeeded");
         }
         if state.generated_present_count <= 5 || state.generated_present_count % 60 == 0 {
             log_info(format!(
-                "history-copy generated frame present={}; previousFrameSourceStored=1; generatedImageIndex={}; currentImageIndex={}",
-                state.generated_present_count, generated_image_index, source_index
+                "history-copy generated frame present={}; previousFrameSourceStored=1; generatedImageIndex={}; currentImageIndex={}; freezeHistory={}",
+                state.generated_present_count, generated_image_index, source_index, freeze_history_refresh as u32
             ));
         }
     } else {
@@ -5454,7 +5520,7 @@ unsafe fn try_present_clear_frame(
     let acquire_result = acquire_next_image(
         device_info.device,
         state.handle,
-        20_000_000,
+        generated_acquire_timeout_ns(),
         state.inject.acquire_semaphore,
         vk::Fence::null(),
         &mut generated_image_index,
@@ -6272,12 +6338,27 @@ unsafe extern "system" fn layer_create_swapchain_khr(
         create_info_ref.image_usage,
         max_image_count,
     );
+    let override_min_image_count = swapchain_image_bump_override().map(|image_bump| {
+        let desired = create_info_ref.min_image_count.saturating_add(image_bump);
+        match max_image_count {
+            Some(max) if max > 0 => desired.min(max),
+            _ => desired,
+        }
+    });
     let expanded_min_image_count = maybe_expand_multi_swapchain_min_image_count(
         mode,
         create_info_ref.min_image_count,
-        mutation.modified_min_image_count,
+        override_min_image_count.unwrap_or(mutation.modified_min_image_count),
         max_image_count,
     );
+    if let Some(override_count) = override_min_image_count {
+        log_info(format!(
+            "swapchain image bump override applied; originalMinImages={}; overriddenMinImages={}; mode={}",
+            create_info_ref.min_image_count,
+            override_count,
+            mode.name()
+        ));
+    }
     modified.min_image_count = expanded_min_image_count;
     modified.image_usage = mutation.modified_usage;
 

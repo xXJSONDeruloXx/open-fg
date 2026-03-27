@@ -85,3 +85,26 @@ As of the validated fix, RE Village is the current proof point that OMFG can:
 - survive both DXVK and VKD3D startup paths
 - create the swapchain
 - generate and present interpolated frames in-game
+
+## Later revalidation after Beyond-focused code changes
+After the Beyond-focused sequencing / acquire-timeout investigation, RE Village was rerun again to ensure no regression on the default path.
+
+Observed Deck evidence:
+
+```text
+app=re8.exe; engine=DXVK; apiVersion=1.3.0
+app=re8.exe; engine=vkd3d; apiVersion=1.3.0
+vkCreateDevice ok
+vkCreateSwapchainKHR ok
+first reproject blended generated-frame present succeeded
+reproject blended frame present=60
+reproject blended frame present=120
+reproject blended frame present=300
+```
+
+Additional note:
+- RE Village still showed occasional `AcquireNextImageKHR timed out for blend frame; skipping injection this present` warnings during the live rerun
+- but the game remained alive and OMFG continued producing generated presents through the run
+
+Interpretation:
+- the Beyond troubleshooting changes did not regress the previously working RE Village path

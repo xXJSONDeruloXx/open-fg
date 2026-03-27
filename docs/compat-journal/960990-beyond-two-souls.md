@@ -107,9 +107,225 @@ Interpretation:
   - added sampled usage on this swapchain path
   - MAILBOX-specific behavior in this title under active FG insertion
 
+## New isolation evidence from simple generated modes
+A repeatable per-mode harness now exists locally:
+- `scripts/test-steamdeck-beyond-two-souls.sh`
+
+It safely:
+- backs up `~/omfg.sh`
+- swaps in a mode-specific wrapper for the run
+- launches AppID `960990`
+- captures process snapshot + OMFG log
+- restores the original wrapper afterward
+- saves local artifacts under `artifacts/steamdeck/rust/real-games/beyond-two-souls/<mode>/`
+
+### `copy`
+Observed:
+
+```text
+vkCreateSwapchainKHR ok; extent=1280x800; format=37; presentMode=MAILBOX; minImages=4->6; usage=TRANSFER_SRC|TRANSFER_DST|STORAGE|COLOR_ATTACHMENT (0x1b) -> TRANSFER_SRC|TRANSFER_DST|STORAGE|COLOR_ATTACHMENT (0x1b); images=6; mode=copy-test
+vkQueuePresentKHR frame=1
+first duplicated-frame present succeeded
+duplicated frame present=1; sourceImageIndex=0; generatedImageIndex=1
+vkQueuePresentKHR frame=2
+duplicated frame present=2; sourceImageIndex=2; generatedImageIndex=3
+vkQueuePresentKHR frame=3
+duplicated frame present=3; sourceImageIndex=4; generatedImageIndex=5
+```
+
+Interpretation:
+- active FG still appears to stall very early
+- no sampled-usage mutation was involved here
+- this points away from shader sampling as the only cause
+
+### `history-copy`
+Observed:
+
+```text
+vkCreateSwapchainKHR ok; extent=1280x800; format=37; presentMode=MAILBOX; minImages=4->6; usage=TRANSFER_SRC|TRANSFER_DST|STORAGE|COLOR_ATTACHMENT (0x1b) -> TRANSFER_SRC|TRANSFER_DST|STORAGE|COLOR_ATTACHMENT (0x1b); images=6; mode=history-copy-test
+vkQueuePresentKHR frame=1
+history-copy primed previous frame history
+vkQueuePresentKHR frame=2
+first previous-frame insertion present succeeded
+history-copy generated frame present=1; previousFrameSourceStored=1; generatedImageIndex=2; currentImageIndex=1
+vkQueuePresentKHR frame=3
+history-copy generated frame present=2; previousFrameSourceStored=1; generatedImageIndex=4; currentImageIndex=3
+```
+
+Interpretation:
+- another non-sampled simple mode shows the same early-progress-then-stall pattern
+- this further weakens the hypothesis that the main issue is reprojection or sampled image usage
+
+### `clear`
+Observed sustained progress deep into the run:
+
+```text
+vkCreateSwapchainKHR ok; extent=1280x800; format=37; presentMode=MAILBOX; minImages=4->5; usage=TRANSFER_SRC|TRANSFER_DST|STORAGE|COLOR_ATTACHMENT (0x1b) -> TRANSFER_SRC|TRANSFER_DST|STORAGE|COLOR_ATTACHMENT (0x1b); images=5; mode=clear-test
+first generated clear-frame present succeeded
+generated frame present=60
+generated frame present=300
+generated frame present=900
+generated frame present=1680
+```
+
+User-observed behavior during this test:
+- flashing green output, but the game seems visible underneath / partially progressing
+
+Interpretation:
+- extra generated presents themselves are **not** the root problem
+- Beyond can keep running while OMFG inserts simple synthetic frames that do not depend on copying real frame contents
+- the remaining issue is more likely tied to use of real app image contents in the generated path (copy/history/reprojection/multi-blend), not mere insertion cadence
+
+### `bfi`
+A cleaned-up rerun now also shows sustained progress under another simple non-content-reading inserted-frame mode:
+
+```text
+vkCreateSwapchainKHR ok; extent=1280x800; format=37; presentMode=MAILBOX; minImages=4->5; usage=TRANSFER_SRC|TRANSFER_DST|STORAGE|COLOR_ATTACHMENT (0x1b) -> TRANSFER_SRC|TRANSFER_DST|STORAGE|COLOR_ATTACHMENT (0x1b); images=5; mode=bfi-test
+bfi settings; period=1; holdMs=0
+first generated black-frame present succeeded
+black frame present=60
+black frame present=300
+black frame present=900
+black frame present=1680
+```
+
+Interpretation:
+- Beyond tolerates both `clear` and `bfi` for long-running inserted-frame presentation
+- that further supports the idea that the failing condition is tied to reading/copying real app image contents, not merely extra present cadence
+
+### Swapchain-image-count override experiment
+A targeted diagnostic toggle was added in code:
+- `OMFG_SWAPCHAIN_IMAGE_BUMP_OVERRIDE`
+
+Intent:
+- override the default swapchain image-count bump during `vkCreateSwapchainKHR` for isolation experiments
+
+Important harness fix:
+- the Beyond harness now embeds override values directly into the temporary wrapper, instead of relying on inherited Steam-launch environment
+- that made the override observable on Deck
+
+Observed results:
+
+#### `copy` with `OMFG_SWAPCHAIN_IMAGE_BUMP_OVERRIDE=0`
+```text
+swapchain image bump override applied; originalMinImages=4; overriddenMinImages=4; mode=copy-test
+vkCreateSwapchainKHR ok; ... minImages=4->4; ... mode=copy-test
+```
+
+#### `copy` with `OMFG_SWAPCHAIN_IMAGE_BUMP_OVERRIDE=1`
+```text
+swapchain image bump override applied; originalMinImages=4; overriddenMinImages=5; mode=copy-test
+vkCreateSwapchainKHR ok; ... minImages=4->5; ... mode=copy-test
+```
+
+#### `history-copy` with `OMFG_SWAPCHAIN_IMAGE_BUMP_OVERRIDE=0`
+```text
+swapchain image bump override applied; originalMinImages=4; overriddenMinImages=4; mode=history-copy-test
+vkCreateSwapchainKHR ok; ... minImages=4->4; ... mode=history-copy-test
+```
+
+Interpretation:
+- the override path is now confirmed working
+- reducing swapchain image count from the default bumped values (`4->6`) down to `4->4` or `4->5` does **not** resolve the early-stall behavior for copy/history-copy
+- so simple swapchain headroom growth is very unlikely to be the primary root cause of the Beyond issue
+
+### History-refresh freeze experiment
+A second targeted diagnostic toggle was added in code:
+- `OMFG_HISTORY_COPY_FREEZE_HISTORY`
+
+Intent:
+- after the first valid history frame, stop refreshing history from the current app image each frame
+- keep history-copy presenting from the already-captured private history image
+- isolate whether the Beyond problem comes specifically from repeated current-image readback every frame
+
+Observed result on Deck with:
+- `OMFG_LAYER_MODE=history-copy`
+- `OMFG_SWAPCHAIN_IMAGE_BUMP_OVERRIDE=0`
+- `OMFG_HISTORY_COPY_FREEZE_HISTORY=1`
+
+```text
+swapchain image bump override applied; originalMinImages=4; overriddenMinImages=4; mode=history-copy-test
+vkCreateSwapchainKHR ok; ... minImages=4->4; ... mode=history-copy-test
+history-copy primed previous frame history
+history-copy freeze-history enabled
+first previous-frame insertion present succeeded
+history-copy generated frame present=1; ... freezeHistory=1
+history-copy generated frame present=2; ... freezeHistory=1
+```
+
+Interpretation:
+- even when repeated history refresh from the current app image is disabled after priming, Beyond still remains in the same early-progress-then-stall class
+- that weakens the hypothesis that the issue is only the *repeated* per-frame current-image readback step
+- current strongest common factor is now even narrower: presenting generated frames whose contents come from copied real frame data appears to be the problematic class, whether the source is the current frame or preserved history
+
+### Copy original-first sequencing experiment
+A third targeted diagnostic toggle was added in code:
+- `OMFG_COPY_ORIGINAL_PRESENT_FIRST`
+
+Intent:
+- make copy mode behave more like the `clear`/`bfi` success class by letting the original app present go through first
+- then perform the duplicate-frame copy/injection path afterward
+- isolate whether Beyond is sensitive to the original present being semaphore-gated behind OMFG's duplicate-frame submit path
+
+Observed result on Deck with:
+- `OMFG_LAYER_MODE=copy`
+- `OMFG_SWAPCHAIN_IMAGE_BUMP_OVERRIDE=0`
+- `OMFG_COPY_ORIGINAL_PRESENT_FIRST=1`
+
+```text
+swapchain image bump override applied; originalMinImages=4; overriddenMinImages=4; mode=copy-test
+vkCreateSwapchainKHR ok; ... minImages=4->4; ... mode=copy-test
+copy original-first mode enabled
+first duplicated-frame present succeeded
+duplicated frame present=1; ... originalFirst=1
+duplicated frame present=2; ... originalFirst=1
+duplicated frame present=3; ... originalFirst=1
+duplicated frame present=4; ... originalFirst=1
+duplicated frame present=5; ... originalFirst=1
+AcquireNextImageKHR timed out for duplicate frame; skipping injection this present
+```
+
+Interpretation:
+- this did **not** produce a full fix by itself, but it was the first tested change that visibly moved the failure boundary
+- previous copy runs typically stopped after only the first few generated presents; with original-first sequencing the run reached at least five generated presents before the first explicit timeout warning
+- that made present sequencing / acquire interaction a much stronger lead
+
+### Generated-acquire-timeout experiment
+A fourth targeted diagnostic / mitigation toggle was added in code:
+- `OMFG_GENERATED_ACQUIRE_TIMEOUT_NS`
+
+Intent:
+- give generated-image acquisition more time in cases where original-first sequencing improves stability but still intermittently starves OMFG of a free generated image
+- test whether Beyond is specifically sensitive to short acquire windows under active copied-content presentation
+
+Observed result on Deck with:
+- `OMFG_LAYER_MODE=copy`
+- `OMFG_SWAPCHAIN_IMAGE_BUMP_OVERRIDE=0`
+- `OMFG_COPY_ORIGINAL_PRESENT_FIRST=1`
+- `OMFG_GENERATED_ACQUIRE_TIMEOUT_NS=500000000`
+
+```text
+swapchain image bump override applied; originalMinImages=4; overriddenMinImages=4; mode=copy-test
+vkCreateSwapchainKHR ok; ... minImages=4->4; ... mode=copy-test
+copy original-first mode enabled
+duplicated frame present=5; ... originalFirst=1
+duplicated frame present=60; ... originalFirst=1
+duplicated frame present=300; ... originalFirst=1
+duplicated frame present=900; ... originalFirst=1
+duplicated frame present=1620; ... originalFirst=1
+```
+
+Interpretation:
+- this is the first Beyond run in an active copied-content mode that clearly enters the same long-running success class as the earlier `clear` / `bfi` runs
+- the current best evidence-backed compatibility recipe for Beyond is:
+  - original app present first
+  - no extra swapchain-image bump (`4->4` worked)
+  - much longer generated-image acquire timeout (`500ms`)
+- this strongly suggests the practical blocker was not copying pixels alone, but copied-content generation combined with overly aggressive generated-image acquire timing / sequencing
+
 ## Current best understanding
 Most evidence-backed statement right now:
-- **Beyond: Two Souls works with OMFG loaded in passthrough, but stalls shortly after active generated-frame modes begin presenting.**
+- **Beyond: Two Souls can sustain passthrough and clear-style insertion, but stalls once OMFG starts generating from real app image contents.**
 
 That is much narrower and better than the old situation.
 
