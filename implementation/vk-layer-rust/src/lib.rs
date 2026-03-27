@@ -621,9 +621,11 @@ struct BlendPushConstants {
     gradient_confidence_weight: f32,
     chroma_weight: f32,
     ambiguity_scale: f32,
+    optflow_motion_penalty: f32,
     search_radius: u32,
     patch_radius: u32,
     hole_fill_radius: u32,
+    optflow_levels: u32,
     mode: u32,
     debug_view: u32,
 }
@@ -2741,6 +2743,26 @@ fn reproject_ambiguity_scale() -> f32 {
     env_f32("OMFG_REPROJECT_AMBIGUITY_SCALE", 6.0).clamp(0.0, 32.0)
 }
 
+fn optflow_search_radius() -> u32 {
+    env_u32("OMFG_OPTICAL_FLOW_SEARCH_RADIUS", 2).clamp(1, 4)
+}
+
+fn optflow_patch_radius() -> u32 {
+    env_u32("OMFG_OPTICAL_FLOW_PATCH_RADIUS", 1).min(2)
+}
+
+fn optflow_confidence_scale() -> f32 {
+    env_f32("OMFG_OPTICAL_FLOW_CONFIDENCE_SCALE", 4.0).clamp(0.0, 32.0)
+}
+
+fn optflow_levels() -> u32 {
+    env_u32("OMFG_OPTICAL_FLOW_LEVELS", 3).clamp(1, 4)
+}
+
+fn optflow_motion_penalty() -> f32 {
+    env_f32("OMFG_OPTICAL_FLOW_MOTION_PENALTY", 0.01).clamp(0.0, 1.0)
+}
+
 fn debug_view() -> DebugView {
     DebugView::from_env()
 }
@@ -2750,6 +2772,7 @@ fn effective_debug_view(mode: Mode) -> DebugView {
         mode,
         Mode::ReprojectBlendTest
             | Mode::ReprojectAdaptiveBlendTest
+            | Mode::OptFlowBlendTest
             | Mode::ReprojectMultiBlendTest
             | Mode::ReprojectAdaptiveMultiBlendTest
     ) {
@@ -2893,6 +2916,23 @@ fn blend_push_constants_for_mode(mode: Mode) -> BlendPushConstants {
             debug_view: effective_debug_view(mode).shader_code(),
             ..Default::default()
         },
+        Mode::OptFlowBlendTest => BlendPushConstants {
+            alpha: 0.5,
+            confidence_scale: optflow_confidence_scale(),
+            disocclusion_scale: reproject_disocclusion_scale(),
+            hole_fill_strength: reproject_hole_fill_strength(),
+            gradient_confidence_weight: reproject_gradient_confidence_weight(),
+            chroma_weight: reproject_chroma_weight(),
+            ambiguity_scale: reproject_ambiguity_scale(),
+            optflow_motion_penalty: optflow_motion_penalty(),
+            search_radius: optflow_search_radius(),
+            patch_radius: optflow_patch_radius(),
+            hole_fill_radius: reproject_hole_fill_radius(),
+            optflow_levels: optflow_levels(),
+            mode: 6,
+            debug_view: effective_debug_view(mode).shader_code(),
+            ..Default::default()
+        },
         _ => BlendPushConstants::default(),
     }
 }
@@ -3009,6 +3049,11 @@ fn blend_mode_labels(mode: Mode) -> (&'static str, &'static str, &'static str) {
             "reproject-adaptive-blend primed previous frame history",
             "first reproject adaptive blended generated-frame present succeeded",
             "reproject adaptive blended frame present=",
+        ),
+        Mode::OptFlowBlendTest => (
+            "optflow-blend primed previous frame history",
+            "first optical-flow blended generated-frame present succeeded",
+            "optical-flow blended frame present=",
         ),
         Mode::MultiBlendTest => (
             "multi-blend primed previous frame history",
@@ -6170,6 +6215,7 @@ unsafe extern "system" fn layer_create_swapchain_khr(
             | Mode::SearchAdaptiveBlendTest
             | Mode::ReprojectBlendTest
             | Mode::ReprojectAdaptiveBlendTest
+            | Mode::OptFlowBlendTest
             | Mode::MultiBlendTest
             | Mode::AdaptiveMultiBlendTest
             | Mode::ReprojectMultiBlendTest
@@ -6412,6 +6458,7 @@ unsafe extern "system" fn layer_queue_present_khr(
                             | Mode::SearchAdaptiveBlendTest
                             | Mode::ReprojectBlendTest
                             | Mode::ReprojectAdaptiveBlendTest
+                            | Mode::OptFlowBlendTest
                     ) && have_queue =>
                 {
                     swapchain_state.injection_attempted = true;
@@ -6868,6 +6915,33 @@ mod tests {
         std::env::remove_var("OMFG_REPROJECT_GRADIENT_CONFIDENCE_WEIGHT");
         std::env::remove_var("OMFG_REPROJECT_CHROMA_WEIGHT");
         std::env::remove_var("OMFG_REPROJECT_AMBIGUITY_SCALE");
+        std::env::remove_var("OMFG_DEBUG_VIEW");
+    }
+
+    #[test]
+    fn optflow_push_constants_include_motion_controls() {
+        let _guard = env_test_lock().lock().expect("env test mutex poisoned");
+        std::env::set_var("OMFG_OPTICAL_FLOW_SEARCH_RADIUS", "3");
+        std::env::set_var("OMFG_OPTICAL_FLOW_PATCH_RADIUS", "2");
+        std::env::set_var("OMFG_OPTICAL_FLOW_LEVELS", "4");
+        std::env::set_var("OMFG_OPTICAL_FLOW_CONFIDENCE_SCALE", "5.5");
+        std::env::set_var("OMFG_OPTICAL_FLOW_MOTION_PENALTY", "0.02");
+        std::env::set_var("OMFG_DEBUG_VIEW", "motion");
+
+        let push = blend_push_constants_for_mode(Mode::OptFlowBlendTest);
+        assert_eq!(push.search_radius, 3);
+        assert_eq!(push.patch_radius, 2);
+        assert_eq!(push.optflow_levels, 4);
+        assert_eq!(push.confidence_scale, 5.5);
+        assert_eq!(push.optflow_motion_penalty, 0.02);
+        assert_eq!(push.mode, 6);
+        assert_eq!(push.debug_view, DebugView::Motion.shader_code());
+
+        std::env::remove_var("OMFG_OPTICAL_FLOW_SEARCH_RADIUS");
+        std::env::remove_var("OMFG_OPTICAL_FLOW_PATCH_RADIUS");
+        std::env::remove_var("OMFG_OPTICAL_FLOW_LEVELS");
+        std::env::remove_var("OMFG_OPTICAL_FLOW_CONFIDENCE_SCALE");
+        std::env::remove_var("OMFG_OPTICAL_FLOW_MOTION_PENALTY");
         std::env::remove_var("OMFG_DEBUG_VIEW");
     }
 

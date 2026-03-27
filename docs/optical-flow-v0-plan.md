@@ -32,6 +32,20 @@ That is a solid post-process baseline, but it still struggles in the classic col
 
 A hardware-agnostic optical-flow path is the most meaningful next analytical step we can make without requiring engine motion vectors or depth.
 
+## Current landing status
+
+A first `optflow-blend` single-FG v0 is now implemented as a coarse-to-fine block-matching half-offset search inside the existing generated-frame shader path.
+
+Current measured Deck result from `artifacts/steamdeck/rust/benchmark/optflow-compare-20260327-102630/`:
+- `reproject-blend-default`: `avgCpuTotalMs=15.98`, `avgGpuCmdMs=3.898`
+- `optflow-blend-default`: `avgCpuTotalMs=21.255`, `avgGpuCmdMs=11.101`
+- `optflow-blend-fast`: `avgCpuTotalMs=15.1`, `avgGpuCmdMs=2.998`
+
+Interpretation:
+- the wider default optical-flow v0 profile is too expensive on the Deck today
+- the tighter fast profile is already competitive with the current reprojection baseline
+- the next optical-flow step should improve quality and confidence handling without regressing toward the expensive default profile
+
 ## Recommended v0 scope
 
 Start with a **single-FG path first**.

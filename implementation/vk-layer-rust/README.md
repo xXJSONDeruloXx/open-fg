@@ -22,6 +22,7 @@ Current Rust capability set:
   - `search-adaptive-blend`
   - `reproject-blend`
   - `reproject-adaptive-blend`
+  - `optflow-blend`
   - `multi-blend`
   - `adaptive-multi-blend`
   - `reproject-multi-blend`
@@ -104,6 +105,14 @@ export OMFG_LAYER_MODE=reproject-blend
 ./scripts/test-steamdeck-vkcube.sh
 
 export OMFG_LAYER_MODE=reproject-adaptive-blend
+./scripts/test-steamdeck-vkcube.sh
+
+export OMFG_LAYER_MODE=optflow-blend
+export OMFG_OPTICAL_FLOW_SEARCH_RADIUS=2
+export OMFG_OPTICAL_FLOW_PATCH_RADIUS=1
+export OMFG_OPTICAL_FLOW_LEVELS=3
+export OMFG_OPTICAL_FLOW_CONFIDENCE_SCALE=4.0
+export OMFG_OPTICAL_FLOW_MOTION_PENALTY=0.01
 ./scripts/test-steamdeck-vkcube.sh
 
 export OMFG_LAYER_MODE=reproject-multi-blend
@@ -229,6 +238,9 @@ OMFG_BENCHMARK_PRESET=decision ./scripts/run-steamdeck-benchmark-suite.sh
 
 # Focused reprojection-quality ablation preset
 OMFG_BENCHMARK_PRESET=reproject-quality ./scripts/run-steamdeck-benchmark-suite.sh
+
+# Focused optical-flow vs reprojection comparison preset
+OMFG_BENCHMARK_PRESET=optflow-compare ./scripts/run-steamdeck-benchmark-suite.sh
 ```
 
 ### Multi-count sweep
@@ -298,6 +310,12 @@ It now also exposes tunable quality controls via:
 - `OMFG_REPROJECT_CHROMA_WEIGHT` (blends between luma-only and full RGB patch matching; default `0.3`, range `0.0-1.0`)
 - `OMFG_REPROJECT_AMBIGUITY_SCALE` (suppresses confidence when multiple reprojection candidates are nearly tied; default `6.0`)
 The `reproject-adaptive-blend` mode combines that stronger reprojection path with adaptive current-frame weighting.
+The `optflow-blend` mode is the first hardware-agnostic optical-flow-style single-FG experiment. Its current v0 uses a coarse-to-fine block-matching search inside the generated-frame shader rather than a separate flow texture stage, making it a practical stepping stone toward a richer analytical motion-estimation stack.
+A focused Deck benchmark run at `artifacts/steamdeck/rust/benchmark/optflow-compare-20260327-102630/` showed:
+- `reproject-blend-default`: `avgCpuTotalMs=15.98`, `avgGpuCmdMs=3.898`
+- `optflow-blend-default`: `avgCpuTotalMs=21.255`, `avgGpuCmdMs=11.101`
+- `optflow-blend-fast`: `avgCpuTotalMs=15.1`, `avgGpuCmdMs=2.998`
+That makes the wider default optical-flow v0 clearly too expensive on the Deck today, while the tighter `optflow-blend-fast` profile is already competitive with and slightly cheaper than the current reprojection baseline on this target.
 The `multi-blend` mode is the first Rust **multi-FG** step, emitting multiple synthetic frames between real frames using temporal blend positions.
 It now auto-expands swapchain image headroom for larger requested multipliers, controlled by `OMFG_MULTI_SWAPCHAIN_MAX_GENERATED_FRAMES` (default `32`).
 A Steam Deck sweep has now validated successful `multi-blend` counts from `1..20` with full generated-frame success once that dynamic headroom expansion is enabled.

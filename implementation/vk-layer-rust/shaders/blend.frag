@@ -13,9 +13,11 @@ layout(push_constant) uniform BlendParams {
     float gradient_confidence_weight;
     float chroma_weight;
     float ambiguity_scale;
+    float optflow_motion_penalty;
     uint search_radius;
     uint patch_radius;
     uint hole_fill_radius;
+    uint optflow_levels;
     uint mode;
     uint debug_view;
 } u_params;
@@ -26,6 +28,7 @@ layout(location = 0) out vec4 out_color;
 const int MAX_SEARCH_RADIUS = 4;
 const int MAX_PATCH_RADIUS = 2;
 const int MAX_HOLE_FILL_RADIUS = 2;
+const int MAX_OPTFLOW_LEVELS = 4;
 
 float luma(vec3 color) {
     return dot(color, vec3(0.299, 0.587, 0.114));
@@ -79,6 +82,64 @@ vec4 neighborhood_temporal_fill(vec2 center_uv, vec2 half_offset_uv, float alpha
     return accum / max(total_weight, 1e-4);
 }
 
+void coarse_to_fine_half_offset(
+    vec2 center_uv,
+    int search_radius,
+    int patch_radius,
+    int levels,
+    vec2 texel,
+    float chroma_weight,
+    float motion_penalty_scale,
+    out ivec2 best_half_offset,
+    out float zero_error,
+    out float best_error,
+    out float second_best_error
+) {
+    zero_error = symmetric_patch_error(center_uv, ivec2(0), patch_radius, texel, chroma_weight);
+    best_half_offset = ivec2(0);
+    best_error = zero_error;
+    second_best_error = 1e20;
+
+    int clamped_levels = clamp(levels, 1, MAX_OPTFLOW_LEVELS);
+    for (int level = MAX_OPTFLOW_LEVELS - 1; level >= 0; --level) {
+        if (level >= clamped_levels) {
+            continue;
+        }
+
+        int step_px = 1 << level;
+        float level_best_error = 1e20;
+        float level_second_best_error = 1e20;
+        ivec2 level_best_half_offset = best_half_offset;
+
+        for (int oy = -MAX_SEARCH_RADIUS; oy <= MAX_SEARCH_RADIUS; ++oy) {
+            if (abs(oy) > search_radius) {
+                continue;
+            }
+            for (int ox = -MAX_SEARCH_RADIUS; ox <= MAX_SEARCH_RADIUS; ++ox) {
+                if (abs(ox) > search_radius) {
+                    continue;
+                }
+                ivec2 candidate_half_offset = best_half_offset + ivec2(ox * step_px, oy * step_px);
+                float motion_penalty = motion_penalty_scale * float(
+                    candidate_half_offset.x * candidate_half_offset.x + candidate_half_offset.y * candidate_half_offset.y
+                );
+                float error = symmetric_patch_error(center_uv, candidate_half_offset, patch_radius, texel, chroma_weight) + motion_penalty;
+                if (error < level_best_error) {
+                    level_second_best_error = level_best_error;
+                    level_best_error = error;
+                    level_best_half_offset = candidate_half_offset;
+                } else if (error < level_second_best_error) {
+                    level_second_best_error = error;
+                }
+            }
+        }
+
+        best_half_offset = level_best_half_offset;
+        best_error = level_best_error;
+        second_best_error = level_second_best_error;
+    }
+}
+
 void main() {
     vec4 prev_color = texture(u_prev_frame, v_uv);
     vec4 curr_color = texture(u_curr_frame, v_uv);
@@ -123,32 +184,50 @@ void main() {
             }
         }
         source_prev = best_prev;
-    } else if (u_params.mode == 4u || u_params.mode == 5u) {
+    } else if (u_params.mode == 4u || u_params.mode == 5u || u_params.mode == 6u) {
         reproject_mode = true;
         ivec2 size_px = textureSize(u_prev_frame, 0);
         vec2 texel = 1.0 / vec2(size_px);
         float chroma_weight = u_params.chroma_weight;
-        float zero_error = symmetric_patch_error(v_uv, ivec2(0), patch_radius, texel, chroma_weight);
-        float best_error = zero_error;
+        float zero_error = 0.0;
+        float best_error = 1e20;
         float second_best_error = 1e20;
         ivec2 best_half_offset = ivec2(0);
 
-        for (int oy = -MAX_SEARCH_RADIUS; oy <= MAX_SEARCH_RADIUS; ++oy) {
-            if (abs(oy) > search_radius) {
-                continue;
-            }
-            for (int ox = -MAX_SEARCH_RADIUS; ox <= MAX_SEARCH_RADIUS; ++ox) {
-                if (abs(ox) > search_radius) {
+        if (u_params.mode == 6u) {
+            coarse_to_fine_half_offset(
+                v_uv,
+                search_radius,
+                patch_radius,
+                int(u_params.optflow_levels),
+                texel,
+                chroma_weight,
+                u_params.optflow_motion_penalty,
+                best_half_offset,
+                zero_error,
+                best_error,
+                second_best_error
+            );
+        } else {
+            zero_error = symmetric_patch_error(v_uv, ivec2(0), patch_radius, texel, chroma_weight);
+            best_error = zero_error;
+            for (int oy = -MAX_SEARCH_RADIUS; oy <= MAX_SEARCH_RADIUS; ++oy) {
+                if (abs(oy) > search_radius) {
                     continue;
                 }
-                float motion_penalty = 0.02 * float(ox * ox + oy * oy);
-                float error = symmetric_patch_error(v_uv, ivec2(ox, oy), patch_radius, texel, chroma_weight) + motion_penalty;
-                if (error < best_error) {
-                    second_best_error = best_error;
-                    best_error = error;
-                    best_half_offset = ivec2(ox, oy);
-                } else if (error < second_best_error) {
-                    second_best_error = error;
+                for (int ox = -MAX_SEARCH_RADIUS; ox <= MAX_SEARCH_RADIUS; ++ox) {
+                    if (abs(ox) > search_radius) {
+                        continue;
+                    }
+                    float motion_penalty = 0.02 * float(ox * ox + oy * oy);
+                    float error = symmetric_patch_error(v_uv, ivec2(ox, oy), patch_radius, texel, chroma_weight) + motion_penalty;
+                    if (error < best_error) {
+                        second_best_error = best_error;
+                        best_error = error;
+                        best_half_offset = ivec2(ox, oy);
+                    } else if (error < second_best_error) {
+                        second_best_error = error;
+                    }
                 }
             }
         }
@@ -211,6 +290,9 @@ void main() {
 
     if (u_params.debug_view == 1u) {
         float search_norm = max(float(search_radius), 1.0);
+        if (u_params.mode == 6u) {
+            search_norm *= float(1 << max(int(u_params.optflow_levels) - 1, 0));
+        }
         vec2 motion_norm = clamp(debug_half_offset_px / search_norm, vec2(-1.0), vec2(1.0));
         float motion_mag = clamp(length(debug_half_offset_px) / (search_norm * 1.41421356), 0.0, 1.0);
         out_color = vec4(0.5 + 0.5 * motion_norm.x, 0.5 + 0.5 * motion_norm.y, motion_mag, 1.0);

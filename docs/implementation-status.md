@@ -57,6 +57,7 @@ Rust also now has additional next-step backend modes:
 - `search-adaptive-blend`
 - `reproject-blend`
 - `reproject-adaptive-blend`
+- `optflow-blend`
 - `multi-blend`
 - `adaptive-multi-blend`
 - `reproject-multi-blend`
@@ -243,6 +244,30 @@ Observed:
 - combines the stronger symmetric reprojection step with adaptive current-frame biasing
 - keeps the same confidence/disocclusion-aware reprojection fallback path
 - stable on Deck through smoke, long, and IMMEDIATE-mode runs
+
+#### 8c. `optflow-blend` (Rust)
+Working as the first hardware-agnostic optical-flow-style single-FG experiment.
+
+Validated with Rust layer on Steam Deck:
+- `vkcube --c 60`
+- local `cargo test --locked`
+- `./scripts/test-rust-layer.sh`
+- `OMFG_LAYER_IMPL=rust ./scripts/build-linux-amd64.sh`
+- Deck benchmark compare run via `OMFG_BENCHMARK_PRESET=optflow-compare ./scripts/run-steamdeck-benchmark-suite.sh`
+
+Observed:
+- first frame primes history
+- subsequent generated frames use a coarse-to-fine block-matching half-offset search before midpoint reprojection/blending
+- current v0 is intentionally a stepping stone: it runs inside the existing generated-frame shader path instead of using a separate flow texture stage
+- the current Deck benchmark compare artifact root is:
+  - `artifacts/steamdeck/rust/benchmark/optflow-compare-20260327-102630/`
+- current compare result on Deck:
+  - `reproject-blend-default`: `avgCpuTotalMs=15.98`, `avgGpuCmdMs=3.898`
+  - `optflow-blend-default`: `avgCpuTotalMs=21.255`, `avgGpuCmdMs=11.101`
+  - `optflow-blend-fast`: `avgCpuTotalMs=15.1`, `avgGpuCmdMs=2.998`
+- conclusion so far:
+  - the wider default optical-flow v0 profile is too expensive on Deck today
+  - the tighter fast profile is already competitive with, and slightly cheaper than, the current reprojection baseline on this target
 
 #### 9. `multi-blend` (Rust)
 Working as the first multi-FG stepping stone.

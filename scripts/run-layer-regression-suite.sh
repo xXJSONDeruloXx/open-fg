@@ -28,7 +28,7 @@ fi
 
 OMFG_LAYER_IMPL="${OMFG_LAYER_IMPL}" "${ROOT_DIR}/scripts/deploy-steamdeck-layer.sh"
 
-modes=(passthrough clear copy history-copy blend adaptive-blend search-blend search-adaptive-blend reproject-blend reproject-adaptive-blend multi-blend adaptive-multi-blend reproject-multi-blend reproject-adaptive-multi-blend)
+modes=(passthrough clear copy history-copy blend adaptive-blend search-blend search-adaptive-blend reproject-blend reproject-adaptive-blend optflow-blend multi-blend adaptive-multi-blend reproject-multi-blend reproject-adaptive-multi-blend)
 if [[ "${OMFG_LAYER_IMPL}" == "rust" ]]; then
   modes+=(bfi)
 fi

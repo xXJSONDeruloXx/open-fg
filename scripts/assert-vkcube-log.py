@@ -75,6 +75,11 @@ MODE_MARKERS = {
         "first reproject adaptive blended generated-frame present succeeded",
         "reproject adaptive blended frame present=60",
     ],
+    "optflow-blend": [
+        "optflow-blend primed previous frame history",
+        "first optical-flow blended generated-frame present succeeded",
+        "optical-flow blended frame present=60",
+    ],
     "reproject-multi-blend": [
         "reproject-multi-blend primed previous frame history",
         "first reproject multi blended generated-frame present succeeded",
