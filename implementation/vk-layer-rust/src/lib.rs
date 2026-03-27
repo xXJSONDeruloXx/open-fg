@@ -620,6 +620,7 @@ struct BlendPushConstants {
     hole_fill_strength: f32,
     gradient_confidence_weight: f32,
     chroma_weight: f32,
+    ambiguity_scale: f32,
     search_radius: u32,
     patch_radius: u32,
     hole_fill_radius: u32,
@@ -2733,6 +2734,10 @@ fn reproject_chroma_weight() -> f32 {
     env_f32("OMFG_REPROJECT_CHROMA_WEIGHT", 0.3).clamp(0.0, 1.0)
 }
 
+fn reproject_ambiguity_scale() -> f32 {
+    env_f32("OMFG_REPROJECT_AMBIGUITY_SCALE", 6.0).clamp(0.0, 32.0)
+}
+
 fn adaptive_multi_target_fps() -> f32 {
     env_f32("OMFG_ADAPTIVE_MULTI_TARGET_FPS", 0.0).max(0.0)
 }
@@ -2842,6 +2847,7 @@ fn blend_push_constants_for_mode(mode: Mode) -> BlendPushConstants {
             hole_fill_strength: reproject_hole_fill_strength(),
             gradient_confidence_weight: reproject_gradient_confidence_weight(),
             chroma_weight: reproject_chroma_weight(),
+            ambiguity_scale: reproject_ambiguity_scale(),
             search_radius: reproject_search_radius(),
             patch_radius: reproject_patch_radius(),
             hole_fill_radius: reproject_hole_fill_radius(),
@@ -2857,6 +2863,7 @@ fn blend_push_constants_for_mode(mode: Mode) -> BlendPushConstants {
             hole_fill_strength: reproject_hole_fill_strength(),
             gradient_confidence_weight: reproject_gradient_confidence_weight(),
             chroma_weight: reproject_chroma_weight(),
+            ambiguity_scale: reproject_ambiguity_scale(),
             search_radius: reproject_search_radius(),
             patch_radius: reproject_patch_radius(),
             hole_fill_radius: reproject_hole_fill_radius(),
@@ -2913,6 +2920,11 @@ fn multi_blend_push_constants_plan(
                 },
                 chroma_weight: if reproject {
                     reproject_chroma_weight()
+                } else {
+                    0.0
+                },
+                ambiguity_scale: if reproject {
+                    reproject_ambiguity_scale()
                 } else {
                     0.0
                 },
@@ -6772,6 +6784,7 @@ mod tests {
         std::env::set_var("OMFG_REPROJECT_HOLE_FILL_RADIUS", "2");
         std::env::set_var("OMFG_REPROJECT_GRADIENT_CONFIDENCE_WEIGHT", "12.0");
         std::env::set_var("OMFG_REPROJECT_CHROMA_WEIGHT", "0.5");
+        std::env::set_var("OMFG_REPROJECT_AMBIGUITY_SCALE", "7.5");
 
         let push = blend_push_constants_for_mode(Mode::ReprojectBlendTest);
         assert_eq!(push.confidence_scale, 3.5);
@@ -6780,6 +6793,7 @@ mod tests {
         assert_eq!(push.hole_fill_radius, 2);
         assert_eq!(push.gradient_confidence_weight, 12.0);
         assert_eq!(push.chroma_weight, 0.5);
+        assert_eq!(push.ambiguity_scale, 7.5);
 
         std::env::remove_var("OMFG_REPROJECT_CONFIDENCE_SCALE");
         std::env::remove_var("OMFG_REPROJECT_DISOCCLUSION_SCALE");
@@ -6787,6 +6801,7 @@ mod tests {
         std::env::remove_var("OMFG_REPROJECT_HOLE_FILL_RADIUS");
         std::env::remove_var("OMFG_REPROJECT_GRADIENT_CONFIDENCE_WEIGHT");
         std::env::remove_var("OMFG_REPROJECT_CHROMA_WEIGHT");
+        std::env::remove_var("OMFG_REPROJECT_AMBIGUITY_SCALE");
     }
 
     #[test]
@@ -6798,6 +6813,7 @@ mod tests {
         std::env::set_var("OMFG_REPROJECT_HOLE_FILL_RADIUS", "1");
         std::env::set_var("OMFG_REPROJECT_GRADIENT_CONFIDENCE_WEIGHT", "6.0");
         std::env::set_var("OMFG_REPROJECT_CHROMA_WEIGHT", "0.4");
+        std::env::set_var("OMFG_REPROJECT_AMBIGUITY_SCALE", "5.5");
 
         let plan = multi_blend_push_constants_plan(Mode::ReprojectAdaptiveMultiBlendTest, 3);
         assert_eq!(plan.len(), 3);
@@ -6808,6 +6824,7 @@ mod tests {
             assert_eq!(push.hole_fill_radius, 1);
             assert_eq!(push.gradient_confidence_weight, 6.0);
             assert_eq!(push.chroma_weight, 0.4);
+            assert_eq!(push.ambiguity_scale, 5.5);
             assert_eq!(push.mode, 5);
         }
 
@@ -6817,5 +6834,6 @@ mod tests {
         std::env::remove_var("OMFG_REPROJECT_HOLE_FILL_RADIUS");
         std::env::remove_var("OMFG_REPROJECT_GRADIENT_CONFIDENCE_WEIGHT");
         std::env::remove_var("OMFG_REPROJECT_CHROMA_WEIGHT");
+        std::env::remove_var("OMFG_REPROJECT_AMBIGUITY_SCALE");
     }
 }

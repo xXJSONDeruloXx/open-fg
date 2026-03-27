@@ -225,6 +225,7 @@ Observed:
   - `OMFG_REPROJECT_HOLE_FILL_RADIUS`
   - `OMFG_REPROJECT_GRADIENT_CONFIDENCE_WEIGHT` (reduces confidence in flat regions where motion estimation is unreliable; default `8.0`)
   - `OMFG_REPROJECT_CHROMA_WEIGHT` (blends between luma-only and full RGB patch matching; default `0.3`)
+  - `OMFG_REPROJECT_AMBIGUITY_SCALE` (suppresses confidence when multiple reprojection candidates are nearly tied; default `6.0`)
 - local validation for those new quality controls is green (`cargo test`, `./scripts/test-rust-layer.sh`, `OMFG_LAYER_IMPL=rust ./scripts/build-linux-amd64.sh`)
 - stable on Deck through smoke, long, and IMMEDIATE-mode runs
 

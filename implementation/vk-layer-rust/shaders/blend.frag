@@ -12,6 +12,7 @@ layout(push_constant) uniform BlendParams {
     float hole_fill_strength;
     float gradient_confidence_weight;
     float chroma_weight;
+    float ambiguity_scale;
     uint search_radius;
     uint patch_radius;
     uint hole_fill_radius;
@@ -122,6 +123,7 @@ void main() {
         float chroma_weight = u_params.chroma_weight;
         float zero_error = symmetric_patch_error(v_uv, ivec2(0), patch_radius, texel, chroma_weight);
         float best_error = zero_error;
+        float second_best_error = 1e20;
         ivec2 best_half_offset = ivec2(0);
 
         for (int oy = -MAX_SEARCH_RADIUS; oy <= MAX_SEARCH_RADIUS; ++oy) {
@@ -135,8 +137,11 @@ void main() {
                 float motion_penalty = 0.02 * float(ox * ox + oy * oy);
                 float error = symmetric_patch_error(v_uv, ivec2(ox, oy), patch_radius, texel, chroma_weight) + motion_penalty;
                 if (error < best_error) {
+                    second_best_error = best_error;
                     best_error = error;
                     best_half_offset = ivec2(ox, oy);
+                } else if (error < second_best_error) {
+                    second_best_error = error;
                 }
             }
         }
@@ -157,6 +162,13 @@ void main() {
             float gradient_factor = clamp(gradient_mag * u_params.gradient_confidence_weight, 0.0, 1.0);
             // In flat regions (low gradient), scale confidence down to 25% max
             confidence *= mix(0.25, 1.0, gradient_factor);
+        }
+
+        if (u_params.ambiguity_scale > 0.0 && second_best_error < 1e19) {
+            float ambiguity_margin = max(second_best_error - best_error, 0.0);
+            float ambiguity_factor = clamp(ambiguity_margin * u_params.ambiguity_scale, 0.0, 1.0);
+            // When multiple candidates are nearly tied, suppress confidence.
+            confidence *= mix(0.2, 1.0, ambiguity_factor);
         }
 
         float residual = length(reproject_curr.rgb - reproject_prev.rgb);

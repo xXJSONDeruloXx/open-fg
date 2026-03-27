@@ -154,6 +154,7 @@ export OMFG_LAYER_MODE=reproject-multi-blend
 export OMFG_REPROJECT_DISOCCLUSION_SCALE=2.0
 export OMFG_REPROJECT_HOLE_FILL_STRENGTH=0.85
 export OMFG_REPROJECT_HOLE_FILL_RADIUS=2
+export OMFG_REPROJECT_AMBIGUITY_SCALE=6.0
 ./scripts/test-steamdeck-vkcube.sh
 ```
 
@@ -274,6 +275,7 @@ It now also exposes tunable quality controls via:
 - `OMFG_REPROJECT_HOLE_FILL_RADIUS`
 - `OMFG_REPROJECT_GRADIENT_CONFIDENCE_WEIGHT` (reduces confidence in flat regions where motion estimation is unreliable; default `8.0`)
 - `OMFG_REPROJECT_CHROMA_WEIGHT` (blends between luma-only and full RGB patch matching; default `0.3`, range `0.0-1.0`)
+- `OMFG_REPROJECT_AMBIGUITY_SCALE` (suppresses confidence when multiple reprojection candidates are nearly tied; default `6.0`)
 The `reproject-adaptive-blend` mode combines that stronger reprojection path with adaptive current-frame weighting.
 The `multi-blend` mode is the first Rust **multi-FG** step, emitting multiple synthetic frames between real frames using temporal blend positions.
 It now auto-expands swapchain image headroom for larger requested multipliers, controlled by `OMFG_MULTI_SWAPCHAIN_MAX_GENERATED_FRAMES` (default `32`).
