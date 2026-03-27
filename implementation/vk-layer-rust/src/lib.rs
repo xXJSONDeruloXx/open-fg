@@ -1311,7 +1311,9 @@ fn requested_multi_generated_frames_for_swapchain(mode: Mode) -> u32 {
         Mode::MultiBlendTest | Mode::ReprojectMultiBlendTest | Mode::OptFlowMultiBlendTest => {
             env_u32("OMFG_MULTI_BLEND_COUNT", 2).max(1)
         }
-        Mode::AdaptiveMultiBlendTest | Mode::ReprojectAdaptiveMultiBlendTest => {
+        Mode::AdaptiveMultiBlendTest
+        | Mode::ReprojectAdaptiveMultiBlendTest
+        | Mode::OptFlowAdaptiveMultiBlendTest => {
             let target_enabled = adaptive_multi_target_fps() > 0.0;
             let min_count = env_u32(
                 "OMFG_ADAPTIVE_MULTI_MIN_GENERATED_FRAMES",
@@ -1337,6 +1339,7 @@ fn maybe_expand_multi_swapchain_min_image_count(
             | Mode::ReprojectMultiBlendTest
             | Mode::ReprojectAdaptiveMultiBlendTest
             | Mode::OptFlowMultiBlendTest
+            | Mode::OptFlowAdaptiveMultiBlendTest
     ) {
         return current_modified_min_image_count;
     }
@@ -2880,6 +2883,7 @@ fn effective_debug_view(mode: Mode) -> DebugView {
             | Mode::OptFlowBlendTest
             | Mode::OptFlowAdaptiveBlendTest
             | Mode::OptFlowMultiBlendTest
+            | Mode::OptFlowAdaptiveMultiBlendTest
             | Mode::ReprojectMultiBlendTest
             | Mode::ReprojectAdaptiveMultiBlendTest
     ) {
@@ -3073,13 +3077,18 @@ fn multi_blend_push_constants_plan(
 ) -> Vec<BlendPushConstants> {
     let adaptive = matches!(
         mode,
-        Mode::AdaptiveMultiBlendTest | Mode::ReprojectAdaptiveMultiBlendTest
+        Mode::AdaptiveMultiBlendTest
+            | Mode::ReprojectAdaptiveMultiBlendTest
+            | Mode::OptFlowAdaptiveMultiBlendTest
     );
     let reproject = matches!(
         mode,
         Mode::ReprojectMultiBlendTest | Mode::ReprojectAdaptiveMultiBlendTest
     );
-    let optflow = matches!(mode, Mode::OptFlowMultiBlendTest);
+    let optflow = matches!(
+        mode,
+        Mode::OptFlowMultiBlendTest | Mode::OptFlowAdaptiveMultiBlendTest
+    );
 
     (1..=generated_frame_count)
         .map(|index| {
@@ -3161,7 +3170,11 @@ fn multi_blend_push_constants_plan(
                         4
                     }
                 } else if optflow {
-                    6
+                    if adaptive {
+                        7
+                    } else {
+                        6
+                    }
                 } else if adaptive {
                     1
                 } else {
@@ -3220,6 +3233,11 @@ fn blend_mode_labels(mode: Mode) -> (&'static str, &'static str, &'static str) {
             "first optical-flow multi blended generated-frame present succeeded",
             "optical-flow multi blended frame present=",
         ),
+        Mode::OptFlowAdaptiveMultiBlendTest => (
+            "optflow-adaptive-multi-blend primed previous frame history",
+            "first optical-flow adaptive multi blended generated-frame present succeeded",
+            "optical-flow adaptive multi blended frame present=",
+        ),
         Mode::MultiBlendTest => (
             "multi-blend primed previous frame history",
             "first multi blended generated-frame present succeeded",
@@ -3251,6 +3269,7 @@ fn blend_mode_labels(mode: Mode) -> (&'static str, &'static str, &'static str) {
 fn adaptive_multi_controller_log_label(mode: Mode) -> &'static str {
     match mode {
         Mode::ReprojectAdaptiveMultiBlendTest => "reproject-adaptive-multi",
+        Mode::OptFlowAdaptiveMultiBlendTest => "optflow-adaptive-multi",
         _ => "adaptive-multi",
     }
 }
@@ -3259,6 +3278,9 @@ fn adaptive_multi_refresh_log_label(mode: Mode) -> &'static str {
     match mode {
         Mode::ReprojectAdaptiveMultiBlendTest => {
             "reproject-adaptive-multi-blend refreshed history without generated frame"
+        }
+        Mode::OptFlowAdaptiveMultiBlendTest => {
+            "optflow-adaptive-multi-blend refreshed history without generated frame"
         }
         _ => "adaptive-multi-blend refreshed history without generated frame",
     }
@@ -4013,13 +4035,15 @@ unsafe fn try_present_multi_blend_frame(
     };
 
     let adaptive_request = match mode {
-        Mode::AdaptiveMultiBlendTest | Mode::ReprojectAdaptiveMultiBlendTest => {
-            Some(adaptive_multi_frame_request(state))
-        }
+        Mode::AdaptiveMultiBlendTest
+        | Mode::ReprojectAdaptiveMultiBlendTest
+        | Mode::OptFlowAdaptiveMultiBlendTest => Some(adaptive_multi_frame_request(state)),
         _ => None,
     };
     let requested_generated_frame_count = match mode {
-        Mode::AdaptiveMultiBlendTest | Mode::ReprojectAdaptiveMultiBlendTest => adaptive_request
+        Mode::AdaptiveMultiBlendTest
+        | Mode::ReprojectAdaptiveMultiBlendTest
+        | Mode::OptFlowAdaptiveMultiBlendTest => adaptive_request
             .map(|request| request.generated_frame_count)
             .unwrap_or(0),
         Mode::MultiBlendTest | Mode::ReprojectMultiBlendTest | Mode::OptFlowMultiBlendTest => {
@@ -6559,6 +6583,7 @@ unsafe extern "system" fn layer_create_swapchain_khr(
             | Mode::OptFlowBlendTest
             | Mode::OptFlowAdaptiveBlendTest
             | Mode::OptFlowMultiBlendTest
+            | Mode::OptFlowAdaptiveMultiBlendTest
             | Mode::MultiBlendTest
             | Mode::AdaptiveMultiBlendTest
             | Mode::ReprojectMultiBlendTest
@@ -6581,6 +6606,7 @@ unsafe extern "system" fn layer_create_swapchain_khr(
             | Mode::ReprojectMultiBlendTest
             | Mode::ReprojectAdaptiveMultiBlendTest
             | Mode::OptFlowMultiBlendTest
+            | Mode::OptFlowAdaptiveMultiBlendTest
     ) && expanded_min_image_count > mutation.modified_min_image_count
     {
         let requested_generated_frames = requested_multi_generated_frames_for_swapchain(mode);
@@ -6705,6 +6731,7 @@ unsafe extern "system" fn layer_queue_present_khr(
                         | Mode::OptFlowBlendTest
                         | Mode::OptFlowAdaptiveBlendTest
                         | Mode::OptFlowMultiBlendTest
+                        | Mode::OptFlowAdaptiveMultiBlendTest
                         | Mode::MultiBlendTest
                         | Mode::AdaptiveMultiBlendTest
                         | Mode::ReprojectMultiBlendTest
@@ -6830,6 +6857,7 @@ unsafe extern "system" fn layer_queue_present_khr(
                             | Mode::ReprojectMultiBlendTest
                             | Mode::ReprojectAdaptiveMultiBlendTest
                             | Mode::OptFlowMultiBlendTest
+                            | Mode::OptFlowAdaptiveMultiBlendTest
                     ) && have_queue =>
                 {
                     swapchain_state.injection_attempted = true;
@@ -7354,6 +7382,35 @@ mod tests {
             assert!(frame.optflow_motion_penalty > 0.0);
             // debug view propagated
             assert_eq!(frame.debug_view, DebugView::Motion.shader_code());
+        }
+
+        std::env::remove_var("OMFG_OPTICAL_FLOW_LEVELS");
+        std::env::remove_var("OMFG_OPTICAL_FLOW_CONFIDENCE_SCALE");
+        std::env::remove_var("OMFG_DEBUG_VIEW");
+    }
+
+    #[test]
+    fn optflow_adaptive_multi_blend_plan_uses_optflow_adaptive_mode_per_generated_frame() {
+        let _guard = env_test_lock().lock().expect("env test mutex poisoned");
+        std::env::set_var("OMFG_OPTICAL_FLOW_LEVELS", "3");
+        std::env::set_var("OMFG_OPTICAL_FLOW_CONFIDENCE_SCALE", "2.5");
+        std::env::set_var("OMFG_DEBUG_VIEW", "confidence");
+
+        let plan = multi_blend_push_constants_plan(Mode::OptFlowAdaptiveMultiBlendTest, 2);
+        assert_eq!(plan.len(), 2);
+        for frame in &plan {
+            // each frame uses shader mode 7 (optflow-adaptive)
+            assert_eq!(
+                frame.mode, 7,
+                "optflow-adaptive-multi per-frame mode should be 7"
+            );
+            // optflow knobs propagated
+            assert_eq!(frame.optflow_levels, 3);
+            assert_eq!(frame.confidence_scale, 2.5);
+            // adaptive controls present
+            assert!(frame.adaptive_strength > 0.0);
+            // debug view propagated
+            assert_eq!(frame.debug_view, DebugView::Confidence.shader_code());
         }
 
         std::env::remove_var("OMFG_OPTICAL_FLOW_LEVELS");

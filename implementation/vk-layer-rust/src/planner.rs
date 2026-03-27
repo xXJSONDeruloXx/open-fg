@@ -63,6 +63,7 @@ pub fn mutate_swapchain(
             | Mode::ReprojectMultiBlendTest
             | Mode::ReprojectAdaptiveMultiBlendTest
             | Mode::OptFlowMultiBlendTest
+            | Mode::OptFlowAdaptiveMultiBlendTest
     ) {
         modified_usage |= vk::ImageUsageFlags::TRANSFER_SRC;
         modified_usage |= vk::ImageUsageFlags::SAMPLED;
@@ -112,6 +113,7 @@ pub fn planned_sequence(mode: Mode, state: &SimulatedPresentState) -> PresentSeq
         | Mode::MultiBlendTest
         | Mode::AdaptiveMultiBlendTest
         | Mode::OptFlowMultiBlendTest
+        | Mode::OptFlowAdaptiveMultiBlendTest
             if !state.history_valid =>
         {
             PresentSequence::PrimeHistory
@@ -129,7 +131,8 @@ pub fn planned_sequence(mode: Mode, state: &SimulatedPresentState) -> PresentSeq
         | Mode::ReprojectAdaptiveMultiBlendTest
         | Mode::MultiBlendTest
         | Mode::AdaptiveMultiBlendTest
-        | Mode::OptFlowMultiBlendTest => PresentSequence::GeneratedThenOriginal,
+        | Mode::OptFlowMultiBlendTest
+        | Mode::OptFlowAdaptiveMultiBlendTest => PresentSequence::GeneratedThenOriginal,
     }
 }
 
@@ -261,7 +264,8 @@ pub fn mark_injection_result(
         | Mode::AdaptiveMultiBlendTest
         | Mode::ReprojectMultiBlendTest
         | Mode::ReprojectAdaptiveMultiBlendTest
-        | Mode::OptFlowMultiBlendTest => {
+        | Mode::OptFlowMultiBlendTest
+        | Mode::OptFlowAdaptiveMultiBlendTest => {
             if state.history_valid && injected_successfully {
                 state.injection_works = true;
                 state.generated_present_count += 2;
@@ -911,6 +915,40 @@ mod tests {
             PresentSequence::GeneratedThenOriginal
         );
         mark_injection_result(Mode::OptFlowMultiBlendTest, &mut state, true);
+        assert_eq!(state.generated_present_count, 2);
+        assert!(state.injection_works);
+    }
+
+    #[test]
+    fn optflow_adaptive_multi_blend_mode_requests_extra_headroom() {
+        let result = mutate_swapchain(
+            Mode::OptFlowAdaptiveMultiBlendTest,
+            3,
+            vk::ImageUsageFlags::COLOR_ATTACHMENT,
+            Some(10),
+        );
+        assert_eq!(result.modified_min_image_count, 6);
+        assert!(result
+            .modified_usage
+            .contains(vk::ImageUsageFlags::TRANSFER_SRC));
+        assert!(result.modified_usage.contains(vk::ImageUsageFlags::SAMPLED));
+    }
+
+    #[test]
+    fn optflow_adaptive_multi_blend_uses_history_prime_then_generated_before_original() {
+        let mut state = SimulatedPresentState::default();
+        assert_eq!(
+            planned_sequence(Mode::OptFlowAdaptiveMultiBlendTest, &state),
+            PresentSequence::PrimeHistory
+        );
+        mark_injection_result(Mode::OptFlowAdaptiveMultiBlendTest, &mut state, true);
+        assert!(state.history_valid);
+        assert_eq!(state.generated_present_count, 0);
+        assert_eq!(
+            planned_sequence(Mode::OptFlowAdaptiveMultiBlendTest, &state),
+            PresentSequence::GeneratedThenOriginal
+        );
+        mark_injection_result(Mode::OptFlowAdaptiveMultiBlendTest, &mut state, true);
         assert_eq!(state.generated_present_count, 2);
         assert!(state.injection_works);
     }
