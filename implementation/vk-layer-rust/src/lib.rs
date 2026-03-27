@@ -622,6 +622,7 @@ struct BlendPushConstants {
     chroma_weight: f32,
     ambiguity_scale: f32,
     optflow_motion_penalty: f32,
+    disocclusion_current_bias: f32,
     search_radius: u32,
     patch_radius: u32,
     hole_fill_radius: u32,
@@ -2731,6 +2732,10 @@ fn reproject_hole_fill_radius() -> u32 {
     env_u32("OMFG_REPROJECT_HOLE_FILL_RADIUS", 1).min(2)
 }
 
+fn reproject_disocclusion_current_bias() -> f32 {
+    env_f32("OMFG_REPROJECT_DISOCCLUSION_CURRENT_BIAS", 0.75).clamp(0.0, 1.0)
+}
+
 fn reproject_gradient_confidence_weight() -> f32 {
     env_f32("OMFG_REPROJECT_GRADIENT_CONFIDENCE_WEIGHT", 8.0).clamp(0.0, 32.0)
 }
@@ -2892,6 +2897,7 @@ fn blend_push_constants_for_mode(mode: Mode) -> BlendPushConstants {
             gradient_confidence_weight: reproject_gradient_confidence_weight(),
             chroma_weight: reproject_chroma_weight(),
             ambiguity_scale: reproject_ambiguity_scale(),
+            disocclusion_current_bias: reproject_disocclusion_current_bias(),
             search_radius: reproject_search_radius(),
             patch_radius: reproject_patch_radius(),
             hole_fill_radius: reproject_hole_fill_radius(),
@@ -2909,6 +2915,7 @@ fn blend_push_constants_for_mode(mode: Mode) -> BlendPushConstants {
             gradient_confidence_weight: reproject_gradient_confidence_weight(),
             chroma_weight: reproject_chroma_weight(),
             ambiguity_scale: reproject_ambiguity_scale(),
+            disocclusion_current_bias: reproject_disocclusion_current_bias(),
             search_radius: reproject_search_radius(),
             patch_radius: reproject_patch_radius(),
             hole_fill_radius: reproject_hole_fill_radius(),
@@ -2925,6 +2932,7 @@ fn blend_push_constants_for_mode(mode: Mode) -> BlendPushConstants {
             chroma_weight: reproject_chroma_weight(),
             ambiguity_scale: reproject_ambiguity_scale(),
             optflow_motion_penalty: optflow_motion_penalty(),
+            disocclusion_current_bias: reproject_disocclusion_current_bias(),
             search_radius: optflow_search_radius(),
             patch_radius: optflow_patch_radius(),
             hole_fill_radius: reproject_hole_fill_radius(),
@@ -2988,6 +2996,11 @@ fn multi_blend_push_constants_plan(
                 },
                 ambiguity_scale: if reproject {
                     reproject_ambiguity_scale()
+                } else {
+                    0.0
+                },
+                disocclusion_current_bias: if reproject {
+                    reproject_disocclusion_current_bias()
                 } else {
                     0.0
                 },
@@ -6857,6 +6870,7 @@ mod tests {
         std::env::set_var("OMFG_REPROJECT_DISOCCLUSION_SCALE", "2.25");
         std::env::set_var("OMFG_REPROJECT_HOLE_FILL_STRENGTH", "0.6");
         std::env::set_var("OMFG_REPROJECT_HOLE_FILL_RADIUS", "2");
+        std::env::set_var("OMFG_REPROJECT_DISOCCLUSION_CURRENT_BIAS", "0.85");
         std::env::set_var("OMFG_REPROJECT_GRADIENT_CONFIDENCE_WEIGHT", "12.0");
         std::env::set_var("OMFG_REPROJECT_CHROMA_WEIGHT", "0.5");
         std::env::set_var("OMFG_REPROJECT_AMBIGUITY_SCALE", "7.5");
@@ -6867,6 +6881,7 @@ mod tests {
         assert_eq!(push.disocclusion_scale, 2.25);
         assert_eq!(push.hole_fill_strength, 0.6);
         assert_eq!(push.hole_fill_radius, 2);
+        assert_eq!(push.disocclusion_current_bias, 0.85);
         assert_eq!(push.gradient_confidence_weight, 12.0);
         assert_eq!(push.chroma_weight, 0.5);
         assert_eq!(push.ambiguity_scale, 7.5);
@@ -6876,6 +6891,7 @@ mod tests {
         std::env::remove_var("OMFG_REPROJECT_DISOCCLUSION_SCALE");
         std::env::remove_var("OMFG_REPROJECT_HOLE_FILL_STRENGTH");
         std::env::remove_var("OMFG_REPROJECT_HOLE_FILL_RADIUS");
+        std::env::remove_var("OMFG_REPROJECT_DISOCCLUSION_CURRENT_BIAS");
         std::env::remove_var("OMFG_REPROJECT_GRADIENT_CONFIDENCE_WEIGHT");
         std::env::remove_var("OMFG_REPROJECT_CHROMA_WEIGHT");
         std::env::remove_var("OMFG_REPROJECT_AMBIGUITY_SCALE");
@@ -6889,6 +6905,7 @@ mod tests {
         std::env::set_var("OMFG_REPROJECT_DISOCCLUSION_SCALE", "1.75");
         std::env::set_var("OMFG_REPROJECT_HOLE_FILL_STRENGTH", "0.9");
         std::env::set_var("OMFG_REPROJECT_HOLE_FILL_RADIUS", "1");
+        std::env::set_var("OMFG_REPROJECT_DISOCCLUSION_CURRENT_BIAS", "0.65");
         std::env::set_var("OMFG_REPROJECT_GRADIENT_CONFIDENCE_WEIGHT", "6.0");
         std::env::set_var("OMFG_REPROJECT_CHROMA_WEIGHT", "0.4");
         std::env::set_var("OMFG_REPROJECT_AMBIGUITY_SCALE", "5.5");
@@ -6901,6 +6918,7 @@ mod tests {
             assert_eq!(push.disocclusion_scale, 1.75);
             assert_eq!(push.hole_fill_strength, 0.9);
             assert_eq!(push.hole_fill_radius, 1);
+            assert_eq!(push.disocclusion_current_bias, 0.65);
             assert_eq!(push.gradient_confidence_weight, 6.0);
             assert_eq!(push.chroma_weight, 0.4);
             assert_eq!(push.ambiguity_scale, 5.5);
@@ -6912,6 +6930,7 @@ mod tests {
         std::env::remove_var("OMFG_REPROJECT_DISOCCLUSION_SCALE");
         std::env::remove_var("OMFG_REPROJECT_HOLE_FILL_STRENGTH");
         std::env::remove_var("OMFG_REPROJECT_HOLE_FILL_RADIUS");
+        std::env::remove_var("OMFG_REPROJECT_DISOCCLUSION_CURRENT_BIAS");
         std::env::remove_var("OMFG_REPROJECT_GRADIENT_CONFIDENCE_WEIGHT");
         std::env::remove_var("OMFG_REPROJECT_CHROMA_WEIGHT");
         std::env::remove_var("OMFG_REPROJECT_AMBIGUITY_SCALE");

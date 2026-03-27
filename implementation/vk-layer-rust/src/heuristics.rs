@@ -169,11 +169,20 @@ pub fn estimate_symmetric_motion_offset(
     }
 }
 
+pub fn disocclusion_biased_fallback_alpha(alpha: f32, disocclusion: f32, current_bias: f32) -> f32 {
+    let alpha = alpha.clamp(0.0, 1.0);
+    let disocclusion = disocclusion.clamp(0.0, 1.0);
+    let current_bias = current_bias.clamp(0.0, 1.0);
+    let t = (disocclusion * current_bias).clamp(0.0, 1.0);
+    alpha + (1.0 - alpha) * t
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         apply_ambiguity_weighted_confidence, apply_gradient_weighted_confidence,
-        estimate_symmetric_motion_offset, mixed_patch_error, SymmetricSearchConfig,
+        disocclusion_biased_fallback_alpha, estimate_symmetric_motion_offset, mixed_patch_error,
+        SymmetricSearchConfig,
     };
 
     #[test]
@@ -264,5 +273,23 @@ mod tests {
     fn ambiguity_weighted_confidence_preserves_clear_winners() {
         let confidence = apply_ambiguity_weighted_confidence(0.9, 1.0, Some(1.5), 6.0);
         assert!((confidence - 0.9).abs() < 1e-6);
+    }
+
+    #[test]
+    fn disocclusion_bias_preserves_original_alpha_when_disabled() {
+        let alpha = disocclusion_biased_fallback_alpha(0.5, 1.0, 0.0);
+        assert!((alpha - 0.5).abs() < 1e-6);
+    }
+
+    #[test]
+    fn disocclusion_bias_pushes_toward_current_frame() {
+        let alpha = disocclusion_biased_fallback_alpha(0.5, 1.0, 0.75);
+        assert!((alpha - 0.875).abs() < 1e-6);
+    }
+
+    #[test]
+    fn disocclusion_bias_respects_partial_disocclusion() {
+        let alpha = disocclusion_biased_fallback_alpha(0.5, 0.5, 0.75);
+        assert!((alpha - 0.6875).abs() < 1e-6);
     }
 }

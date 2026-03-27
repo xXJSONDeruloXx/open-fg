@@ -163,6 +163,7 @@ export OMFG_LAYER_MODE=reproject-multi-blend
 export OMFG_REPROJECT_DISOCCLUSION_SCALE=2.0
 export OMFG_REPROJECT_HOLE_FILL_STRENGTH=0.85
 export OMFG_REPROJECT_HOLE_FILL_RADIUS=2
+export OMFG_REPROJECT_DISOCCLUSION_CURRENT_BIAS=0.75
 export OMFG_REPROJECT_AMBIGUITY_SCALE=6.0
 ./scripts/test-steamdeck-vkcube.sh
 
@@ -239,6 +240,11 @@ OMFG_BENCHMARK_PRESET=decision ./scripts/run-steamdeck-benchmark-suite.sh
 # Focused reprojection-quality ablation preset
 OMFG_BENCHMARK_PRESET=reproject-quality ./scripts/run-steamdeck-benchmark-suite.sh
 
+# Focused reprojection disocclusion-fallback preset
+OMFG_BENCHMARK_PRESET=reproject-disocclusion ./scripts/run-steamdeck-benchmark-suite.sh
+# Current Deck result: perf impact is negligible/inconclusive, so this preset is mainly for
+# protecting quality-oriented fallback changes rather than chasing synthetic micro-wins.
+
 # Focused optical-flow vs reprojection comparison preset
 OMFG_BENCHMARK_PRESET=optflow-compare ./scripts/run-steamdeck-benchmark-suite.sh
 ```
@@ -306,6 +312,7 @@ It now also exposes tunable quality controls via:
 - `OMFG_REPROJECT_DISOCCLUSION_SCALE`
 - `OMFG_REPROJECT_HOLE_FILL_STRENGTH`
 - `OMFG_REPROJECT_HOLE_FILL_RADIUS`
+- `OMFG_REPROJECT_DISOCCLUSION_CURRENT_BIAS` (biases fallback toward the current frame in stronger disocclusion regions; default `0.75`)
 - `OMFG_REPROJECT_GRADIENT_CONFIDENCE_WEIGHT` (reduces confidence in flat regions where motion estimation is unreliable; default `8.0`)
 - `OMFG_REPROJECT_CHROMA_WEIGHT` (blends between luma-only and full RGB patch matching; default `0.3`, range `0.0-1.0`)
 - `OMFG_REPROJECT_AMBIGUITY_SCALE` (suppresses confidence when multiple reprojection candidates are nearly tied; default `6.0`)

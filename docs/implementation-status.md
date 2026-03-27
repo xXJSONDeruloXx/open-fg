@@ -224,6 +224,7 @@ Observed:
   - `OMFG_REPROJECT_DISOCCLUSION_SCALE`
   - `OMFG_REPROJECT_HOLE_FILL_STRENGTH`
   - `OMFG_REPROJECT_HOLE_FILL_RADIUS`
+  - `OMFG_REPROJECT_DISOCCLUSION_CURRENT_BIAS` (biases fallback toward the current frame in stronger disocclusion regions; default `0.75`)
   - `OMFG_REPROJECT_GRADIENT_CONFIDENCE_WEIGHT` (reduces confidence in flat regions where motion estimation is unreliable; default `8.0`)
   - `OMFG_REPROJECT_CHROMA_WEIGHT` (blends between luma-only and full RGB patch matching; default `0.3`)
   - `OMFG_REPROJECT_AMBIGUITY_SCALE` (suppresses confidence when multiple reprojection candidates are nearly tied; default `6.0`)
@@ -383,6 +384,10 @@ The Rust layer now has a first debug-view path for reprojection-backed modes via
 - `OMFG_DEBUG_VIEW=hole-fill`
 - `OMFG_DEBUG_VIEW=fallback`
 
+A later fallback-debug Deck run was also used while validating the new disocclusion-current-bias heuristic:
+- `reproject-blend` + `OMFG_DEBUG_VIEW=fallback` + `OMFG_REPROJECT_DISOCCLUSION_CURRENT_BIAS=0.75`
+  - artifact root: `artifacts/steamdeck/rust/vkcube/reproject-blend-debug-fallback-currentbias/`
+
 Current behavior:
 - debug views apply only to reprojection-backed modes for now
 - the generated frame output is replaced with the requested diagnostic view
@@ -401,7 +406,7 @@ Observed:
 - logs confirm the selected `debugView` in benchmark samples/summaries
 - the fallback view also works on the higher-cost reprojection-backed multi-FG path
 
-This is the first landing of the observability track; the next follow-up is to use these views for deliberate tuning and then extend them further if needed.
+This is the first landing of the observability track; it is already being used to validate later quality heuristics such as current-frame-biased disocclusion fallback.
 
 ---
 
@@ -492,6 +497,21 @@ First validated autoperf run:
   - accepted with weighted improvement `1.163%`
 
 This is intended to make future pacing / synchronization experiments much cheaper to validate before paying for the full Deck benchmark matrix.
+
+A newer focused quality preset now also exists for reprojection disocclusion fallback work:
+- `OMFG_BENCHMARK_PRESET=reproject-disocclusion`
+- current Deck artifact root:
+  - `artifacts/steamdeck/rust/benchmark/reproject-disocclusion-20260327-104120/`
+- current result summary:
+  - `reproject-blend-default`: `avgCpuTotalMs=16.109`, `avgGpuCmdMs=3.931`
+  - `reproject-blend-no-current-bias`: `avgCpuTotalMs=16.032`, `avgGpuCmdMs=3.929`
+  - `reproject-multi-count3-default`: `avgCpuPerGeneratedFrameMs=14.463`, `avgGpuPerGeneratedFrameMs=3.859`
+  - `reproject-multi-count3-no-current-bias`: `avgCpuPerGeneratedFrameMs=14.489`, `avgGpuPerGeneratedFrameMs=3.871`
+  - `reproject-adaptive-multi-target180-default`: `avgCpuPerGeneratedFrameMs=15.953`, `avgGpuPerGeneratedFrameMs=3.906`
+  - `reproject-adaptive-multi-target180-no-current-bias`: `avgCpuPerGeneratedFrameMs=15.874`, `avgGpuPerGeneratedFrameMs=3.903`
+- interpretation so far:
+  - the new disocclusion-current-bias heuristic has negligible / mixed perf impact on Deck
+  - this should be treated as a quality-oriented heuristic rather than a measured performance win or loss
 
 Post-dynamic-headroom validation rerun status:
 - `cargo test --locked`

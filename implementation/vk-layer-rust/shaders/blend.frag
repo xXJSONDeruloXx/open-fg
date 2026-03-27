@@ -14,6 +14,7 @@ layout(push_constant) uniform BlendParams {
     float chroma_weight;
     float ambiguity_scale;
     float optflow_motion_penalty;
+    float disocclusion_current_bias;
     uint search_radius;
     uint patch_radius;
     uint hole_fill_radius;
@@ -160,6 +161,9 @@ void main() {
     float debug_ambiguity = 0.0;
     float debug_disocclusion = 0.0;
     float debug_fallback_weight = 1.0;
+    float debug_fallback_alpha = u_params.alpha;
+    vec4 debug_reproject_prev = prev_color;
+    vec4 debug_reproject_curr = curr_color;
 
     if (u_params.mode == 2u || u_params.mode == 3u) {
         ivec2 size_px = textureSize(u_prev_frame, 0);
@@ -269,6 +273,8 @@ void main() {
         debug_confidence = confidence;
         debug_disocclusion = disocclusion;
         debug_fallback_weight = 1.0 - confidence;
+        debug_reproject_prev = reproject_prev;
+        debug_reproject_curr = reproject_curr;
         reproject_hole_fill_weight = clamp((1.0 - confidence) * disocclusion * u_params.hole_fill_strength, 0.0, 1.0);
 
         source_prev = mix(prev_color, reproject_prev, confidence);
@@ -282,6 +288,13 @@ void main() {
     }
 
     vec4 blended_color = mix(source_prev, source_curr, blend_alpha);
+    if (reproject_mode) {
+        float fallback_alpha = clamp(mix(blend_alpha, 1.0, debug_disocclusion * u_params.disocclusion_current_bias), 0.0, 1.0);
+        debug_fallback_alpha = fallback_alpha;
+        vec4 fallback_color = mix(prev_color, curr_color, fallback_alpha);
+        vec4 reprojection_color = mix(debug_reproject_prev, debug_reproject_curr, blend_alpha);
+        blended_color = mix(fallback_color, reprojection_color, debug_confidence);
+    }
     if (reproject_mode && reproject_hole_fill_weight > 0.0 && u_params.hole_fill_radius > 0u) {
         int hole_fill_radius = min(int(u_params.hole_fill_radius), MAX_HOLE_FILL_RADIUS);
         vec4 hole_fill_color = neighborhood_temporal_fill(v_uv, reproject_half_offset_uv, blend_alpha, hole_fill_radius, reproject_texel);
@@ -315,7 +328,7 @@ void main() {
         return;
     }
     if (u_params.debug_view == 6u) {
-        out_color = vec4(debug_fallback_weight, debug_confidence, reproject_hole_fill_weight, 1.0);
+        out_color = vec4(debug_fallback_weight, debug_fallback_alpha, reproject_hole_fill_weight, 1.0);
         return;
     }
 
