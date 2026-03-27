@@ -12,6 +12,8 @@ pub enum Mode {
     ReprojectBlendTest,
     ReprojectAdaptiveBlendTest,
     OptFlowBlendTest,
+    OptFlowAdaptiveBlendTest,
+    OptFlowMultiBlendTest,
     ReprojectMultiBlendTest,
     ReprojectAdaptiveMultiBlendTest,
     MultiBlendTest,
@@ -47,6 +49,15 @@ impl Mode {
             "optflow-blend" | "optical-flow" | "optical-flow-blend" | "optflow-blend-test" => {
                 Self::OptFlowBlendTest
             }
+            "optflow-adaptive-blend"
+            | "optflow-adaptive"
+            | "optical-flow-adaptive"
+            | "optflow-adaptive-blend-test" => Self::OptFlowAdaptiveBlendTest,
+            "optflow-multi-blend"
+            | "optflow-multi-fg"
+            | "optflow-multi"
+            | "optical-flow-multi"
+            | "optflow-multi-blend-test" => Self::OptFlowMultiBlendTest,
             "reproject-multi-blend"
             | "reproject-multi-fg"
             | "reproject-multi-blend-test"
@@ -84,6 +95,8 @@ impl Mode {
             Self::ReprojectBlendTest => "reproject-blend-test",
             Self::ReprojectAdaptiveBlendTest => "reproject-adaptive-blend-test",
             Self::OptFlowBlendTest => "optflow-blend-test",
+            Self::OptFlowAdaptiveBlendTest => "optflow-adaptive-blend-test",
+            Self::OptFlowMultiBlendTest => "optflow-multi-blend-test",
             Self::ReprojectMultiBlendTest => "reproject-multi-blend-test",
             Self::ReprojectAdaptiveMultiBlendTest => "reproject-adaptive-multi-blend-test",
             Self::MultiBlendTest => "multi-blend-test",
@@ -282,6 +295,42 @@ mod tests {
             Mode::OptFlowBlendTest
         );
         assert_eq!(
+            Mode::from_env_value(Some("optflow-adaptive-blend")),
+            Mode::OptFlowAdaptiveBlendTest
+        );
+        assert_eq!(
+            Mode::from_env_value(Some("optflow-adaptive")),
+            Mode::OptFlowAdaptiveBlendTest
+        );
+        assert_eq!(
+            Mode::from_env_value(Some("optical-flow-adaptive")),
+            Mode::OptFlowAdaptiveBlendTest
+        );
+        assert_eq!(
+            Mode::from_env_value(Some("optflow-adaptive-blend-test")),
+            Mode::OptFlowAdaptiveBlendTest
+        );
+        assert_eq!(
+            Mode::from_env_value(Some("optflow-multi-blend")),
+            Mode::OptFlowMultiBlendTest
+        );
+        assert_eq!(
+            Mode::from_env_value(Some("optflow-multi-fg")),
+            Mode::OptFlowMultiBlendTest
+        );
+        assert_eq!(
+            Mode::from_env_value(Some("optflow-multi")),
+            Mode::OptFlowMultiBlendTest
+        );
+        assert_eq!(
+            Mode::from_env_value(Some("optical-flow-multi")),
+            Mode::OptFlowMultiBlendTest
+        );
+        assert_eq!(
+            Mode::from_env_value(Some("optflow-multi-blend-test")),
+            Mode::OptFlowMultiBlendTest
+        );
+        assert_eq!(
             Mode::from_env_value(Some("reproject-multi-blend")),
             Mode::ReprojectMultiBlendTest
         );
@@ -365,6 +414,14 @@ mod tests {
             "reproject-adaptive-blend-test"
         );
         assert_eq!(Mode::OptFlowBlendTest.name(), "optflow-blend-test");
+        assert_eq!(
+            Mode::OptFlowAdaptiveBlendTest.name(),
+            "optflow-adaptive-blend-test"
+        );
+        assert_eq!(
+            Mode::OptFlowMultiBlendTest.name(),
+            "optflow-multi-blend-test"
+        );
         assert_eq!(
             Mode::ReprojectMultiBlendTest.name(),
             "reproject-multi-blend-test"

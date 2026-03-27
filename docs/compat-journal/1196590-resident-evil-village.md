@@ -126,3 +126,23 @@ reproject blended frame present=1; generatedImageIndex=2; currentImageIndex=1; o
 Interpretation:
 - the new blend-path sequencing support did not break the existing default RE Village path in the quick live rerun
 - the live log still shows default behavior (`originalFirst=0`) for RE Village unless the new Beyond-oriented blend knob is explicitly enabled
+
+## Later revalidation after adaptive acquire-timeout fallback
+After replacing the fixed generated-acquire fallback with an adaptive policy based on observed present interval, RE Village was rerun again.
+
+Observed Deck evidence:
+
+```text
+app=re8.exe; engine=DXVK; apiVersion=1.3.0
+app=re8.exe; engine=vkd3d; apiVersion=1.3.0
+vkCreateDevice ok
+vkCreateSwapchainKHR ok
+first reproject blended generated-frame present succeeded
+reproject blended frame present=60; generatedImageIndex=4; currentImageIndex=0; originalFirst=0
+reproject blended frame present=180; generatedImageIndex=0; currentImageIndex=3; originalFirst=0
+reproject blended frame present=300; generatedImageIndex=0; currentImageIndex=3; originalFirst=0
+```
+
+Interpretation:
+- the adaptive acquire-timeout fallback did not regress the default RE Village path in the live rerun
+- RE Village continued to generate frames without needing the Beyond-specific original-first blend knob

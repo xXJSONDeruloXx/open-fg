@@ -1,0 +1,66 @@
+[omfg][info][1774639830398] vkNegotiateLoaderLayerInterfaceVersion ok; mode=passthrough
+[omfg][info][1774639830400] vkCreateInstance ok; mode=passthrough; apiVersion=1.1.0
+[omfg][info][1774639832629] vkNegotiateLoaderLayerInterfaceVersion ok; mode=passthrough
+[omfg][info][1774639832631] vkCreateInstance ok; mode=passthrough; app=SB-Win64-Shipping.exe; engine=DXVK; apiVersion=1.3.0
+[omfg][info][1774639833593] vkNegotiateLoaderLayerInterfaceVersion ok; mode=passthrough
+[omfg][info][1774639833595] vkCreateInstance ok; mode=passthrough; app=SB-Win64-Shipping.exe; engine=vkd3d; apiVersion=1.3.0
+[omfg][info][1774639833828] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH); presentId=1; presentWait=1; displayTiming=0
+[omfg][info][1774639833863] vkNegotiateLoaderLayerInterfaceVersion ok; mode=passthrough
+[omfg][info][1774639833864] vkCreateInstance ok; mode=passthrough; apiVersion=1.1.0
+[omfg][info][1774639833937] vkDestroyDevice
+[omfg][info][1774639834017] vkDestroyInstance
+[omfg][info][1774639834039] vkNegotiateLoaderLayerInterfaceVersion ok; mode=passthrough
+[omfg][info][1774639834040] vkCreateInstance ok; mode=passthrough; app=SB-Win64-Shipping.exe; engine=vkd3d; apiVersion=1.3.0
+[omfg][info][1774639834232] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH); presentId=1; presentWait=1; displayTiming=0
+[omfg][info][1774639834895] vkCreateSwapchainKHR ok; extent=1280x800; format=64; presentMode=MAILBOX; minImages=3->3; usage=TRANSFER_SRC|STORAGE|COLOR_ATTACHMENT (0x19) -> TRANSFER_SRC|STORAGE|COLOR_ATTACHMENT (0x19); images=3; mode=passthrough
+[omfg][info][1774639834902] vkQueuePresentKHR passthrough frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774639838506] vkDestroySwapchainKHR
+[omfg][info][1774639838512] vkCreateSwapchainKHR ok; extent=1280x800; format=64; presentMode=MAILBOX; minImages=3->3; usage=TRANSFER_SRC|STORAGE|COLOR_ATTACHMENT (0x19) -> TRANSFER_SRC|STORAGE|COLOR_ATTACHMENT (0x19); images=3; mode=passthrough
+[omfg][info][1774639838513] vkQueuePresentKHR passthrough frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774639838515] vkQueuePresentKHR passthrough frame=2; queueFamily=0; imageIndex=1; waitSemaphores=1
+[omfg][info][1774639838516] vkQueuePresentKHR passthrough frame=3; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774639838535] vkQueuePresentKHR passthrough frame=4; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774639838547] vkQueuePresentKHR passthrough frame=5; queueFamily=0; imageIndex=1; waitSemaphores=1
+[omfg][info][1774639840930] vkDestroySwapchainKHR
+[omfg][info][1774639840932] vkCreateSwapchainKHR ok; extent=1280x800; format=64; presentMode=MAILBOX; minImages=3->3; usage=TRANSFER_SRC|STORAGE|COLOR_ATTACHMENT (0x19) -> TRANSFER_SRC|STORAGE|COLOR_ATTACHMENT (0x19); images=3; mode=passthrough
+[omfg][info][1774639840933] vkQueuePresentKHR passthrough frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774639840934] vkQueuePresentKHR passthrough frame=2; queueFamily=0; imageIndex=1; waitSemaphores=1
+[omfg][info][1774639840940] vkQueuePresentKHR passthrough frame=3; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774639840985] vkQueuePresentKHR passthrough frame=4; queueFamily=0; imageIndex=1; waitSemaphores=1
+[omfg][info][1774639840986] vkQueuePresentKHR passthrough frame=5; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774639841605] vkQueuePresentKHR passthrough frame=60; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774639842215] vkQueuePresentKHR passthrough frame=120; queueFamily=0; imageIndex=1; waitSemaphores=1
+[omfg][info][1774639842847] vkQueuePresentKHR passthrough frame=180; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774639843634] vkQueuePresentKHR passthrough frame=240; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774639844423] vkQueuePresentKHR passthrough frame=300; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774639845326] vkQueuePresentKHR passthrough frame=360; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774639846178] vkQueuePresentKHR passthrough frame=420; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774639846782] vkQueuePresentKHR passthrough frame=480; queueFamily=0; imageIndex=1; waitSemaphores=1
+[omfg][info][1774639847432] vkQueuePresentKHR passthrough frame=540; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774639847990] vkQueuePresentKHR passthrough frame=600; queueFamily=0; imageIndex=1; waitSemaphores=1
+[omfg][info][1774639848711] vkQueuePresentKHR passthrough frame=660; queueFamily=0; imageIndex=1; waitSemaphores=1
+[omfg][info][1774639849245] vkQueuePresentKHR passthrough frame=720; queueFamily=0; imageIndex=1; waitSemaphores=1
+[omfg][info][1774639849946] vkQueuePresentKHR passthrough frame=780; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774639850885] vkQueuePresentKHR passthrough frame=840; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774639851704] vkQueuePresentKHR passthrough frame=900; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774639852204] vkQueuePresentKHR passthrough frame=960; queueFamily=0; imageIndex=1; waitSemaphores=1
+[omfg][info][1774639853660] vkQueuePresentKHR passthrough frame=1020; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774639854271] vkQueuePresentKHR passthrough frame=1080; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774639854861] vkQueuePresentKHR passthrough frame=1140; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774639855434] vkQueuePresentKHR passthrough frame=1200; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774639856010] vkQueuePresentKHR passthrough frame=1260; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774639856660] vkQueuePresentKHR passthrough frame=1320; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774639857272] vkQueuePresentKHR passthrough frame=1380; queueFamily=0; imageIndex=1; waitSemaphores=1
+[omfg][info][1774639857839] vkQueuePresentKHR passthrough frame=1440; queueFamily=0; imageIndex=1; waitSemaphores=1
+[omfg][info][1774639858438] vkQueuePresentKHR passthrough frame=1500; queueFamily=0; imageIndex=1; waitSemaphores=1
+[omfg][info][1774639859037] vkQueuePresentKHR passthrough frame=1560; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774639859597] vkQueuePresentKHR passthrough frame=1620; queueFamily=0; imageIndex=1; waitSemaphores=1
+[omfg][info][1774639860204] vkQueuePresentKHR passthrough frame=1680; queueFamily=0; imageIndex=1; waitSemaphores=1
+[omfg][info][1774639860826] vkQueuePresentKHR passthrough frame=1740; queueFamily=0; imageIndex=1; waitSemaphores=1
+[omfg][info][1774639861437] vkQueuePresentKHR passthrough frame=1800; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774639862004] vkQueuePresentKHR passthrough frame=1860; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774639862582] vkQueuePresentKHR passthrough frame=1920; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774639863138] vkQueuePresentKHR passthrough frame=1980; queueFamily=0; imageIndex=1; waitSemaphores=1
+[omfg][info][1774639863730] vkQueuePresentKHR passthrough frame=2040; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774639864334] vkQueuePresentKHR passthrough frame=2100; queueFamily=0; imageIndex=1; waitSemaphores=1
+[omfg][info][1774639864939] vkQueuePresentKHR passthrough frame=2160; queueFamily=0; imageIndex=2; waitSemaphores=1

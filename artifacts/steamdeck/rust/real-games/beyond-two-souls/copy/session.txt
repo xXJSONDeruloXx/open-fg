@@ -1,0 +1,110 @@
+spawn ssh -tt -o StrictHostKeyChecking=accept-new -o PreferredAuthentications=password -o PubkeyAuthentication=no deck@192.168.0.241 bash -lc 'set -euo pipefail
+chmod +x /home/deck/omfg.sh
+mkdir -p /home/deck/post-proc-fg-research/logs
+rm -f /home/deck/post-proc-fg-research/logs/beyond-copy.log /tmp/omfg-beyond-copy.steam.log
+set -a
+source /run/user/1000/gamescope-environment
+set +a
+export DISPLAY=:0
+export XDG_RUNTIME_DIR=/run/user/1000
+xauth=$(ls -1 /run/user/1000/xauth_* 2>/dev/null | head -1 || true)
+if [ -n "$xauth" ]; then export XAUTHORITY="$xauth"; fi
+nohup steam steam://rungameid/960990 >/tmp/omfg-beyond-launch-copy.log 2>&1 &
+sleep 45
+echo "=== beyond mode=copy process ==="
+ps -ef | grep -E "BeyondTwoSouls|AppId=960990|proton waitforexitandrun|proton run|wineserver" | grep -v grep || true
+echo "=== beyond mode=copy omfg log ==="
+if [ -f /home/deck/post-proc-fg-research/logs/beyond-copy.log ]; then tail -200 /home/deck/post-proc-fg-research/logs/beyond-copy.log; else echo missing-log; fi
+echo "=== beyond mode=copy steam log ==="
+if [ -f /tmp/omfg-beyond-launch-copy.log ]; then tail -80 /tmp/omfg-beyond-launch-copy.log; else echo missing-steam-log; fi
+pkill -f BeyondTwoSouls_Steam.exe || true
+pkill -f "AppId=960990" || true
+pkill -f "/proton waitforexitandrun .*BEYOND Two Souls" || true
+pkill -f "/proton run .*BEYOND Two Souls" || true'
+deck@192.168.0.241's password: 
+=== beyond mode=copy process ===
+deck       25693    1738  0 14:22 ?        00:00:00 /home/deck/.local/share/Steam/ubuntu12_32/reaper SteamLaunch AppId=960990 -- /home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/_v2-entry-point --verb=waitforexitandrun -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
+deck       25698   25693  2 14:22 ?        00:00:00 /home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/pressure-vessel/libexec/steam-runtime-tools-0/srt-bwrap --args 26 /usr/lib/pressure-vessel/from-host/libexec/steam-runtime-tools-0/pv-adverb --prefix=/usr/lib/pressure-vessel/from-host --generate-locales --fd 10 --regenerate-ld.so-cache /var/pressure-vessel/ldso --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu --set-ld-library-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu/aliases:/usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu/aliases --overrides-path /usr/lib/pressure-vessel/overrides --exit-with-parent --subreaper --assign-fd=1=3 --assign-fd=2=4 --ld-preload=/home/deck/.local/share/Steam/ubuntu12_32/gameoverlayrenderer.so --ld-preload=/home/deck/.local/share/Steam/ubuntu12_64/gameoverlayrenderer.so -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
+deck       25780   25698  0 14:22 ?        00:00:00 /usr/lib/pressure-vessel/from-host/libexec/steam-runtime-tools-0/pv-adverb --prefix=/usr/lib/pressure-vessel/from-host --generate-locales --fd 10 --regenerate-ld.so-cache /var/pressure-vessel/ldso --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu --set-ld-library-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu/aliases:/usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu/aliases --overrides-path /usr/lib/pressure-vessel/overrides --exit-with-parent --subreaper --assign-fd=1=3 --assign-fd=2=4 --ld-preload=/home/deck/.local/share/Steam/ubuntu12_32/gameoverlayrenderer.so --ld-preload=/home/deck/.local/share/Steam/ubuntu12_64/gameoverlayrenderer.so -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
+deck       25804   25780  0 14:22 ?        00:00:00 python3 /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
+deck       25806   25804  0 14:22 ?        00:00:00 c:\windows\system32\steam.exe /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
+deck       25808   25780  2 14:22 ?        00:00:00 /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/files/bin/wineserver
+deck       25877   25780 99 14:22 ?        00:00:56 Z:\home\deck\.local\share\Steam\steamapps\common\BEYOND Two Souls\BeyondTwoSouls_Steam.exe
+=== beyond mode=copy omfg log ===
+[omfg][info][1774635778525] vkNegotiateLoaderLayerInterfaceVersion ok; mode=copy-test
+[omfg][info][1774635778528] vkCreateInstance ok; mode=copy-test; apiVersion=1.1.0
+[omfg][info][1774635780271] vkNegotiateLoaderLayerInterfaceVersion ok; mode=copy-test
+[omfg][info][1774635780273] vkCreateInstance ok; mode=copy-test; app=BeyondTwoSouls_Steam.exe; engine=DXVK; apiVersion=1.3.0
+[omfg][info][1774635780587] vkNegotiateLoaderLayerInterfaceVersion ok; mode=copy-test
+[omfg][info][1774635780588] vkCreateInstance ok; mode=copy-test; apiVersion=1.1.0
+[omfg][info][1774635780865] vkDestroyInstance
+[omfg][info][1774635780899] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH); presentId=1; presentWait=1; displayTiming=0
+[omfg][info][1774635783498] swapchain image bump override applied; originalMinImages=4; overriddenMinImages=4; mode=copy-test
+[omfg][info][1774635783499] vkCreateSwapchainKHR ok; extent=1280x800; format=37; presentMode=MAILBOX; minImages=4->4; usage=TRANSFER_SRC|TRANSFER_DST|STORAGE|COLOR_ATTACHMENT (0x1b) -> TRANSFER_SRC|TRANSFER_DST|STORAGE|COLOR_ATTACHMENT (0x1b); images=4; mode=copy-test
+[omfg][info][1774635783503] vkQueuePresentKHR frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774635783503] initialized injection resources for queue family 0
+[omfg][info][1774635783504] copy original-first mode enabled
+[omfg][info][1774635783504] first duplicated-frame present succeeded
+[omfg][info][1774635783504] duplicated frame present=1; sourceImageIndex=0; generatedImageIndex=1; originalFirst=1
+[omfg][info][1774635783531] vkQueuePresentKHR frame=2; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774635783539] duplicated frame present=2; sourceImageIndex=2; generatedImageIndex=3; originalFirst=1
+[omfg][info][1774635783540] vkQueuePresentKHR frame=3; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774635783545] duplicated frame present=3; sourceImageIndex=0; generatedImageIndex=1; originalFirst=1
+[omfg][info][1774635783550] vkQueuePresentKHR frame=4; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774635783555] duplicated frame present=4; sourceImageIndex=2; generatedImageIndex=3; originalFirst=1
+[omfg][info][1774635783565] vkQueuePresentKHR frame=5; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774635783572] duplicated frame present=5; sourceImageIndex=0; generatedImageIndex=1; originalFirst=1
+[omfg][info][1774635784918] vkQueuePresentKHR frame=60; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774635784925] duplicated frame present=60; sourceImageIndex=2; generatedImageIndex=3; originalFirst=1
+[omfg][info][1774635785915] vkQueuePresentKHR frame=120; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774635785922] duplicated frame present=120; sourceImageIndex=2; generatedImageIndex=3; originalFirst=1
+[omfg][info][1774635786913] vkQueuePresentKHR frame=180; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774635786920] duplicated frame present=180; sourceImageIndex=2; generatedImageIndex=3; originalFirst=1
+[omfg][info][1774635787910] vkQueuePresentKHR frame=240; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774635787916] duplicated frame present=240; sourceImageIndex=2; generatedImageIndex=3; originalFirst=1
+[omfg][info][1774635788907] vkQueuePresentKHR frame=300; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774635788914] duplicated frame present=300; sourceImageIndex=2; generatedImageIndex=3; originalFirst=1
+[omfg][info][1774635789903] vkQueuePresentKHR frame=360; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774635789911] duplicated frame present=360; sourceImageIndex=2; generatedImageIndex=3; originalFirst=1
+[omfg][info][1774635790900] vkQueuePresentKHR frame=420; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774635790907] duplicated frame present=420; sourceImageIndex=2; generatedImageIndex=3; originalFirst=1
+[omfg][info][1774635791897] vkQueuePresentKHR frame=480; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774635791903] duplicated frame present=480; sourceImageIndex=2; generatedImageIndex=3; originalFirst=1
+[omfg][info][1774635792894] vkQueuePresentKHR frame=540; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774635792901] duplicated frame present=540; sourceImageIndex=2; generatedImageIndex=3; originalFirst=1
+[omfg][info][1774635793891] vkQueuePresentKHR frame=600; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774635793898] duplicated frame present=600; sourceImageIndex=2; generatedImageIndex=3; originalFirst=1
+[omfg][info][1774635794888] vkQueuePresentKHR frame=660; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774635794895] duplicated frame present=660; sourceImageIndex=2; generatedImageIndex=3; originalFirst=1
+[omfg][info][1774635795885] vkQueuePresentKHR frame=720; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774635795893] duplicated frame present=720; sourceImageIndex=2; generatedImageIndex=3; originalFirst=1
+[omfg][info][1774635796882] vkQueuePresentKHR frame=780; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774635796890] duplicated frame present=780; sourceImageIndex=2; generatedImageIndex=3; originalFirst=1
+[omfg][info][1774635797879] vkQueuePresentKHR frame=840; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774635797887] duplicated frame present=840; sourceImageIndex=2; generatedImageIndex=3; originalFirst=1
+[omfg][info][1774635798896] vkQueuePresentKHR frame=900; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774635798907] duplicated frame present=900; sourceImageIndex=3; generatedImageIndex=1; originalFirst=1
+[omfg][info][1774635799893] vkQueuePresentKHR frame=960; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774635799905] duplicated frame present=960; sourceImageIndex=3; generatedImageIndex=1; originalFirst=1
+[omfg][info][1774635800891] vkQueuePresentKHR frame=1020; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774635800905] duplicated frame present=1020; sourceImageIndex=3; generatedImageIndex=1; originalFirst=1
+[omfg][info][1774635801887] vkQueuePresentKHR frame=1080; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774635801900] duplicated frame present=1080; sourceImageIndex=3; generatedImageIndex=1; originalFirst=1
+[omfg][info][1774635802885] vkQueuePresentKHR frame=1140; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774635802898] duplicated frame present=1140; sourceImageIndex=3; generatedImageIndex=1; originalFirst=1
+[omfg][info][1774635803882] vkQueuePresentKHR frame=1200; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774635803895] duplicated frame present=1200; sourceImageIndex=3; generatedImageIndex=1; originalFirst=1
+[omfg][info][1774635804880] vkQueuePresentKHR frame=1260; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774635804892] duplicated frame present=1260; sourceImageIndex=3; generatedImageIndex=1; originalFirst=1
+[omfg][info][1774635805878] vkQueuePresentKHR frame=1320; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774635805889] duplicated frame present=1320; sourceImageIndex=3; generatedImageIndex=1; originalFirst=1
+[omfg][info][1774635806874] vkQueuePresentKHR frame=1380; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774635806884] duplicated frame present=1380; sourceImageIndex=3; generatedImageIndex=1; originalFirst=1
+[omfg][info][1774635807871] vkQueuePresentKHR frame=1440; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774635807882] duplicated frame present=1440; sourceImageIndex=3; generatedImageIndex=1; originalFirst=1
+[omfg][info][1774635808869] vkQueuePresentKHR frame=1500; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774635808881] duplicated frame present=1500; sourceImageIndex=3; generatedImageIndex=1; originalFirst=1
+[omfg][info][1774635809865] vkQueuePresentKHR frame=1560; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774635809877] duplicated frame present=1560; sourceImageIndex=3; generatedImageIndex=1; originalFirst=1
+=== beyond mode=copy steam log ===
+Connection to 192.168.0.241 closed.

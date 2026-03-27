@@ -1,0 +1,93 @@
+spawn ssh -tt -o StrictHostKeyChecking=accept-new -o PreferredAuthentications=password -o PubkeyAuthentication=no deck@192.168.0.241 bash -lc 'set -euo pipefail
+chmod +x /home/deck/omfg.sh
+mkdir -p /home/deck/post-proc-fg-research/logs
+rm -f /home/deck/post-proc-fg-research/logs/gris-passthrough-20260327-153504-11153.log /tmp/omfg-gris-passthrough-20260327-153504-11153.steam.log
+set -a
+source /run/user/1000/gamescope-environment
+set +a
+export DISPLAY=:0
+export XDG_RUNTIME_DIR=/run/user/1000
+xauth=$(ls -1 /run/user/1000/xauth_* 2>/dev/null | head -1 || true)
+if [ -n "$xauth" ]; then export XAUTHORITY="$xauth"; fi
+cleanup_matches() {
+  APPID='"'"'683320'"'"' EXE_REGEX='"'"'GRIS.exe'"'"' python3 - <<'"'"'PY'"'"'
+import os, subprocess, signal
+appid = os.environ['"'"'APPID'"'"']
+exe_regex = os.environ.get('"'"'EXE_REGEX'"'"', '"'"''"'"')
+patterns = [f'"'"'AppId={appid}'"'"']
+if exe_regex:
+    patterns.append(exe_regex)
+self_pid = os.getpid()
+ancestors = {self_pid}
+try:
+    pid = self_pid
+    while True:
+        with open(f'"'"'/proc/{pid}/status'"'"', '"'"'r'"'"', encoding='"'"'utf-8'"'"', errors='"'"'ignore'"'"') as f:
+            ppid = None
+            for line in f:
+                if line.startswith('"'"'PPid:'"'"'):
+                    ppid = int(line.split()[1])
+                    break
+        if not ppid or ppid in ancestors:
+            break
+        ancestors.add(ppid)
+        pid = ppid
+except Exception:
+    pass
+out = subprocess.check_output(['"'"'ps'"'"', '"'"'-eo'"'"', '"'"'pid=,args='"'"'], text=True, errors='"'"'ignore'"'"')
+for line in out.splitlines():
+    s = line.strip()
+    if not s:
+        continue
+    parts = s.split(None, 1)
+    if len(parts) != 2:
+        continue
+    pid = int(parts[0])
+    args = parts[1]
+    if pid in ancestors:
+        continue
+    if any(p and p in args for p in patterns):
+        try:
+            os.kill(pid, signal.SIGKILL)
+            print(f'"'"'killed pid={pid} args={args}'"'"')
+        except ProcessLookupError:
+            pass
+        except PermissionError:
+            pass
+PY
+}
+cleanup_matches || true
+sleep 2
+echo "=== title=GRIS appid=683320 mode=passthrough run=20260327-153504-11153 paths ==="
+echo "remote_log=/home/deck/post-proc-fg-research/logs/gris-passthrough-20260327-153504-11153.log"
+echo "remote_steam_log=/tmp/omfg-gris-passthrough-20260327-153504-11153.steam.log"
+nohup steam steam://rungameid/683320 >/tmp/omfg-gris-passthrough-20260327-153504-11153.steam.log 2>&1 &
+sleep 45
+echo "=== title=GRIS appid=683320 mode=passthrough process ==="
+ps -ef | grep -E "AppId=683320|GRIS.exe" | grep -v grep || true
+echo "=== title=GRIS appid=683320 mode=passthrough omfg log ==="
+if [ -f /home/deck/post-proc-fg-research/logs/gris-passthrough-20260327-153504-11153.log ]; then tail -200 /home/deck/post-proc-fg-research/logs/gris-passthrough-20260327-153504-11153.log; else echo missing-log; fi
+echo "=== title=GRIS appid=683320 mode=passthrough steam log ==="
+if [ -f /tmp/omfg-gris-passthrough-20260327-153504-11153.steam.log ]; then tail -80 /tmp/omfg-gris-passthrough-20260327-153504-11153.steam.log; else echo missing-steam-log; fi
+cleanup_matches || true'
+deck@192.168.0.241's password: 
+=== title=GRIS appid=683320 mode=passthrough run=20260327-153504-11153 paths ===
+remote_log=/home/deck/post-proc-fg-research/logs/gris-passthrough-20260327-153504-11153.log
+remote_steam_log=/tmp/omfg-gris-passthrough-20260327-153504-11153.steam.log
+=== title=GRIS appid=683320 mode=passthrough process ===
+deck       38863   35396  0 15:35 ?        00:00:00 /home/deck/.local/share/Steam/ubuntu12_32/reaper SteamLaunch AppId=683320 -- /home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/_v2-entry-point --verb=waitforexitandrun -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/GRIS/GRIS.exe
+deck       38866   38863  3 15:35 ?        00:00:01 /home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/pressure-vessel/libexec/steam-runtime-tools-0/srt-bwrap --args 26 /usr/lib/pressure-vessel/from-host/libexec/steam-runtime-tools-0/pv-adverb --prefix=/usr/lib/pressure-vessel/from-host --generate-locales --fd 14 --regenerate-ld.so-cache /var/pressure-vessel/ldso --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu --set-ld-library-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu/aliases:/usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu/aliases --overrides-path /usr/lib/pressure-vessel/overrides --exit-with-parent --subreaper --assign-fd=1=3 --assign-fd=2=4 --ld-preload=/home/deck/.local/share/Steam/ubuntu12_32/gameoverlayrenderer.so --ld-preload=/home/deck/.local/share/Steam/ubuntu12_64/gameoverlayrenderer.so -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/GRIS/GRIS.exe
+deck       38953   38866  0 15:35 ?        00:00:00 /usr/lib/pressure-vessel/from-host/libexec/steam-runtime-tools-0/pv-adverb --prefix=/usr/lib/pressure-vessel/from-host --generate-locales --fd 14 --regenerate-ld.so-cache /var/pressure-vessel/ldso --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu --set-ld-library-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu/aliases:/usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu/aliases --overrides-path /usr/lib/pressure-vessel/overrides --exit-with-parent --subreaper --assign-fd=1=3 --assign-fd=2=4 --ld-preload=/home/deck/.local/share/Steam/ubuntu12_32/gameoverlayrenderer.so --ld-preload=/home/deck/.local/share/Steam/ubuntu12_64/gameoverlayrenderer.so -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/GRIS/GRIS.exe
+deck       38977   38953  0 15:35 ?        00:00:00 python3 /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/GRIS/GRIS.exe
+deck       38979   38977  0 15:35 ?        00:00:00 c:\windows\system32\steam.exe /home/deck/.local/share/Steam/steamapps/common/GRIS/GRIS.exe
+deck       39055   38953 50 15:35 ?        00:00:18 Z:\home\deck\.local\share\Steam\steamapps\common\GRIS\GRIS.exe
+=== title=GRIS appid=683320 mode=passthrough omfg log ===
+missing-log
+=== title=GRIS appid=683320 mode=passthrough steam log ===
+killed pid=38863 args=/home/deck/.local/share/Steam/ubuntu12_32/reaper SteamLaunch AppId=683320 -- /home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/_v2-entry-point --verb=waitforexitandrun -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/GRIS/GRIS.exe
+killed pid=38866 args=/home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/pressure-vessel/libexec/steam-runtime-tools-0/srt-bwrap --args 26 /usr/lib/pressure-vessel/from-host/libexec/steam-runtime-tools-0/pv-adverb --prefix=/usr/lib/pressure-vessel/from-host --generate-locales --fd 14 --regenerate-ld.so-cache /var/pressure-vessel/ldso --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu --set-ld-library-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu/aliases:/usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu/aliases --overrides-path /usr/lib/pressure-vessel/overrides --exit-with-parent --subreaper --assign-fd=1=3 --assign-fd=2=4 --ld-preload=/home/deck/.local/share/Steam/ubuntu12_32/gameoverlayrenderer.so --ld-preload=/home/deck/.local/share/Steam/ubuntu12_64/gameoverlayrenderer.so -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/GRIS/GRIS.exe
+killed pid=38953 args=/usr/lib/pressure-vessel/from-host/libexec/steam-runtime-tools-0/pv-adverb --prefix=/usr/lib/pressure-vessel/from-host --generate-locales --fd 14 --regenerate-ld.so-cache /var/pressure-vessel/ldso --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu --set-ld-library-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu/aliases:/usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu/aliases --overrides-path /usr/lib/pressure-vessel/overrides --exit-with-parent --subreaper --assign-fd=1=3 --assign-fd=2=4 --ld-preload=/home/deck/.local/share/Steam/ubuntu12_32/gameoverlayrenderer.so --ld-preload=/home/deck/.local/share/Steam/ubuntu12_64/gameoverlayrenderer.so -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/GRIS/GRIS.exe
+killed pid=38977 args=python3 /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/GRIS/GRIS.exe
+killed pid=38979 args=c:\windows\system32\steam.exe /home/deck/.local/share/Steam/steamapps/common/GRIS/GRIS.exe
+killed pid=39055 args=Z:\home\deck\.local\share\Steam\steamapps\common\GRIS\GRIS.exe
+Connection to 192.168.0.241 closed.

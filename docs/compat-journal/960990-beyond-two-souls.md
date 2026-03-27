@@ -416,6 +416,72 @@ Interpretation:
   - generated-image acquire / present sequencing pressure before the app’s original present
   - rather than a mode-specific incompatibility with sampling or blending itself
 
+### Adaptive generated-acquire-timeout follow-up
+The fixed `OMFG_GENERATED_ACQUIRE_TIMEOUT_NS=500000000` override was then replaced with an adaptive fallback policy in code.
+
+Current policy:
+- if `OMFG_GENERATED_ACQUIRE_TIMEOUT_NS` is explicitly set, use that exact override
+- otherwise derive timeout from observed present cadence:
+  - use `smoothed_present_interval_ms` when available
+  - otherwise `last_present_interval_ms`
+  - compute `4x` the interval
+  - clamp to:
+    - minimum `50ms`
+    - maximum `500ms`
+  - if no timing data exists yet, fall back to `20ms`
+
+Reasoning:
+- Beyond appears to run close to a 30 FPS cadence in the problematic startup/gameplay path
+- that implies a frame interval around `33.3ms`
+- a `20ms` acquire timeout is plausibly too short, while an adaptive timeout near `133ms` is much more aligned with the game’s real cadence without hardcoding a global `500ms`
+
+Validated on Deck **without** explicitly setting `OMFG_GENERATED_ACQUIRE_TIMEOUT_NS`:
+
+For `copy` with:
+- `OMFG_LAYER_MODE=copy`
+- `OMFG_COPY_ORIGINAL_PRESENT_FIRST=1`
+- `OMFG_SWAPCHAIN_IMAGE_BUMP_OVERRIDE=0`
+
+Observed log excerpt:
+
+```text
+duplicated frame present=60; ... originalFirst=1
+duplicated frame present=300; ... originalFirst=1
+duplicated frame present=900; ... originalFirst=1
+duplicated frame present=1560; ... originalFirst=1
+```
+
+For `reproject-blend` with:
+- `OMFG_LAYER_MODE=reproject-blend`
+- `OMFG_BLEND_ORIGINAL_PRESENT_FIRST=1`
+
+Observed log excerpt:
+
+```text
+reproject blended frame present=60; ... originalFirst=1
+reproject blended frame present=300; ... originalFirst=1
+reproject blended frame present=900; ... originalFirst=1
+reproject blended frame present=1260; ... originalFirst=1
+```
+
+For `multi-blend` with:
+- `OMFG_LAYER_MODE=multi-blend`
+- `OMFG_BLEND_ORIGINAL_PRESENT_FIRST=1`
+
+Observed log excerpt:
+
+```text
+multi blended frame present=60; ... originalFirst=1
+multi blended frame present=300; ... originalFirst=1
+multi blended frame present=1620; ... originalFirst=1
+multi blended frame present=3300; ... originalFirst=1
+```
+
+Interpretation:
+- the blunt `500ms` override does **not** appear to be necessary for Beyond once original-first sequencing is in place
+- the adaptive acquire-timeout policy appears sufficient to keep `copy`, `reproject-blend`, and `multi-blend` in the same long-running success class
+- this is a better product direction than requiring a large per-game fixed timeout override
+
 ## Current best understanding
 Most evidence-backed statement right now:
 - **Beyond: Two Souls can sustain passthrough and clear-style insertion, but stalls once OMFG starts generating from real app image contents.**

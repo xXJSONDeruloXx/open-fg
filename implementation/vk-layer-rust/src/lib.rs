@@ -1001,7 +1001,8 @@ unsafe fn physical_device_supports_extension(
 }
 
 unsafe fn describe_enabled_extensions(create_info: &DeviceCreateInfo) -> String {
-    if create_info.enabled_extension_count == 0 || create_info.pp_enabled_extension_names.is_null() {
+    if create_info.enabled_extension_count == 0 || create_info.pp_enabled_extension_names.is_null()
+    {
         return "<none>".to_string();
     }
 
@@ -1086,8 +1087,7 @@ fn append_timing_features_enabled() -> bool {
 }
 
 fn swapchain_image_bump_override() -> Option<u32> {
-    env_string("OMFG_SWAPCHAIN_IMAGE_BUMP_OVERRIDE")
-        .and_then(|value| value.parse::<u32>().ok())
+    env_string("OMFG_SWAPCHAIN_IMAGE_BUMP_OVERRIDE").and_then(|value| value.parse::<u32>().ok())
 }
 
 fn benchmark_enabled() -> bool {
@@ -1102,8 +1102,34 @@ fn copy_original_present_first_enabled() -> bool {
     env_bool("OMFG_COPY_ORIGINAL_PRESENT_FIRST", false)
 }
 
-fn generated_acquire_timeout_ns() -> u64 {
-    env_u64("OMFG_GENERATED_ACQUIRE_TIMEOUT_NS", 20_000_000)
+fn generated_acquire_timeout_ns_for_state(state: &SwapchainState) -> u64 {
+    if let Some(value) = env_string("OMFG_GENERATED_ACQUIRE_TIMEOUT_NS") {
+        if let Ok(parsed) = value.parse::<u64>() {
+            return parsed;
+        }
+    }
+
+    let fallback_ns = 20_000_000u64;
+    let interval_multiplier =
+        env_f32("OMFG_GENERATED_ACQUIRE_TIMEOUT_INTERVAL_MULTIPLIER", 4.0).max(1.0);
+    let min_ns = env_u64("OMFG_GENERATED_ACQUIRE_TIMEOUT_MIN_NS", 50_000_000);
+    let max_ns = env_u64("OMFG_GENERATED_ACQUIRE_TIMEOUT_MAX_NS", 500_000_000).max(min_ns);
+    let interval_ms = if state.smoothed_present_interval_ms > 0.0 {
+        Some(state.smoothed_present_interval_ms)
+    } else if state.last_present_interval_ms > 0.0 {
+        Some(state.last_present_interval_ms)
+    } else {
+        None
+    };
+
+    let Some(interval_ms) = interval_ms else {
+        return fallback_ns;
+    };
+
+    let adaptive_ns = ((interval_ms as f64) * 1_000_000.0 * interval_multiplier as f64)
+        .round()
+        .clamp(min_ns as f64, max_ns as f64) as u64;
+    adaptive_ns
 }
 
 fn blend_original_present_first_enabled() -> bool {
@@ -1282,7 +1308,7 @@ fn multi_swapchain_generated_frame_cap() -> u32 {
 
 fn requested_multi_generated_frames_for_swapchain(mode: Mode) -> u32 {
     let requested = match mode {
-        Mode::MultiBlendTest | Mode::ReprojectMultiBlendTest => {
+        Mode::MultiBlendTest | Mode::ReprojectMultiBlendTest | Mode::OptFlowMultiBlendTest => {
             env_u32("OMFG_MULTI_BLEND_COUNT", 2).max(1)
         }
         Mode::AdaptiveMultiBlendTest | Mode::ReprojectAdaptiveMultiBlendTest => {
@@ -1310,6 +1336,7 @@ fn maybe_expand_multi_swapchain_min_image_count(
             | Mode::AdaptiveMultiBlendTest
             | Mode::ReprojectMultiBlendTest
             | Mode::ReprojectAdaptiveMultiBlendTest
+            | Mode::OptFlowMultiBlendTest
     ) {
         return current_modified_min_image_count;
     }
@@ -2851,6 +2878,8 @@ fn effective_debug_view(mode: Mode) -> DebugView {
         Mode::ReprojectBlendTest
             | Mode::ReprojectAdaptiveBlendTest
             | Mode::OptFlowBlendTest
+            | Mode::OptFlowAdaptiveBlendTest
+            | Mode::OptFlowMultiBlendTest
             | Mode::ReprojectMultiBlendTest
             | Mode::ReprojectAdaptiveMultiBlendTest
     ) {
@@ -3014,6 +3043,26 @@ fn blend_push_constants_for_mode(mode: Mode) -> BlendPushConstants {
             debug_view: effective_debug_view(mode).shader_code(),
             ..Default::default()
         },
+        Mode::OptFlowAdaptiveBlendTest => BlendPushConstants {
+            alpha: 0.5,
+            adaptive_strength: blend_adaptive_strength(),
+            adaptive_bias: blend_adaptive_bias(),
+            confidence_scale: optflow_confidence_scale(),
+            disocclusion_scale: reproject_disocclusion_scale(),
+            hole_fill_strength: reproject_hole_fill_strength(),
+            gradient_confidence_weight: reproject_gradient_confidence_weight(),
+            chroma_weight: reproject_chroma_weight(),
+            ambiguity_scale: reproject_ambiguity_scale(),
+            optflow_motion_penalty: optflow_motion_penalty(),
+            disocclusion_current_bias: reproject_disocclusion_current_bias(),
+            search_radius: optflow_search_radius(),
+            patch_radius: optflow_patch_radius(),
+            hole_fill_radius: reproject_hole_fill_radius(),
+            optflow_levels: optflow_levels(),
+            mode: 7,
+            debug_view: effective_debug_view(mode).shader_code(),
+            ..Default::default()
+        },
         _ => BlendPushConstants::default(),
     }
 }
@@ -3030,6 +3079,7 @@ fn multi_blend_push_constants_plan(
         mode,
         Mode::ReprojectMultiBlendTest | Mode::ReprojectAdaptiveMultiBlendTest
     );
+    let optflow = matches!(mode, Mode::OptFlowMultiBlendTest);
 
     (1..=generated_frame_count)
         .map(|index| {
@@ -3044,61 +3094,80 @@ fn multi_blend_push_constants_plan(
                 adaptive_bias: if adaptive { blend_adaptive_bias() } else { 0.0 },
                 confidence_scale: if reproject {
                     reproject_confidence_scale()
+                } else if optflow {
+                    optflow_confidence_scale()
                 } else {
                     0.0
                 },
-                disocclusion_scale: if reproject {
+                disocclusion_scale: if reproject || optflow {
                     reproject_disocclusion_scale()
                 } else {
                     0.0
                 },
-                hole_fill_strength: if reproject {
+                hole_fill_strength: if reproject || optflow {
                     reproject_hole_fill_strength()
                 } else {
                     0.0
                 },
-                gradient_confidence_weight: if reproject {
+                gradient_confidence_weight: if reproject || optflow {
                     reproject_gradient_confidence_weight()
                 } else {
                     0.0
                 },
-                chroma_weight: if reproject {
+                chroma_weight: if reproject || optflow {
                     reproject_chroma_weight()
                 } else {
                     0.0
                 },
-                ambiguity_scale: if reproject {
+                ambiguity_scale: if reproject || optflow {
                     reproject_ambiguity_scale()
                 } else {
                     0.0
                 },
-                disocclusion_current_bias: if reproject {
+                disocclusion_current_bias: if reproject || optflow {
                     reproject_disocclusion_current_bias()
                 } else {
                     0.0
                 },
                 search_radius: if reproject {
                     reproject_search_radius()
+                } else if optflow {
+                    optflow_search_radius()
                 } else {
                     0
                 },
                 patch_radius: if reproject {
                     reproject_patch_radius()
+                } else if optflow {
+                    optflow_patch_radius()
                 } else {
                     0
                 },
-                hole_fill_radius: if reproject {
+                hole_fill_radius: if reproject || optflow {
                     reproject_hole_fill_radius()
                 } else {
                     0
                 },
-                mode: match (reproject, adaptive) {
-                    (false, false) => 0,
-                    (false, true) => 1,
-                    (true, false) => 4,
-                    (true, true) => 5,
+                optflow_motion_penalty: if optflow {
+                    optflow_motion_penalty()
+                } else {
+                    0.0
                 },
-                debug_view: if reproject {
+                optflow_levels: if optflow { optflow_levels() } else { 0 },
+                mode: if reproject {
+                    if adaptive {
+                        5
+                    } else {
+                        4
+                    }
+                } else if optflow {
+                    6
+                } else if adaptive {
+                    1
+                } else {
+                    0
+                },
+                debug_view: if reproject || optflow {
                     effective_debug_view(mode).shader_code()
                 } else {
                     DebugView::Off.shader_code()
@@ -3140,6 +3209,16 @@ fn blend_mode_labels(mode: Mode) -> (&'static str, &'static str, &'static str) {
             "optflow-blend primed previous frame history",
             "first optical-flow blended generated-frame present succeeded",
             "optical-flow blended frame present=",
+        ),
+        Mode::OptFlowAdaptiveBlendTest => (
+            "optflow-adaptive-blend primed previous frame history",
+            "first optical-flow adaptive blended generated-frame present succeeded",
+            "optical-flow adaptive blended frame present=",
+        ),
+        Mode::OptFlowMultiBlendTest => (
+            "optflow-multi-blend primed previous frame history",
+            "first optical-flow multi blended generated-frame present succeeded",
+            "optical-flow multi blended frame present=",
         ),
         Mode::MultiBlendTest => (
             "multi-blend primed previous frame history",
@@ -3310,7 +3389,7 @@ unsafe fn try_present_blend_frame(
         let acquire_result = acquire_next_image(
             device_info.device,
             state.handle,
-            generated_acquire_timeout_ns(),
+            generated_acquire_timeout_ns_for_state(state),
             state.inject.acquire_semaphore,
             vk::Fence::null(),
             &mut generated_image_index,
@@ -3692,13 +3771,15 @@ unsafe fn try_present_blend_frame(
         benchmark_sample.cpu_record_ms = timer.elapsed().as_secs_f64() * 1000.0;
     }
 
-    let mut wait_semaphores = Vec::with_capacity(
-        if blend_original_first {
-            if have_generated { 1 } else { 0 }
+    let mut wait_semaphores = Vec::with_capacity(if blend_original_first {
+        if have_generated {
+            1
         } else {
-            present_info.wait_semaphore_count as usize + if have_generated { 1 } else { 0 }
-        },
-    );
+            0
+        }
+    } else {
+        present_info.wait_semaphore_count as usize + if have_generated { 1 } else { 0 }
+    });
     let mut wait_stages = Vec::with_capacity(wait_semaphores.capacity());
     if !blend_original_first {
         for index in 0..present_info.wait_semaphore_count as usize {
@@ -3941,7 +4022,7 @@ unsafe fn try_present_multi_blend_frame(
         Mode::AdaptiveMultiBlendTest | Mode::ReprojectAdaptiveMultiBlendTest => adaptive_request
             .map(|request| request.generated_frame_count)
             .unwrap_or(0),
-        Mode::MultiBlendTest | Mode::ReprojectMultiBlendTest => {
+        Mode::MultiBlendTest | Mode::ReprojectMultiBlendTest | Mode::OptFlowMultiBlendTest => {
             env_u32("OMFG_MULTI_BLEND_COUNT", 2).max(1) as usize
         }
         _ => 1,
@@ -4045,7 +4126,9 @@ unsafe fn try_present_multi_blend_frame(
             return false;
         };
         if queue_wait_idle(queue) != vk::Result::SUCCESS {
-            log_warn("QueueWaitIdle failed after original present in multi-blend original-first mode");
+            log_warn(
+                "QueueWaitIdle failed after original present in multi-blend original-first mode",
+            );
             return false;
         }
     }
@@ -4099,7 +4182,7 @@ unsafe fn try_present_multi_blend_frame(
             let acquire_result = acquire_next_image(
                 device_info.device,
                 state.handle,
-                generated_acquire_timeout_ns(),
+                generated_acquire_timeout_ns_for_state(state),
                 acquire_semaphore,
                 acquire_fence,
                 &mut generated_image_index,
@@ -4483,22 +4566,20 @@ unsafe fn try_present_multi_blend_frame(
         benchmark_sample.cpu_record_ms = timer.elapsed().as_secs_f64() * 1000.0;
     }
 
-    let mut wait_semaphores = Vec::with_capacity(
-        if blend_original_first {
-            if use_gpu_acquire_chain {
+    let mut wait_semaphores = Vec::with_capacity(if blend_original_first {
+        if use_gpu_acquire_chain {
+            generated_image_indices.len()
+        } else {
+            0
+        }
+    } else {
+        present_info.wait_semaphore_count as usize
+            + if use_gpu_acquire_chain {
                 generated_image_indices.len()
             } else {
                 0
             }
-        } else {
-            present_info.wait_semaphore_count as usize
-                + if use_gpu_acquire_chain {
-                    generated_image_indices.len()
-                } else {
-                    0
-                }
-        },
-    );
+    });
     let mut wait_stages = Vec::with_capacity(wait_semaphores.capacity());
     if !blend_original_first {
         for index in 0..present_info.wait_semaphore_count as usize {
@@ -4750,7 +4831,7 @@ unsafe fn try_present_copy_frame(
     let acquire_result = acquire_next_image(
         device_info.device,
         state.handle,
-        generated_acquire_timeout_ns(),
+        generated_acquire_timeout_ns_for_state(state),
         state.inject.acquire_semaphore,
         vk::Fence::null(),
         &mut generated_image_index,
@@ -4926,13 +5007,11 @@ unsafe fn try_present_copy_frame(
         return false;
     }
 
-    let mut wait_semaphores = Vec::with_capacity(
-        if copy_original_first {
-            1
-        } else {
-            present_info.wait_semaphore_count as usize + 1
-        },
-    );
+    let mut wait_semaphores = Vec::with_capacity(if copy_original_first {
+        1
+    } else {
+        present_info.wait_semaphore_count as usize + 1
+    });
     let mut wait_stages = Vec::with_capacity(wait_semaphores.capacity());
     if !copy_original_first {
         for index in 0..present_info.wait_semaphore_count as usize {
@@ -5129,7 +5208,7 @@ unsafe fn try_present_history_copy_frame(
         let acquire_result = acquire_next_image(
             device_info.device,
             state.handle,
-            generated_acquire_timeout_ns(),
+            generated_acquire_timeout_ns_for_state(state),
             state.inject.acquire_semaphore,
             vk::Fence::null(),
             &mut generated_image_index,
@@ -5592,7 +5671,7 @@ unsafe fn try_present_clear_frame(
     let acquire_result = acquire_next_image(
         device_info.device,
         state.handle,
-        generated_acquire_timeout_ns(),
+        generated_acquire_timeout_ns_for_state(state),
         state.inject.acquire_semaphore,
         vk::Fence::null(),
         &mut generated_image_index,
@@ -6041,12 +6120,14 @@ unsafe extern "system" fn layer_create_device(
     let mut present_id_features = vk::PhysicalDevicePresentIdFeaturesKHR::default();
     let mut present_wait_features = vk::PhysicalDevicePresentWaitFeaturesKHR::default();
     if append_timing_features {
-        if let Some(get_physical_device_features2) = instance_dispatch.get_physical_device_features2 {
+        if let Some(get_physical_device_features2) = instance_dispatch.get_physical_device_features2
+        {
             let mut features2 = vk::PhysicalDeviceFeatures2::default();
             let mut query_present_id = vk::PhysicalDevicePresentIdFeaturesKHR::default();
             let mut query_present_wait = vk::PhysicalDevicePresentWaitFeaturesKHR::default();
-            query_present_id.p_next =
-                (&mut query_present_wait as *mut vk::PhysicalDevicePresentWaitFeaturesKHR<'_>).cast();
+            query_present_id.p_next = (&mut query_present_wait
+                as *mut vk::PhysicalDevicePresentWaitFeaturesKHR<'_>)
+                .cast();
             features2.p_next =
                 (&mut query_present_id as *mut vk::PhysicalDevicePresentIdFeaturesKHR<'_>).cast();
             get_physical_device_features2(physical_device, &mut features2);
@@ -6476,6 +6557,8 @@ unsafe extern "system" fn layer_create_swapchain_khr(
             | Mode::ReprojectBlendTest
             | Mode::ReprojectAdaptiveBlendTest
             | Mode::OptFlowBlendTest
+            | Mode::OptFlowAdaptiveBlendTest
+            | Mode::OptFlowMultiBlendTest
             | Mode::MultiBlendTest
             | Mode::AdaptiveMultiBlendTest
             | Mode::ReprojectMultiBlendTest
@@ -6497,6 +6580,7 @@ unsafe extern "system" fn layer_create_swapchain_khr(
             | Mode::AdaptiveMultiBlendTest
             | Mode::ReprojectMultiBlendTest
             | Mode::ReprojectAdaptiveMultiBlendTest
+            | Mode::OptFlowMultiBlendTest
     ) && expanded_min_image_count > mutation.modified_min_image_count
     {
         let requested_generated_frames = requested_multi_generated_frames_for_swapchain(mode);
@@ -6618,6 +6702,9 @@ unsafe extern "system" fn layer_queue_present_khr(
                         | Mode::SearchAdaptiveBlendTest
                         | Mode::ReprojectBlendTest
                         | Mode::ReprojectAdaptiveBlendTest
+                        | Mode::OptFlowBlendTest
+                        | Mode::OptFlowAdaptiveBlendTest
+                        | Mode::OptFlowMultiBlendTest
                         | Mode::MultiBlendTest
                         | Mode::AdaptiveMultiBlendTest
                         | Mode::ReprojectMultiBlendTest
@@ -6719,6 +6806,7 @@ unsafe extern "system" fn layer_queue_present_khr(
                             | Mode::ReprojectBlendTest
                             | Mode::ReprojectAdaptiveBlendTest
                             | Mode::OptFlowBlendTest
+                            | Mode::OptFlowAdaptiveBlendTest
                     ) && have_queue =>
                 {
                     swapchain_state.injection_attempted = true;
@@ -6741,6 +6829,7 @@ unsafe extern "system" fn layer_queue_present_khr(
                             | Mode::AdaptiveMultiBlendTest
                             | Mode::ReprojectMultiBlendTest
                             | Mode::ReprojectAdaptiveMultiBlendTest
+                            | Mode::OptFlowMultiBlendTest
                     ) && have_queue =>
                 {
                     swapchain_state.injection_attempted = true;
@@ -7208,6 +7297,67 @@ mod tests {
         std::env::remove_var("OMFG_OPTICAL_FLOW_LEVELS");
         std::env::remove_var("OMFG_OPTICAL_FLOW_CONFIDENCE_SCALE");
         std::env::remove_var("OMFG_OPTICAL_FLOW_MOTION_PENALTY");
+        std::env::remove_var("OMFG_DEBUG_VIEW");
+    }
+
+    #[test]
+    fn optflow_adaptive_push_constants_include_motion_and_adaptive_controls() {
+        let _guard = env_test_lock().lock().expect("env test mutex poisoned");
+        std::env::set_var("OMFG_OPTICAL_FLOW_SEARCH_RADIUS", "2");
+        std::env::set_var("OMFG_OPTICAL_FLOW_PATCH_RADIUS", "1");
+        std::env::set_var("OMFG_OPTICAL_FLOW_LEVELS", "3");
+        std::env::set_var("OMFG_OPTICAL_FLOW_CONFIDENCE_SCALE", "4.0");
+        std::env::set_var("OMFG_OPTICAL_FLOW_MOTION_PENALTY", "0.03");
+        std::env::set_var("OMFG_DEBUG_VIEW", "confidence");
+
+        let push = blend_push_constants_for_mode(Mode::OptFlowAdaptiveBlendTest);
+        assert_eq!(push.search_radius, 2);
+        assert_eq!(push.patch_radius, 1);
+        assert_eq!(push.optflow_levels, 3);
+        assert_eq!(push.confidence_scale, 4.0);
+        assert_eq!(push.optflow_motion_penalty, 0.03);
+        // mode 7 = optflow-adaptive-blend
+        assert_eq!(push.mode, 7);
+        // adaptive controls present
+        assert!(push.adaptive_strength > 0.0);
+        // debug view propagated
+        assert_eq!(push.debug_view, DebugView::Confidence.shader_code());
+
+        std::env::remove_var("OMFG_OPTICAL_FLOW_SEARCH_RADIUS");
+        std::env::remove_var("OMFG_OPTICAL_FLOW_PATCH_RADIUS");
+        std::env::remove_var("OMFG_OPTICAL_FLOW_LEVELS");
+        std::env::remove_var("OMFG_OPTICAL_FLOW_CONFIDENCE_SCALE");
+        std::env::remove_var("OMFG_OPTICAL_FLOW_MOTION_PENALTY");
+        std::env::remove_var("OMFG_DEBUG_VIEW");
+    }
+
+    #[test]
+    fn optflow_multi_blend_plan_uses_optflow_mode_per_generated_frame() {
+        let _guard = env_test_lock().lock().expect("env test mutex poisoned");
+        std::env::set_var("OMFG_OPTICAL_FLOW_LEVELS", "4");
+        std::env::set_var("OMFG_OPTICAL_FLOW_CONFIDENCE_SCALE", "3.0");
+        std::env::set_var("OMFG_DEBUG_VIEW", "motion");
+
+        let plan = multi_blend_push_constants_plan(Mode::OptFlowMultiBlendTest, 2);
+        assert_eq!(plan.len(), 2);
+        // first generated frame at alpha=1/3
+        assert!((plan[0].alpha - (1.0_f32 / 3.0)).abs() < 0.01);
+        // second at alpha=2/3
+        assert!((plan[1].alpha - (2.0_f32 / 3.0)).abs() < 0.01);
+        for frame in &plan {
+            // each frame uses shader mode 6 (optflow)
+            assert_eq!(frame.mode, 6, "optflow-multi per-frame mode should be 6");
+            // optflow knobs propagated
+            assert_eq!(frame.optflow_levels, 4);
+            assert_eq!(frame.confidence_scale, 3.0);
+            // optflow motion penalty propagated
+            assert!(frame.optflow_motion_penalty > 0.0);
+            // debug view propagated
+            assert_eq!(frame.debug_view, DebugView::Motion.shader_code());
+        }
+
+        std::env::remove_var("OMFG_OPTICAL_FLOW_LEVELS");
+        std::env::remove_var("OMFG_OPTICAL_FLOW_CONFIDENCE_SCALE");
         std::env::remove_var("OMFG_DEBUG_VIEW");
     }
 

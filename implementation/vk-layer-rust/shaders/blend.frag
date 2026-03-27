@@ -189,7 +189,7 @@ void main() {
             }
         }
         source_prev = best_prev;
-    } else if (u_params.mode == 4u || u_params.mode == 5u || u_params.mode == 6u) {
+    } else if (u_params.mode == 4u || u_params.mode == 5u || u_params.mode == 6u || u_params.mode == 7u) {
         reproject_mode = true;
         ivec2 size_px = textureSize(u_prev_frame, 0);
         vec2 texel = 1.0 / vec2(size_px);
@@ -199,7 +199,7 @@ void main() {
         float second_best_error = 1e20;
         ivec2 best_half_offset = ivec2(0);
 
-        if (u_params.mode == 6u) {
+        if (u_params.mode == 6u || u_params.mode == 7u) {
             coarse_to_fine_half_offset(
                 v_uv,
                 search_radius,
@@ -282,7 +282,7 @@ void main() {
         source_curr = mix(curr_color, reproject_curr, confidence);
     }
 
-    if (u_params.mode == 1u || u_params.mode == 3u || u_params.mode == 5u) {
+    if (u_params.mode == 1u || u_params.mode == 3u || u_params.mode == 5u || u_params.mode == 7u) {
         float diff = length(source_curr.rgb - source_prev.rgb);
         float motion = clamp(diff * u_params.adaptive_strength, 0.0, 1.0);
         blend_alpha = clamp(mix(u_params.alpha, 1.0 - u_params.adaptive_bias, motion), 0.0, 1.0);
@@ -304,7 +304,7 @@ void main() {
 
     if (u_params.debug_view == 1u) {
         float search_norm = max(float(search_radius), 1.0);
-        if (u_params.mode == 6u) {
+        if (u_params.mode == 6u || u_params.mode == 7u) {
             search_norm *= float(1 << max(int(u_params.optflow_levels) - 1, 0));
         }
         vec2 motion_norm = clamp(debug_half_offset_px / search_norm, vec2(-1.0), vec2(1.0));

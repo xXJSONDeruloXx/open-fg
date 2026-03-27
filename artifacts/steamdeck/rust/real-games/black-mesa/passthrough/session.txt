@@ -1,0 +1,26 @@
+spawn ssh -tt -o StrictHostKeyChecking=accept-new -o PreferredAuthentications=password -o PubkeyAuthentication=no deck@192.168.0.241 bash -lc 'set -euo pipefail
+chmod +x /home/deck/omfg.sh
+mkdir -p /home/deck/post-proc-fg-research/logs
+rm -f /home/deck/post-proc-fg-research/logs/black-mesa-passthrough.log /tmp/omfg-black-mesa-passthrough.steam.log
+set -a
+source /run/user/1000/gamescope-environment
+set +a
+export DISPLAY=:0
+export XDG_RUNTIME_DIR=/run/user/1000
+xauth=$(ls -1 /run/user/1000/xauth_* 2>/dev/null | head -1 || true)
+if [ -n "$xauth" ]; then export XAUTHORITY="$xauth"; fi
+pkill -f "AppId=362890" || true
+if [ -n "bms_linux" ]; then pkill -f "bms_linux" || true; fi
+sleep 2
+nohup steam steam://rungameid/362890 >/tmp/omfg-black-mesa-passthrough.steam.log 2>&1 &
+sleep 35
+echo "=== title=Black Mesa appid=362890 mode=passthrough process ==="
+ps -ef | grep -E "AppId=362890|bms_linux" | grep -v grep || true
+echo "=== title=Black Mesa appid=362890 mode=passthrough omfg log ==="
+if [ -f /home/deck/post-proc-fg-research/logs/black-mesa-passthrough.log ]; then tail -200 /home/deck/post-proc-fg-research/logs/black-mesa-passthrough.log; else echo missing-log; fi
+echo "=== title=Black Mesa appid=362890 mode=passthrough steam log ==="
+if [ -f /tmp/omfg-black-mesa-passthrough.steam.log ]; then tail -80 /tmp/omfg-black-mesa-passthrough.steam.log; else echo missing-steam-log; fi
+pkill -f "AppId=362890" || true
+if [ -n "bms_linux" ]; then pkill -f "bms_linux" || true; fi'
+deck@192.168.0.241's password: 
+Connection to 192.168.0.241 closed.
