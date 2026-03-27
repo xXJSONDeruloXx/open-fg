@@ -167,11 +167,21 @@ export OMFG_REPROJECT_DISOCCLUSION_CURRENT_BIAS=0.75
 export OMFG_REPROJECT_AMBIGUITY_SCALE=6.0
 ./scripts/test-steamdeck-vkcube.sh
 
-# Optional reprojection debug views (currently for reprojection-backed modes)
+# Optional debug views (currently supported for reprojection-backed modes and `optflow-blend`)
 export OMFG_LAYER_MODE=reproject-blend
 export OMFG_DEBUG_VIEW=motion        # or confidence / ambiguity / disocclusion / hole-fill / fallback
 export OMFG_BENCHMARK=1
 export OMFG_BENCHMARK_LABEL=debug-motion
+./scripts/test-steamdeck-vkcube.sh
+
+# Example optical-flow debug run
+export OMFG_LAYER_MODE=optflow-blend
+export OMFG_OPTICAL_FLOW_SEARCH_RADIUS=1
+export OMFG_OPTICAL_FLOW_PATCH_RADIUS=1
+export OMFG_OPTICAL_FLOW_LEVELS=2
+export OMFG_DEBUG_VIEW=motion        # or confidence
+export OMFG_BENCHMARK=1
+export OMFG_BENCHMARK_LABEL=optflow-debug-motion
 ./scripts/test-steamdeck-vkcube.sh
 ```
 
@@ -318,6 +328,9 @@ It now also exposes tunable quality controls via:
 - `OMFG_REPROJECT_AMBIGUITY_SCALE` (suppresses confidence when multiple reprojection candidates are nearly tied; default `6.0`)
 The `reproject-adaptive-blend` mode combines that stronger reprojection path with adaptive current-frame weighting.
 The `optflow-blend` mode is the first hardware-agnostic optical-flow-style single-FG experiment. Its current v0 uses a coarse-to-fine block-matching search inside the generated-frame shader rather than a separate flow texture stage, making it a practical stepping stone toward a richer analytical motion-estimation stack.
+The current debug-view path also works on `optflow-blend`; Deck-validated examples include:
+- `artifacts/steamdeck/rust/vkcube/optflow-blend-debug-motion-fast/`
+- `artifacts/steamdeck/rust/vkcube/optflow-blend-debug-confidence-fast/`
 A focused Deck benchmark run at `artifacts/steamdeck/rust/benchmark/optflow-compare-20260327-102630/` showed:
 - `reproject-blend-default`: `avgCpuTotalMs=15.98`, `avgGpuCmdMs=3.898`
 - `optflow-blend-default`: `avgCpuTotalMs=21.255`, `avgGpuCmdMs=11.101`

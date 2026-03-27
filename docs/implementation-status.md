@@ -269,6 +269,10 @@ Observed:
 - conclusion so far:
   - the wider default optical-flow v0 profile is too expensive on Deck today
   - the tighter fast profile is already competitive with, and slightly cheaper than, the current reprojection baseline on this target
+- current optflow debug-view Deck artifacts also now include:
+  - `artifacts/steamdeck/rust/vkcube/optflow-blend-debug-motion-fast/`
+  - `artifacts/steamdeck/rust/vkcube/optflow-blend-debug-confidence-fast/`
+- those runs confirm the same debug-view plumbing used for reprojection-backed modes is also useful on the fast optical-flow v0 path
 
 #### 9. `multi-blend` (Rust)
 Working as the first multi-FG stepping stone.
