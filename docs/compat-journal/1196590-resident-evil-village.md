@@ -108,3 +108,21 @@ Additional note:
 
 Interpretation:
 - the Beyond troubleshooting changes did not regress the previously working RE Village path
+
+## Later revalidation after blend-sequencing code changes
+After adding blend-path original-first sequencing support for Beyond (`OMFG_BLEND_ORIGINAL_PRESENT_FIRST`), RE Village was rerun again to check for regressions on the default path.
+
+Observed Deck evidence:
+
+```text
+app=re8.exe; engine=DXVK; apiVersion=1.3.0
+app=re8.exe; engine=vkd3d; apiVersion=1.3.0
+vkCreateDevice ok
+vkCreateSwapchainKHR ok
+first reproject blended generated-frame present succeeded
+reproject blended frame present=1; generatedImageIndex=2; currentImageIndex=1; originalFirst=0
+```
+
+Interpretation:
+- the new blend-path sequencing support did not break the existing default RE Village path in the quick live rerun
+- the live log still shows default behavior (`originalFirst=0`) for RE Village unless the new Beyond-oriented blend knob is explicitly enabled

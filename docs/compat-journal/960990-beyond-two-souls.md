@@ -322,6 +322,99 @@ Interpretation:
   - no extra swapchain-image bump (`4->4` worked)
   - much longer generated-image acquire timeout (`500ms`)
 - this strongly suggests the practical blocker was not copying pixels alone, but copied-content generation combined with overly aggressive generated-image acquire timing / sequencing
+- importantly, this is still a **config-dependent compatibility path**, not yet proof that stock/default OMFG behavior for Beyond is fixed, because earlier default/near-default `copy` runs remained in the early-stall class until these explicit knobs were applied
+
+### Blend follow-up audit
+Question:
+- can the longer generated-image acquire timeout alone promote Beyond blend modes into the same long-running success class?
+
+Tested on Deck with:
+- `OMFG_LAYER_MODE=reproject-blend`
+- `OMFG_GENERATED_ACQUIRE_TIMEOUT_NS=500000000`
+
+Observed log excerpt:
+
+```text
+vkCreateSwapchainKHR ok; ... minImages=4->6; ... mode=reproject-blend-test
+reproject-blend primed previous frame history
+first reproject blended generated-frame present succeeded
+reproject blended frame present=1; generatedImageIndex=2; currentImageIndex=1
+reproject blended frame present=2; generatedImageIndex=4; currentImageIndex=3
+```
+
+Tested on Deck with:
+- `OMFG_LAYER_MODE=multi-blend`
+- `OMFG_GENERATED_ACQUIRE_TIMEOUT_NS=500000000`
+
+Observed log excerpt:
+
+```text
+vkCreateSwapchainKHR ok; ... minImages=4->7; ... mode=multi-blend-test
+multi-blend primed previous frame history
+first multi blended generated-frame present succeeded
+multi blended frame present=2; generatedImageIndices=[2, 3]; currentImageIndex=1
+multi blended frame present=4; generatedImageIndices=[5, 6]; currentImageIndex=4
+```
+
+Interpretation:
+- the longer acquire timeout by itself does **not** yet put `reproject-blend` or `multi-blend` into the same long-running success class that `copy` now reaches with original-first sequencing plus the longer timeout
+- at least in this iteration, both blend-derived modes still showed only their initial generated-frame progress before falling back into the same early-stop pattern
+- this makes the current evidence-backed classification clearer:
+  - `copy` has a validated **config-dependent compatibility recipe**
+  - `reproject-blend` and `multi-blend` still need additional sequencing work, likely analogous to the copy-mode original-first experiment rather than timeout-only tuning
+
+### Blend original-first follow-up
+A fifth targeted sequencing knob was added in code:
+- `OMFG_BLEND_ORIGINAL_PRESENT_FIRST`
+
+Intent:
+- apply the same successful idea from `copy` mode to blend-derived modes
+- let the game’s original present complete first, then do the generated blend presents afterward
+- combine that with the already-useful longer generated-image acquire timeout
+
+Tested on Deck with:
+- `OMFG_LAYER_MODE=reproject-blend`
+- `OMFG_BLEND_ORIGINAL_PRESENT_FIRST=1`
+- `OMFG_GENERATED_ACQUIRE_TIMEOUT_NS=500000000`
+
+Observed log excerpt:
+
+```text
+vkCreateSwapchainKHR ok; ... minImages=4->6; ... mode=reproject-blend-test
+first reproject blended generated-frame present succeeded
+blend original-first mode enabled
+reproject blended frame present=5; ... originalFirst=1
+reproject blended frame present=60; ... originalFirst=1
+reproject blended frame present=300; ... originalFirst=1
+reproject blended frame present=600; ... originalFirst=1
+reproject blended frame present=1140; ... originalFirst=1
+```
+
+Tested on Deck with:
+- `OMFG_LAYER_MODE=multi-blend`
+- `OMFG_BLEND_ORIGINAL_PRESENT_FIRST=1`
+- `OMFG_GENERATED_ACQUIRE_TIMEOUT_NS=500000000`
+
+Observed log excerpt:
+
+```text
+vkCreateSwapchainKHR ok; ... minImages=4->7; ... mode=multi-blend-test
+first multi blended generated-frame present succeeded
+multi-blend original-first mode enabled
+multi blended frame present=6; ... originalFirst=1
+multi blended frame present=60; ... originalFirst=1
+multi blended frame present=300; ... originalFirst=1
+multi blended frame present=1620; ... originalFirst=1
+multi blended frame present=3060; ... originalFirst=1
+```
+
+Interpretation:
+- this is the strongest generalization result so far: the same **original-first sequencing** idea that rescued `copy` also rescues both tested blend-derived Beyond modes when paired with the longer acquire timeout
+- `reproject-blend` now reaches the same long-running active-FG success class in Beyond
+- `multi-blend` also reaches a long-running active-FG success class in Beyond and sustains repeated generated presents far beyond the old early-stall boundary
+- the evidence now points much more strongly to a shared root cause across these modes:
+  - generated-image acquire / present sequencing pressure before the app’s original present
+  - rather than a mode-specific incompatibility with sampling or blending itself
 
 ## Current best understanding
 Most evidence-backed statement right now:

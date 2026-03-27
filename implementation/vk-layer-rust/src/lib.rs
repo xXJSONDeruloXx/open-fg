@@ -1106,6 +1106,10 @@ fn generated_acquire_timeout_ns() -> u64 {
     env_u64("OMFG_GENERATED_ACQUIRE_TIMEOUT_NS", 20_000_000)
 }
 
+fn blend_original_present_first_enabled() -> bool {
+    env_bool("OMFG_BLEND_ORIGINAL_PRESENT_FIRST", false)
+}
+
 fn present_timing_enabled() -> bool {
     env_bool("OMFG_PRESENT_TIMING", true)
 }
@@ -3245,6 +3249,7 @@ unsafe fn try_present_blend_frame(
     };
 
     let (prime_label, first_success_label, generated_label_prefix) = blend_mode_labels(mode);
+    let blend_original_first = blend_original_present_first_enabled();
 
     let prior_submit_wait = wait_for_fences(
         device_info.device,
@@ -3262,6 +3267,23 @@ unsafe fn try_present_blend_frame(
     }
 
     let source_index = *present_info.p_image_indices;
+    if blend_original_first {
+        let original_result = queue_present(queue, present_info);
+        if original_result != vk::Result::SUCCESS && original_result != vk::Result::SUBOPTIMAL_KHR {
+            log_warn(format!(
+                "original QueuePresentKHR failed in blend original-first mode: {}",
+                original_result.as_raw()
+            ));
+            return false;
+        }
+        let Some(queue_wait_idle) = device_info.dispatch.queue_wait_idle else {
+            return false;
+        };
+        if queue_wait_idle(queue) != vk::Result::SUCCESS {
+            log_warn("QueueWaitIdle failed after original present in blend original-first mode");
+            return false;
+        }
+    }
     if source_index as usize >= state.images.len() {
         refresh_swapchain_images(state, &device_info.dispatch);
         if source_index as usize >= state.images.len() {
@@ -3671,21 +3693,31 @@ unsafe fn try_present_blend_frame(
     }
 
     let mut wait_semaphores = Vec::with_capacity(
-        present_info.wait_semaphore_count as usize + if have_generated { 1 } else { 0 },
+        if blend_original_first {
+            if have_generated { 1 } else { 0 }
+        } else {
+            present_info.wait_semaphore_count as usize + if have_generated { 1 } else { 0 }
+        },
     );
     let mut wait_stages = Vec::with_capacity(wait_semaphores.capacity());
-    for index in 0..present_info.wait_semaphore_count as usize {
-        wait_semaphores.push(*present_info.p_wait_semaphores.add(index));
-        wait_stages.push(
-            vk::PipelineStageFlags::TRANSFER | vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,
-        );
+    if !blend_original_first {
+        for index in 0..present_info.wait_semaphore_count as usize {
+            wait_semaphores.push(*present_info.p_wait_semaphores.add(index));
+            wait_stages.push(
+                vk::PipelineStageFlags::TRANSFER | vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,
+            );
+        }
     }
     if have_generated {
         wait_semaphores.push(state.inject.acquire_semaphore);
         wait_stages.push(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT);
     }
 
-    let mut signal_semaphores = vec![state.inject.ready_original_semaphore];
+    let mut signal_semaphores = if blend_original_first {
+        Vec::new()
+    } else {
+        vec![state.inject.ready_original_semaphore]
+    };
     if have_generated {
         signal_semaphores.push(state.inject.ready_generated_semaphore);
     }
@@ -3781,37 +3813,39 @@ unsafe fn try_present_blend_frame(
         }
     }
 
-    let mut original_present = *present_info;
-    original_present.wait_semaphore_count = 1;
-    original_present.p_wait_semaphores = &state.inject.ready_original_semaphore;
-    let original_present_timer = benchmark_active.then(Instant::now);
-    if have_generated {
-        maybe_sleep_ms(visual_hold_ms());
-    }
-    let original_result = queue_present_with_timing(
-        state,
-        device_info,
-        queue_present,
-        queue,
-        &original_present,
-        "blend-original",
-    );
-    if let Some(timer) = original_present_timer {
-        benchmark_sample.cpu_original_present_ms = timer.elapsed().as_secs_f64() * 1000.0;
-    }
-    if original_result != vk::Result::SUCCESS && original_result != vk::Result::SUBOPTIMAL_KHR {
-        log_warn(format!(
-            "original QueuePresentKHR failed in blend mode: {}",
-            original_result.as_raw()
-        ));
-        destroy_ephemeral_blend_frame_resources(
-            &device_info.dispatch,
-            device_info.device,
-            &mut current_view,
-            &mut generated_view,
-            &mut framebuffer,
+    if !blend_original_first {
+        let mut original_present = *present_info;
+        original_present.wait_semaphore_count = 1;
+        original_present.p_wait_semaphores = &state.inject.ready_original_semaphore;
+        let original_present_timer = benchmark_active.then(Instant::now);
+        if have_generated {
+            maybe_sleep_ms(visual_hold_ms());
+        }
+        let original_result = queue_present_with_timing(
+            state,
+            device_info,
+            queue_present,
+            queue,
+            &original_present,
+            "blend-original",
         );
-        return false;
+        if let Some(timer) = original_present_timer {
+            benchmark_sample.cpu_original_present_ms = timer.elapsed().as_secs_f64() * 1000.0;
+        }
+        if original_result != vk::Result::SUCCESS && original_result != vk::Result::SUBOPTIMAL_KHR {
+            log_warn(format!(
+                "original QueuePresentKHR failed in blend mode: {}",
+                original_result.as_raw()
+            ));
+            destroy_ephemeral_blend_frame_resources(
+                &device_info.dispatch,
+                device_info.device,
+                &mut current_view,
+                &mut generated_view,
+                &mut framebuffer,
+            );
+            return false;
+        }
     }
 
     let queue_wait_idle_timer = benchmark_active.then(Instant::now);
@@ -3858,12 +3892,16 @@ unsafe fn try_present_blend_frame(
             log_info(first_success_label);
         }
         if state.generated_present_count <= 5 || state.generated_present_count % 60 == 0 {
+            if first_success && blend_original_first {
+                log_info("blend original-first mode enabled");
+            }
             log_info(format!(
-                "{}{}; generatedImageIndex={}; currentImageIndex={}",
+                "{}{}; generatedImageIndex={}; currentImageIndex={}; originalFirst={}",
                 generated_label_prefix,
                 state.generated_present_count,
                 generated_image_index,
-                source_index
+                source_index,
+                blend_original_first as u32
             ));
         }
     } else {
@@ -3910,6 +3948,7 @@ unsafe fn try_present_multi_blend_frame(
     };
     let generated_plan = multi_blend_push_constants_plan(mode, requested_generated_frame_count);
     let (prime_label, first_success_label, generated_label_prefix) = blend_mode_labels(mode);
+    let blend_original_first = blend_original_present_first_enabled();
     let benchmark_active = benchmark_enabled();
     let mut benchmark_sample = BenchmarkSample::default();
     let benchmark_query_span = if benchmark_active {
@@ -3993,6 +4032,23 @@ unsafe fn try_present_multi_blend_frame(
     }
 
     let source_index = *present_info.p_image_indices;
+    if blend_original_first {
+        let original_result = queue_present(queue, present_info);
+        if original_result != vk::Result::SUCCESS && original_result != vk::Result::SUBOPTIMAL_KHR {
+            log_warn(format!(
+                "original QueuePresentKHR failed in multi-blend original-first mode: {}",
+                original_result.as_raw()
+            ));
+            return false;
+        }
+        let Some(queue_wait_idle) = device_info.dispatch.queue_wait_idle else {
+            return false;
+        };
+        if queue_wait_idle(queue) != vk::Result::SUCCESS {
+            log_warn("QueueWaitIdle failed after original present in multi-blend original-first mode");
+            return false;
+        }
+    }
     if source_index as usize >= state.images.len() {
         refresh_swapchain_images(state, &device_info.dispatch);
         if source_index as usize >= state.images.len() {
@@ -4428,19 +4484,29 @@ unsafe fn try_present_multi_blend_frame(
     }
 
     let mut wait_semaphores = Vec::with_capacity(
-        present_info.wait_semaphore_count as usize
-            + if use_gpu_acquire_chain {
+        if blend_original_first {
+            if use_gpu_acquire_chain {
                 generated_image_indices.len()
             } else {
                 0
-            },
+            }
+        } else {
+            present_info.wait_semaphore_count as usize
+                + if use_gpu_acquire_chain {
+                    generated_image_indices.len()
+                } else {
+                    0
+                }
+        },
     );
     let mut wait_stages = Vec::with_capacity(wait_semaphores.capacity());
-    for index in 0..present_info.wait_semaphore_count as usize {
-        wait_semaphores.push(*present_info.p_wait_semaphores.add(index));
-        wait_stages.push(
-            vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT | vk::PipelineStageFlags::TRANSFER,
-        );
+    if !blend_original_first {
+        for index in 0..present_info.wait_semaphore_count as usize {
+            wait_semaphores.push(*present_info.p_wait_semaphores.add(index));
+            wait_stages.push(
+                vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT | vk::PipelineStageFlags::TRANSFER,
+            );
+        }
     }
     if use_gpu_acquire_chain {
         for slot in 0..generated_image_indices.len() {
@@ -4540,30 +4606,32 @@ unsafe fn try_present_multi_blend_frame(
         benchmark_sample.cpu_generated_present_ms = timer.elapsed().as_secs_f64() * 1000.0;
     }
 
-    let mut original_present = *present_info;
-    original_present.wait_semaphore_count = 0;
-    original_present.p_wait_semaphores = ptr::null();
-    let original_present_timer = (benchmark_active && emit_generated).then(Instant::now);
-    if emit_generated {
-        maybe_sleep_ms(visual_hold_ms());
-    }
-    let original_result = queue_present_with_timing(
-        state,
-        device_info,
-        queue_present,
-        queue,
-        &original_present,
-        "multi-original",
-    );
-    if let Some(timer) = original_present_timer {
-        benchmark_sample.cpu_original_present_ms = timer.elapsed().as_secs_f64() * 1000.0;
-    }
-    if original_result != vk::Result::SUCCESS && original_result != vk::Result::SUBOPTIMAL_KHR {
-        log_warn(format!(
-            "original QueuePresentKHR failed in multi-blend mode: {}",
-            original_result.as_raw()
-        ));
-        return false;
+    if !blend_original_first {
+        let mut original_present = *present_info;
+        original_present.wait_semaphore_count = 0;
+        original_present.p_wait_semaphores = ptr::null();
+        let original_present_timer = (benchmark_active && emit_generated).then(Instant::now);
+        if emit_generated {
+            maybe_sleep_ms(visual_hold_ms());
+        }
+        let original_result = queue_present_with_timing(
+            state,
+            device_info,
+            queue_present,
+            queue,
+            &original_present,
+            "multi-original",
+        );
+        if let Some(timer) = original_present_timer {
+            benchmark_sample.cpu_original_present_ms = timer.elapsed().as_secs_f64() * 1000.0;
+        }
+        if original_result != vk::Result::SUCCESS && original_result != vk::Result::SUBOPTIMAL_KHR {
+            log_warn(format!(
+                "original QueuePresentKHR failed in multi-blend mode: {}",
+                original_result.as_raw()
+            ));
+            return false;
+        }
     }
     if let Some(gpu_cmd_ms) =
         resolve_benchmark_gpu_cmd_ms(device_info, queue_info, &state.inject, benchmark_query_span)
@@ -4588,12 +4656,16 @@ unsafe fn try_present_multi_blend_frame(
         if state.generated_present_count <= generated_image_indices.len() as u64 * 3
             || state.generated_present_count % 60 == 0
         {
+            if first_success && blend_original_first {
+                log_info("multi-blend original-first mode enabled");
+            }
             log_info(format!(
-                "{}{}; generatedImageIndices={:?}; currentImageIndex={}",
+                "{}{}; generatedImageIndices={:?}; currentImageIndex={}; originalFirst={}",
                 generated_label_prefix,
                 state.generated_present_count,
                 generated_image_indices,
-                source_index
+                source_index,
+                blend_original_first as u32
             ));
         }
     } else if have_history {
