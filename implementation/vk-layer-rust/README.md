@@ -255,9 +255,15 @@ See `experiments/program.md` for the current subset, weights, and accept/reject 
 ### Future backend planning
 For the broader roadmap beyond the current Rust mainline, see:
 - `docs/future-backends.md`
+- `docs/rust-feature-roadmap.md`
+- `docs/debug-observability-plan.md`
+- `docs/optical-flow-v0-plan.md`
 
-That document records how:
+Those documents record how:
 - FSR3-style analytical FG concepts fit the current Linux post-process mainline
+- the next recommended implementation order is debug views first, then hardware-agnostic optical flow, then broader quality improvements and pacing follow-through
+- the first debug / observability landing should be structured and validated
+- the first hardware-agnostic optical-flow landing should be benchmarked against the current reprojection baseline
 - `RIFE` / `rife-ncnn-vulkan` fit as a quality oracle and later optional experimental backend
 - NVIDIA Optical Flow / FRUC fit as a vendor-specific acceleration branch
 - FSR4-style ML fits only later or behind an architecture pivot
@@ -298,7 +304,7 @@ The `reproject-adaptive-multi-blend` mode combines reprojection, confidence/diso
 That mode is also now validated on Deck through smoke, long, IMMEDIATE, and a forced higher-count adaptive run with `OMFG_ADAPTIVE_MULTI_MAX_GENERATED_FRAMES=6`.
 A focused benchmark run at `artifacts/steamdeck/rust/benchmark/reproject-multi-20260327-002943/` shows the reprojection-backed multi-FG path costs about `~3.76–3.79 ms/generated` on the Deck GPU for the current default reprojection settings.
 
-Today that target-FPS controller is already validated on the Deck, but it still observes the app's intercepted present cadence under the current conservative synchronization model, so its decisions are still coupled to current pacing overhead.
+Today that target-FPS controller is already validated on the Deck, but it still observes the app's intercepted present cadence under the current synchronization model. On the current Deck vsync-like validation path, that may simply reflect correct display-paced behavior rather than a bug; future controller work should separate app cadence from FG cadence more cleanly only where it improves decisions or visible results.
 
 These are still not fully optical-flow or ML interpolation backends, but they are real shader-based generated-frame steps beyond placeholder copying and simple same-pixel blending.
 

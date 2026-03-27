@@ -491,6 +491,7 @@ A later dynamic-multiplier sweep on the Deck (`multi-count-sweep3-20260326-23194
 - average **GPU time per generated frame** remained tiny relative to that wall
 
 This strongly suggests the current architecture is still primarily constrained by **present/acquire pacing against the 90 Hz panel**, not by shader cost for the classical multi-blend backend.
+That should be treated first as **expected display-paced behavior under the current vsync-like validation path**, and only second as an optimization target if later timing evidence shows unnecessary waiting beyond correct pacing.
 
 ---
 
@@ -588,5 +589,6 @@ Recommended execution model now:
 Meaning:
 - keep the current queue/swapchain/present path
 - treat `blend`, `adaptive-blend`, `search-blend`, `search-adaptive-blend`, `multi-blend`, and `adaptive-multi-blend` as shader stepping stones
-- next target **stronger motion-aware synthesis, better reprojection, and better pacing in Rust**
+- next target **better debug visibility, stronger motion-aware synthesis, and hardware-agnostic optical flow in Rust**
+- keep pacing/timing work as a validation and measurement track, and only prioritize deeper scheduling refactors when evidence shows behavior beyond expected display-paced waiting
 - in parallel, use ML primarily as a research oracle first rather than immediately making it the default backend

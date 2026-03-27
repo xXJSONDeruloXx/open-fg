@@ -66,12 +66,13 @@ This path:
 - is the fastest way to improve quality while preserving portability
 
 ### Mainline next steps
+- debug / observability views for motion, confidence, ambiguity, disocclusion, and hole-fill behavior
 - stronger reprojection inside multi-FG
 - confidence / disocclusion handling
-- post-process optical-flow style estimation
-- better pacing and presentation control
-- dynamic swapchain / scheduling improvements
+- hardware-agnostic post-process optical-flow style estimation with explicit benchmark cost comparison
 - better display-timing instrumentation
+- better pacing and presentation control when measurements show something beyond expected display-paced waiting
+- dynamic swapchain / scheduling improvements
 
 ---
 

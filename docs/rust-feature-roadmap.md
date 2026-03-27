@@ -120,9 +120,10 @@ Current status:
   - `reproject-adaptive-multi-blend` (`120` and `180` FPS smoke coverage)
 
 Next likely path:
+- add debug / observability views for reprojection-backed modes so motion/confidence failures are inspectable
 - improve confidence/disocclusion handling inside the new reprojection-backed multi-FG modes
-- better separate controller policy from current pacing overhead
-- improve synchronization model beyond the current conservative approach
+- add a hardware-agnostic post-process optical-flow path and benchmark it against the current reprojection baseline
+- better separate controller policy from the intercepted present cadence model where that improves adaptive decisions
 - validate with broader Deck finite-frame runs and additional quality settings
 
 ### 2. Adaptive FG controller
@@ -171,7 +172,18 @@ Next likely path:
 - reduce visible failure cases in higher-count reprojection-backed multi-FG
 - eventual optical-flow style pipeline
 
-### 4. Temporal quality / disocclusion handling
+### 4. Debug views / observability
+Goal:
+- make motion, confidence, disocclusion, and hole-fill behavior visible enough to tune intentionally
+
+Likely path:
+- FSR-style debug views for selected motion / reprojection offsets
+- confidence / ambiguity masks
+- disocclusion / hole-fill masks
+- source-selection / fallback visualization
+- capture-friendly output modes that can be benchmarked and compared on Deck
+
+### 5. Temporal quality / disocclusion handling
 Goal:
 - reduce ghosting, double edges, and smear
 
@@ -181,27 +193,39 @@ Likely path:
 - edge-aware / difference-aware compositing
 - disocclusion fallback rules
 - small neighborhood hole-fill / inpainting passes for higher-disocclusion regions
+- tighter integration with the new debug / observability views
 
-### 5. Pacing / latency improvements
+### 6. Hardware-agnostic optical flow
 Goal:
-- reduce the current conservative synchronization model
-- validate actual present pacing against display-side timing where possible
+- move from patch-search reprojection toward a more FSR3-like analytical motion-estimation core without requiring engine metadata
+
+Likely path:
+- start with a cross-vendor compute optical-flow / pyramid / block-matching prototype
+- benchmark its GPU and wall-clock cost against the current reprojection baseline
+- land it first in single-FG paths before propagating it into multi-FG
+- keep vendor optical flow and ML as optional side branches rather than the default mainline
+
+### 7. Pacing / latency improvements
+Goal:
+- keep validating actual present pacing against display-side timing where possible
+- only pursue deeper pacing refactors when evidence shows behavior beyond expected display-paced waiting
 
 Current status:
 - first timing-aware present instrumentation now exists in the Rust layer
 - the layer can now append and use `VK_KHR_present_id` / `VK_KHR_present_wait` when available
 - Deck smoke validation now confirms successful `present wait` results on injected presents
 - `VK_GOOGLE_display_timing` query hooks are now part of the layer, but the current `vkcube` Deck path still has not yielded useful past-presentation samples
+- current acquire/present wall time under vsync-like Deck runs may simply reflect expected pacing against the active panel cadence, not necessarily wasted compute-side overhead
 
 Likely path:
 - use the new autoperf loop as the gate for pacing experiments before promoting to the full Deck suite
 - strengthen the current timing instrumentation so it yields more useful panel-side evidence
-- reduce `vkQueueWaitIdle` dependence
+- reduce `vkQueueWaitIdle` dependence where it proves to be unnecessary rather than assuming all wait time is a bug
 - improve semaphore/fence lifetime strategy
-- explore pacing thread / scheduling logic
+- explore pacing thread / scheduling logic only when it helps visible pacing or controller quality
 - keep using the now-confirmed `VK_GOOGLE_display_timing` / `VK_KHR_present_id` / `VK_KHR_present_wait` support on the Deck test target for stronger panel-side validation
 
-### 6. Advanced parity targets
+### 8. Advanced parity targets
 Longer-term targets include:
 - multi-FG
 - adaptive FG
@@ -223,14 +247,15 @@ New capability work should continue following this loop:
 
 With `reproject-multi-blend` and `reproject-adaptive-multi-blend` now working, the current mainline priority is:
 
-## **improving confidence/disocclusion handling and pacing for the new reprojection-backed multi-FG path**
+## **make the reprojection-backed path easier to see, measure, and then improve toward a more FSR3-like analytical stack**
 
 More specifically, the current ordering is:
-1. pacing / present-timing instrumentation and scheduling improvements
-2. richer confidence / disocclusion / hole-filling improvements inside reprojection-backed multi-FG
-3. stronger patch metrics / search-window experiments / temporal stability tuning
-4. cleaner controller-vs-backend separation for adaptive higher-quality multi-FG
-5. post-process optical-flow style estimation
+1. debug / observability views for motion, confidence, ambiguity, disocclusion, and hole-fill behavior
+2. hardware-agnostic post-process optical-flow experiments with explicit benchmark cost comparison versus the current reprojection path
+3. richer confidence / disocclusion / hole-filling improvements inside reprojection-backed multi-FG
+4. stronger patch metrics / search-window experiments / temporal stability tuning
+5. cleaner controller-vs-backend separation for adaptive higher-quality multi-FG
+6. pacing / present-timing follow-through as a validation/support track rather than assuming current vsync-paced waiting is the primary bottleneck
 
 In parallel, but not as the default mainline:
 - use `RIFE` / `rife-ncnn-vulkan` as a quality oracle on captured frame pairs
