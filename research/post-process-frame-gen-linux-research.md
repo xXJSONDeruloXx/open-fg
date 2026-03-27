@@ -671,6 +671,37 @@ These are what separate a cool demo from a usable product.
 
 ---
 
+## How this fits the current repo roadmap
+
+For the current repo, the most practical branch placement is:
+
+### Mainline now
+- keep the default path **classical / analytical / post-process**
+- use the current Vulkan layer + Rust implementation as the primary path
+- borrow ideas from FSR3-style analytical FG where they fit post-process constraints
+
+### Immediate parallel research
+- use `rife-ncnn-vulkan` as a **quality oracle** on captured frame pairs
+- compare its outputs against the repo's best classical modes
+- use that to decide whether runtime ML is worth the complexity
+
+### Medium-term optional runtime branches
+- NVIDIA Optical Flow / FRUC backend on supported Linux/NVIDIA systems
+- experimental runtime ML single-FG backend
+- hybrid classical + ML refinement ideas
+
+### Later / pivot-only branches
+- FSR4-style ML integration
+- engine/plugin-first integration requiring richer metadata
+- Windows/DX12-specific ML-first FG path
+
+The key reason for that ordering is simple:
+- **FSR3-style analytical ideas fit the current repo's constraints conceptually**
+- **RIFE fits as a synthesis oracle and later optional backend**
+- **FSR4 ML does not fit the current Linux explicit-layer assumptions well enough to be near-term mainline work**
+
+---
+
 ## My view on the strongest foundations from this research
 
 ### Best architectural foundation

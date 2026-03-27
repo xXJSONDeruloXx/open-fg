@@ -301,6 +301,29 @@ This is intended to make future pacing / synchronization experiments much cheape
 
 ---
 
+## Future backend map
+
+The repo now explicitly treats backend directions as separate tracks:
+
+### Current mainline
+- keep the default implementation **classical / analytical / post-process**
+- continue Linux-first Vulkan-layer work
+- borrow ideas from FSR3-style analytical FG where they fit post-process constraints
+
+### Parallel research
+- use `RIFE` / `rife-ncnn-vulkan` as a **quality oracle** on captured frame pairs
+- evaluate when an experimental runtime ML backend would be worth the latency/runtime cost
+- evaluate NVIDIA Optical Flow / FRUC as an optional vendor-specific acceleration path
+
+### Not current mainline
+- FSR4-style ML is currently a **later conceptual reference**, not a near-term Linux layer target
+- the public FSR4 path is a poor direct fit for the current repo assumptions because it expects richer platform and integration constraints than the current Linux explicit-layer path provides
+
+Detailed rationale now lives in:
+- `docs/future-backends.md`
+
+---
+
 ## Important technical insight from implementation
 
 ### The stable placeholder-frame paths were:
@@ -331,12 +354,18 @@ Right now the layer can do:
 - **combined adaptive + multi-FG synthesis**
 
 It still cannot do:
-- **true motion-aware interpolated frame generation**
+- **true motion-aware interpolated frame generation** comparable to mature optical-flow-backed systems
 - **a pacing-decoupled target-FPS controller comparable to polished production FG stacks**
 - **higher-quality motion/disocclusion-aware multi-FG**
+- **runtime ML interpolation**
+- **vendor optical-flow accelerated motion estimation**
 
-So the next major milestone is replacing duplicate copy with:
+So the next major milestone on the mainline is replacing duplicate copy / naive interpolation assumptions with:
 - optical-flow / warp / blend / inpaint logic
+- stronger confidence and disocclusion handling
+
+Separately, the most important parallel research milestone is:
+- using `RIFE`-style ML interpolation as a quality oracle so we can decide when ML is worth adding as an experimental runtime branch
 
 ---
 
@@ -419,16 +448,17 @@ to:
 
 The next best implementation step is:
 
-## **add a real generated-frame backend behind the existing `history-copy` / `copy` infrastructure**
+## **keep improving the classical Linux mainline while treating ML and vendor optical flow as explicit side branches**
 
 Recommended execution model now:
 - keep the C++ layer as the already-proven oracle
 - make the Rust port the primary place for new safety-minded implementation and test growth
 - keep both on the same Deck smoke harness until interpolation parity is achieved
 - continue iterating toward the roadmap recorded in `docs/rust-feature-roadmap.md`
+- use `docs/future-backends.md` as the guide for when FSR3-style ideas, RIFE-style ML, and NVIDIA optical-flow paths should enter the roadmap
 
 Meaning:
 - keep the current queue/swapchain/present path
 - treat `blend`, `adaptive-blend`, `search-blend`, `search-adaptive-blend`, `multi-blend`, and `adaptive-multi-blend` as shader stepping stones
-- next target **stronger motion-aware synthesis and better reprojection in Rust**
-- then continue toward stronger adaptive policies and higher-quality multi-FG
+- next target **stronger motion-aware synthesis, better reprojection, and better pacing in Rust**
+- in parallel, use ML primarily as a research oracle first rather than immediately making it the default backend

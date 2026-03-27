@@ -185,6 +185,16 @@ PPFG_AUTOPERF_RUN_FULL_ON_ACCEPT=1 ./scripts/run-autoperf-loop.sh
 
 See `experiments/program.md` for the current subset, weights, and accept/reject rules.
 
+### Future backend planning
+For the broader roadmap beyond the current Rust mainline, see:
+- `docs/future-backends.md`
+
+That document records how:
+- FSR3-style analytical FG concepts fit the current Linux post-process mainline
+- `RIFE` / `rife-ncnn-vulkan` fit as a quality oracle and later optional experimental backend
+- NVIDIA Optical Flow / FRUC fit as a vendor-specific acceleration branch
+- FSR4-style ML fits only later or behind an architecture pivot
+
 ## Design notes
 
 The Rust port intentionally separates:

@@ -60,6 +60,9 @@ Build toward an open solution that can:
 - `docs/rust-feature-roadmap.md`
   - Rust-first implementation ladder
   - parity goals and next capability targets
+- `docs/future-backends.md`
+  - how FSR3-style analytical FG, RIFE-style ML, and vendor optical-flow paths fit the roadmap
+  - current recommendation for what stays on the mainline vs parallel research branches
 - `experiments/program.md`
   - current autoperf benchmark subset
   - acceptance rules for pacing/synchronization changes

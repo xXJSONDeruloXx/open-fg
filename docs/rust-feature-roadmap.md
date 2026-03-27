@@ -58,6 +58,34 @@ Continue iterating on the Rust implementation until practical feature parity is 
   - weighted baseline-vs-candidate comparison
   - optional full-suite promotion path
 
+## Mainline vs research branches
+
+This repo now explicitly separates:
+
+### Mainline
+The mainline remains:
+- Linux-first
+- Vulkan-layer based
+- post-process where possible
+- cross-vendor by default
+- validated on real Linux hardware
+
+So the default backend path remains **classical / analytical** rather than ML-first.
+
+### Parallel research branch
+ML and vendor-specific paths are now tracked as explicit side branches rather than the default mainline:
+- `RIFE` / `rife-ncnn-vulkan`
+  - best immediate use: **quality oracle** on captured frame pairs
+  - best later runtime use: **experimental single-FG backend**
+- NVIDIA Optical Flow / FRUC
+  - best use: **optional vendor-specific acceleration branch**
+- FSR3-style analytical FG
+  - best use: **algorithm and pacing inspiration** for the mainline
+- FSR4 ML
+  - best use: **later conceptual reference**, not near-term Linux mainline work
+
+See `docs/future-backends.md` for the full rationale and branch placement.
+
 ## Next implementation ladder
 
 ### 1. Multi-FG in Rust
@@ -154,6 +182,19 @@ New capability work should continue following this loop:
 
 ## Current practical priority
 
-With `reproject-blend`, `reproject-adaptive-blend`, and `adaptive-multi-blend` now working, the next highest-value capability is:
+With `reproject-blend`, `reproject-adaptive-blend`, and `adaptive-multi-blend` now working, the current mainline priority is:
 
 ## **bringing stronger reprojection into higher-quality multi-FG and richer confidence/disocclusion handling**
+
+More specifically, the current ordering is:
+1. pacing / present-timing instrumentation and scheduling improvements
+2. dynamic multi-FG scaling and swapchain headroom improvements
+3. stronger reprojection inside multi-FG
+4. confidence / disocclusion / hole-filling improvements
+5. post-process optical-flow style estimation
+
+In parallel, but not as the default mainline:
+- use `RIFE` / `rife-ncnn-vulkan` as a quality oracle on captured frame pairs
+- evaluate NVIDIA Optical Flow as an optional vendor-specific motion-estimation backend
+- keep FSR3 analytical concepts as algorithm references
+- treat FSR4 ML as later, unless the architecture pivots toward richer engine metadata
