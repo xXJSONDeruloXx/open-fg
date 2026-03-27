@@ -157,6 +157,7 @@ Current status:
   - `OMFG_REPROJECT_HOLE_FILL_STRENGTH`
   - `OMFG_REPROJECT_HOLE_FILL_RADIUS`
   - `OMFG_REPROJECT_GRADIENT_CONFIDENCE_WEIGHT` (reduces confidence in flat regions; default `8.0`)
+  - `OMFG_REPROJECT_CHROMA_WEIGHT` (blends between luma-only and RGB matching; default `0.3`)
 - that stronger reprojection path has now been propagated into multi-FG via:
   - `reproject-multi-blend`
   - `reproject-adaptive-multi-blend`

@@ -11,6 +11,7 @@ layout(push_constant) uniform BlendParams {
     float disocclusion_scale;
     float hole_fill_strength;
     float gradient_confidence_weight;
+    float chroma_weight;
     uint search_radius;
     uint patch_radius;
     uint hole_fill_radius;
@@ -28,7 +29,7 @@ float luma(vec3 color) {
     return dot(color, vec3(0.299, 0.587, 0.114));
 }
 
-float symmetric_patch_error(vec2 center_uv, ivec2 half_offset_px, int patch_radius, vec2 texel) {
+float symmetric_patch_error(vec2 center_uv, ivec2 half_offset_px, int patch_radius, vec2 texel, float chroma_weight) {
     float error = 0.0;
     for (int patch_y = -MAX_PATCH_RADIUS; patch_y <= MAX_PATCH_RADIUS; ++patch_y) {
         if (abs(patch_y) > patch_radius) {
@@ -41,7 +42,10 @@ float symmetric_patch_error(vec2 center_uv, ivec2 half_offset_px, int patch_radi
             vec2 patch_offset = vec2(patch_x, patch_y) * texel;
             vec3 prev_sample = texture(u_prev_frame, center_uv + (vec2(half_offset_px) * texel) + patch_offset).rgb;
             vec3 curr_sample = texture(u_curr_frame, center_uv - (vec2(half_offset_px) * texel) + patch_offset).rgb;
-            error += abs(luma(prev_sample) - luma(curr_sample));
+            // Blend between luma-only (0.0) and full RGB matching (1.0)
+            float luma_diff = abs(luma(prev_sample) - luma(curr_sample));
+            float rgb_diff = length(prev_sample - curr_sample);
+            error += mix(luma_diff, rgb_diff, chroma_weight);
         }
     }
     return error;
@@ -115,7 +119,8 @@ void main() {
         reproject_mode = true;
         ivec2 size_px = textureSize(u_prev_frame, 0);
         vec2 texel = 1.0 / vec2(size_px);
-        float zero_error = symmetric_patch_error(v_uv, ivec2(0), patch_radius, texel);
+        float chroma_weight = u_params.chroma_weight;
+        float zero_error = symmetric_patch_error(v_uv, ivec2(0), patch_radius, texel, chroma_weight);
         float best_error = zero_error;
         ivec2 best_half_offset = ivec2(0);
 
@@ -128,7 +133,7 @@ void main() {
                     continue;
                 }
                 float motion_penalty = 0.02 * float(ox * ox + oy * oy);
-                float error = symmetric_patch_error(v_uv, ivec2(ox, oy), patch_radius, texel) + motion_penalty;
+                float error = symmetric_patch_error(v_uv, ivec2(ox, oy), patch_radius, texel, chroma_weight) + motion_penalty;
                 if (error < best_error) {
                     best_error = error;
                     best_half_offset = ivec2(ox, oy);
