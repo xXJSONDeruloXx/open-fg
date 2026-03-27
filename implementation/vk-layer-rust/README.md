@@ -148,6 +148,13 @@ export OMFG_PRESENT_TIMING=1
 export OMFG_PRESENT_WAIT=1
 export OMFG_PRESENT_WAIT_TIMEOUT_NS=5000000000
 ./scripts/test-steamdeck-vkcube.sh
+
+# Optional reprojection quality tuning
+export OMFG_LAYER_MODE=reproject-multi-blend
+export OMFG_REPROJECT_DISOCCLUSION_SCALE=2.0
+export OMFG_REPROJECT_HOLE_FILL_STRENGTH=0.85
+export OMFG_REPROJECT_HOLE_FILL_RADIUS=2
+./scripts/test-steamdeck-vkcube.sh
 ```
 
 ### Full regression suite
@@ -261,6 +268,11 @@ The `adaptive-blend` mode builds on that by biasing the blend toward the current
 The `search-blend` mode adds a small neighborhood search on the previous frame to approximate motion-aware reprojection before blending.
 The `search-adaptive-blend` mode combines the small neighborhood search with adaptive current-frame weighting.
 The `reproject-blend` mode adds a stronger **symmetric patch-search reprojection** step, searching for a midpoint half-motion offset between the previous and current frames and blending confidence-weighted reprojected samples.
+It now also exposes tunable quality controls via:
+- `OMFG_REPROJECT_DISOCCLUSION_SCALE`
+- `OMFG_REPROJECT_HOLE_FILL_STRENGTH`
+- `OMFG_REPROJECT_HOLE_FILL_RADIUS`
+- `OMFG_REPROJECT_GRADIENT_CONFIDENCE_WEIGHT` (reduces confidence in flat regions where motion estimation is unreliable; default `8.0`)
 The `reproject-adaptive-blend` mode combines that stronger reprojection path with adaptive current-frame weighting.
 The `multi-blend` mode is the first Rust **multi-FG** step, emitting multiple synthetic frames between real frames using temporal blend positions.
 It now auto-expands swapchain image headroom for larger requested multipliers, controlled by `OMFG_MULTI_SWAPCHAIN_MAX_GENERATED_FRAMES` (default `32`).
@@ -269,6 +281,7 @@ The `adaptive-multi-blend` mode combines both ideas: multi-FG plus adaptive curr
 - the older present-interval heuristic path
 - a newer **target-FPS adaptive controller** (`OMFG_ADAPTIVE_MULTI_TARGET_FPS`) that accumulates fractional generated-frame credit so the effective FG multiplier can fluctuate over time.
 The `reproject-multi-blend` mode now propagates the stronger symmetric reprojection + confidence/disocclusion path into multi-FG generation.
+That path now includes a small neighborhood hole-fill fallback for higher-disocclusion regions, using the same reprojection quality knobs above.
 That higher-quality reprojection-backed multi-FG path is now validated on Deck through smoke, long, IMMEDIATE, and a higher-count `OMFG_MULTI_BLEND_COUNT=6` run.
 The `reproject-adaptive-multi-blend` mode combines reprojection, confidence/disocclusion-aware fallback, adaptive current-frame weighting, and adaptive multi-FG control in one backend.
 That mode is also now validated on Deck through smoke, long, IMMEDIATE, and a forced higher-count adaptive run with `OMFG_ADAPTIVE_MULTI_MAX_GENERATED_FRAMES=6`.

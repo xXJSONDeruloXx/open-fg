@@ -152,10 +152,15 @@ Current status:
 - `search-blend` and `search-adaptive-blend` established the first local motion-search heuristics
 - `reproject-blend` now adds a stronger symmetric patch-search reprojection step
 - `reproject-adaptive-blend` adds adaptive weighting on top of that reprojection path
+- the current reprojection path now also has tunable quality controls:
+  - `OMFG_REPROJECT_DISOCCLUSION_SCALE`
+  - `OMFG_REPROJECT_HOLE_FILL_STRENGTH`
+  - `OMFG_REPROJECT_HOLE_FILL_RADIUS`
+  - `OMFG_REPROJECT_GRADIENT_CONFIDENCE_WEIGHT` (reduces confidence in flat regions; default `8.0`)
 - that stronger reprojection path has now been propagated into multi-FG via:
   - `reproject-multi-blend`
   - `reproject-adaptive-multi-blend`
-- all four reprojection-backed modes are now validated locally, in Linux Docker, and on the Steam Deck through smoke, long, and IMMEDIATE runs
+- all four reprojection-backed modes are now validated locally and in Linux Docker, and the base reprojection path is already validated on the Steam Deck through smoke, long, and IMMEDIATE runs
 - focused Deck benchmarking now shows the reprojection-backed multi-FG path costs roughly `~3.76–3.79 ms/generated` with the current default reprojection settings
 
 Next likely path:
@@ -173,6 +178,7 @@ Likely path:
 - adaptive biasing toward current frame
 - edge-aware / difference-aware compositing
 - disocclusion fallback rules
+- small neighborhood hole-fill / inpainting passes for higher-disocclusion regions
 
 ### 5. Pacing / latency improvements
 Goal:

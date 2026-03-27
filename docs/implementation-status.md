@@ -219,6 +219,12 @@ Observed:
 - first frame primes history
 - subsequent generated frames use a stronger **symmetric patch-search reprojection** step
 - reprojected samples are blended with confidence weighting and a disocclusion-aware fallback toward the original frames
+- the reprojection path now also exposes tunable quality controls:
+  - `OMFG_REPROJECT_DISOCCLUSION_SCALE`
+  - `OMFG_REPROJECT_HOLE_FILL_STRENGTH`
+  - `OMFG_REPROJECT_HOLE_FILL_RADIUS`
+  - `OMFG_REPROJECT_GRADIENT_CONFIDENCE_WEIGHT` (reduces confidence in flat regions where motion estimation is unreliable; default `8.0`)
+- local validation for those new quality controls is green (`cargo test`, `./scripts/test-rust-layer.sh`, `OMFG_LAYER_IMPL=rust ./scripts/build-linux-amd64.sh`)
 - stable on Deck through smoke, long, and IMMEDIATE-mode runs
 
 #### 8b. `reproject-adaptive-blend` (Rust)
@@ -295,6 +301,8 @@ Validated with Rust layer on Steam Deck:
 
 Observed:
 - propagates the stronger symmetric reprojection + confidence/disocclusion path into multi-FG generation
+- the current reprojection path now includes a small neighborhood hole-fill fallback for higher-disocclusion regions, driven by the same `OMFG_REPROJECT_DISOCCLUSION_SCALE`, `OMFG_REPROJECT_HOLE_FILL_STRENGTH`, and `OMFG_REPROJECT_HOLE_FILL_RADIUS` knobs
+- local validation for that richer reprojection path is green (`cargo test`, `./scripts/test-rust-layer.sh`, `OMFG_LAYER_IMPL=rust ./scripts/build-linux-amd64.sh`)
 - stable on Deck through smoke, long, and IMMEDIATE-mode runs
 - larger-count validation now proves the higher-quality reprojection path also benefits from dynamic swapchain headroom expansion
 - a targeted `count=6` Deck smoke run succeeded with:
@@ -323,6 +331,7 @@ Validated with Rust layer on Steam Deck:
 
 Observed:
 - combines stronger reprojection, confidence/disocclusion-aware fallback, adaptive current-frame weighting, and adaptive multi-FG control in one backend
+- inherits the richer reprojection quality controls and neighborhood hole-fill fallback used by `reproject-multi-blend`
 - the same target/controller plumbing used by `adaptive-multi-blend` now also drives the reprojection-backed multi-FG path
 - higher-count adaptive validation now also succeeds on Deck:
   - `requestedGeneratedFrames=6`

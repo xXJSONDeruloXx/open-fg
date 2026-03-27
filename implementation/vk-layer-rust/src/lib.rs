@@ -616,10 +616,13 @@ struct BlendPushConstants {
     adaptive_strength: f32,
     adaptive_bias: f32,
     confidence_scale: f32,
+    disocclusion_scale: f32,
+    hole_fill_strength: f32,
+    gradient_confidence_weight: f32,
     search_radius: u32,
     patch_radius: u32,
+    hole_fill_radius: u32,
     mode: u32,
-    _reserved: u32,
 }
 
 #[derive(Clone)]
@@ -2709,6 +2712,22 @@ fn reproject_confidence_scale() -> f32 {
     env_f32("OMFG_REPROJECT_CONFIDENCE_SCALE", 4.0)
 }
 
+fn reproject_disocclusion_scale() -> f32 {
+    env_f32("OMFG_REPROJECT_DISOCCLUSION_SCALE", 1.5).clamp(0.0, 8.0)
+}
+
+fn reproject_hole_fill_strength() -> f32 {
+    env_f32("OMFG_REPROJECT_HOLE_FILL_STRENGTH", 0.75).clamp(0.0, 1.0)
+}
+
+fn reproject_hole_fill_radius() -> u32 {
+    env_u32("OMFG_REPROJECT_HOLE_FILL_RADIUS", 1).min(2)
+}
+
+fn reproject_gradient_confidence_weight() -> f32 {
+    env_f32("OMFG_REPROJECT_GRADIENT_CONFIDENCE_WEIGHT", 8.0).clamp(0.0, 32.0)
+}
+
 fn adaptive_multi_target_fps() -> f32 {
     env_f32("OMFG_ADAPTIVE_MULTI_TARGET_FPS", 0.0).max(0.0)
 }
@@ -2814,8 +2833,12 @@ fn blend_push_constants_for_mode(mode: Mode) -> BlendPushConstants {
         Mode::ReprojectBlendTest => BlendPushConstants {
             alpha: 0.5,
             confidence_scale: reproject_confidence_scale(),
+            disocclusion_scale: reproject_disocclusion_scale(),
+            hole_fill_strength: reproject_hole_fill_strength(),
+            gradient_confidence_weight: reproject_gradient_confidence_weight(),
             search_radius: reproject_search_radius(),
             patch_radius: reproject_patch_radius(),
+            hole_fill_radius: reproject_hole_fill_radius(),
             mode: 4,
             ..Default::default()
         },
@@ -2824,8 +2847,12 @@ fn blend_push_constants_for_mode(mode: Mode) -> BlendPushConstants {
             adaptive_strength: blend_adaptive_strength(),
             adaptive_bias: blend_adaptive_bias(),
             confidence_scale: reproject_confidence_scale(),
+            disocclusion_scale: reproject_disocclusion_scale(),
+            hole_fill_strength: reproject_hole_fill_strength(),
+            gradient_confidence_weight: reproject_gradient_confidence_weight(),
             search_radius: reproject_search_radius(),
             patch_radius: reproject_patch_radius(),
+            hole_fill_radius: reproject_hole_fill_radius(),
             mode: 5,
             ..Default::default()
         },
@@ -2862,6 +2889,21 @@ fn multi_blend_push_constants_plan(
                 } else {
                     0.0
                 },
+                disocclusion_scale: if reproject {
+                    reproject_disocclusion_scale()
+                } else {
+                    0.0
+                },
+                hole_fill_strength: if reproject {
+                    reproject_hole_fill_strength()
+                } else {
+                    0.0
+                },
+                gradient_confidence_weight: if reproject {
+                    reproject_gradient_confidence_weight()
+                } else {
+                    0.0
+                },
                 search_radius: if reproject {
                     reproject_search_radius()
                 } else {
@@ -2869,6 +2911,11 @@ fn multi_blend_push_constants_plan(
                 },
                 patch_radius: if reproject {
                     reproject_patch_radius()
+                } else {
+                    0
+                },
+                hole_fill_radius: if reproject {
+                    reproject_hole_fill_radius()
                 } else {
                     0
                 },
@@ -6702,5 +6749,55 @@ mod tests {
         );
         assert_eq!(result, 7);
         std::env::remove_var("OMFG_ADAPTIVE_MULTI_MAX_GENERATED_FRAMES");
+    }
+
+    #[test]
+    fn reproject_push_constants_include_quality_controls() {
+        let _guard = env_test_lock().lock().expect("env test mutex poisoned");
+        std::env::set_var("OMFG_REPROJECT_CONFIDENCE_SCALE", "3.5");
+        std::env::set_var("OMFG_REPROJECT_DISOCCLUSION_SCALE", "2.25");
+        std::env::set_var("OMFG_REPROJECT_HOLE_FILL_STRENGTH", "0.6");
+        std::env::set_var("OMFG_REPROJECT_HOLE_FILL_RADIUS", "2");
+        std::env::set_var("OMFG_REPROJECT_GRADIENT_CONFIDENCE_WEIGHT", "12.0");
+
+        let push = blend_push_constants_for_mode(Mode::ReprojectBlendTest);
+        assert_eq!(push.confidence_scale, 3.5);
+        assert_eq!(push.disocclusion_scale, 2.25);
+        assert_eq!(push.hole_fill_strength, 0.6);
+        assert_eq!(push.hole_fill_radius, 2);
+        assert_eq!(push.gradient_confidence_weight, 12.0);
+
+        std::env::remove_var("OMFG_REPROJECT_CONFIDENCE_SCALE");
+        std::env::remove_var("OMFG_REPROJECT_DISOCCLUSION_SCALE");
+        std::env::remove_var("OMFG_REPROJECT_HOLE_FILL_STRENGTH");
+        std::env::remove_var("OMFG_REPROJECT_HOLE_FILL_RADIUS");
+        std::env::remove_var("OMFG_REPROJECT_GRADIENT_CONFIDENCE_WEIGHT");
+    }
+
+    #[test]
+    fn reproject_multi_plan_propagates_quality_controls() {
+        let _guard = env_test_lock().lock().expect("env test mutex poisoned");
+        std::env::set_var("OMFG_REPROJECT_CONFIDENCE_SCALE", "5.0");
+        std::env::set_var("OMFG_REPROJECT_DISOCCLUSION_SCALE", "1.75");
+        std::env::set_var("OMFG_REPROJECT_HOLE_FILL_STRENGTH", "0.9");
+        std::env::set_var("OMFG_REPROJECT_HOLE_FILL_RADIUS", "1");
+        std::env::set_var("OMFG_REPROJECT_GRADIENT_CONFIDENCE_WEIGHT", "6.0");
+
+        let plan = multi_blend_push_constants_plan(Mode::ReprojectAdaptiveMultiBlendTest, 3);
+        assert_eq!(plan.len(), 3);
+        for push in plan {
+            assert_eq!(push.confidence_scale, 5.0);
+            assert_eq!(push.disocclusion_scale, 1.75);
+            assert_eq!(push.hole_fill_strength, 0.9);
+            assert_eq!(push.hole_fill_radius, 1);
+            assert_eq!(push.gradient_confidence_weight, 6.0);
+            assert_eq!(push.mode, 5);
+        }
+
+        std::env::remove_var("OMFG_REPROJECT_CONFIDENCE_SCALE");
+        std::env::remove_var("OMFG_REPROJECT_DISOCCLUSION_SCALE");
+        std::env::remove_var("OMFG_REPROJECT_HOLE_FILL_STRENGTH");
+        std::env::remove_var("OMFG_REPROJECT_HOLE_FILL_RADIUS");
+        std::env::remove_var("OMFG_REPROJECT_GRADIENT_CONFIDENCE_WEIGHT");
     }
 }

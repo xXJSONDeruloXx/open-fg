@@ -11,3 +11,13 @@ compile_commands.json
 
 # Local vendor/source clones used for research only
 research/repos/
+
+# Local Pi/Ralph automation state
+.pi/
+.ralph/logs/
+.ralph/docs/generated/
+.ralph/status.json
+.ralph/.call_count
+.ralph/.last_reset
+.ralph/.ralph_session
+.ralph/.ralph_session_history
