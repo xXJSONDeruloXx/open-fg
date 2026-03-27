@@ -269,6 +269,11 @@ Observed:
 - conclusion so far:
   - the wider default optical-flow v0 profile is too expensive on Deck today
   - the tighter fast profile is already competitive with, and slightly cheaper than, the current reprojection baseline on this target
+  - a later rerun after refining the coarse-to-fine search to penalize local refinement steps instead of the full accumulated offset kept the same overall story:
+    - `artifacts/steamdeck/rust/benchmark/optflow-compare-ctf2-20260327-105927/`
+    - `reproject-blend-default`: `avgCpuTotalMs=18.452`, `avgGpuCmdMs=3.896`
+    - `optflow-blend-default`: `avgCpuTotalMs=21.288`, `avgGpuCmdMs=10.955`
+    - `optflow-blend-fast`: `avgCpuTotalMs=15.12`, `avgGpuCmdMs=2.987`
 - current optflow debug-view Deck artifacts also now include:
   - `artifacts/steamdeck/rust/vkcube/optflow-blend-debug-motion-fast/`
   - `artifacts/steamdeck/rust/vkcube/optflow-blend-debug-confidence-fast/`

@@ -177,11 +177,105 @@ pub fn disocclusion_biased_fallback_alpha(alpha: f32, disocclusion: f32, current
     alpha + (1.0 - alpha) * t
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct CoarseToFineSearchConfig {
+    pub search_radius: i32,
+    pub patch_radius: i32,
+    pub confidence_scale: f32,
+    pub motion_penalty: f32,
+    pub levels: i32,
+}
+
+impl Default for CoarseToFineSearchConfig {
+    fn default() -> Self {
+        Self {
+            search_radius: 1,
+            patch_radius: 1,
+            confidence_scale: 0.5,
+            motion_penalty: 0.01,
+            levels: 3,
+        }
+    }
+}
+
+pub fn estimate_coarse_to_fine_motion_offset(
+    prev: &[f32],
+    curr: &[f32],
+    width: usize,
+    height: usize,
+    x: usize,
+    y: usize,
+    config: CoarseToFineSearchConfig,
+) -> SymmetricSearchResult {
+    assert_eq!(prev.len(), width * height);
+    assert_eq!(curr.len(), width * height);
+
+    let search_radius = config.search_radius.max(0);
+    let patch_radius = config.patch_radius.max(0);
+    let levels = config.levels.clamp(1, 4);
+
+    let zero_error = symmetric_patch_error(prev, curr, width, height, x, y, 0, 0, patch_radius);
+    let mut best_error = zero_error;
+    let mut second_best_error = f32::INFINITY;
+    let mut best_offset = (0, 0);
+
+    for level in (0..levels).rev() {
+        let step = 1 << level;
+        let mut level_best_error = f32::INFINITY;
+        let mut level_second_best_error = f32::INFINITY;
+        let mut level_best_offset = best_offset;
+
+        for offset_y in -search_radius..=search_radius {
+            for offset_x in -search_radius..=search_radius {
+                let step_offset = (offset_x * step, offset_y * step);
+                let candidate = (best_offset.0 + step_offset.0, best_offset.1 + step_offset.1);
+                let motion_cost = config.motion_penalty
+                    * (step_offset.0 * step_offset.0 + step_offset.1 * step_offset.1) as f32;
+                let error = symmetric_patch_error(
+                    prev,
+                    curr,
+                    width,
+                    height,
+                    x,
+                    y,
+                    candidate.0,
+                    candidate.1,
+                    patch_radius,
+                ) + motion_cost;
+
+                if error < level_best_error {
+                    level_second_best_error = level_best_error;
+                    level_best_error = error;
+                    level_best_offset = candidate;
+                } else if error < level_second_best_error {
+                    level_second_best_error = error;
+                }
+            }
+        }
+
+        best_offset = level_best_offset;
+        best_error = level_best_error;
+        second_best_error = level_second_best_error;
+    }
+
+    let confidence = ((zero_error - best_error) * config.confidence_scale).clamp(0.0, 1.0);
+    let _ = second_best_error;
+
+    SymmetricSearchResult {
+        offset_x: best_offset.0,
+        offset_y: best_offset.1,
+        best_error,
+        zero_error,
+        confidence,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         apply_ambiguity_weighted_confidence, apply_gradient_weighted_confidence,
-        disocclusion_biased_fallback_alpha, estimate_symmetric_motion_offset, mixed_patch_error,
+        disocclusion_biased_fallback_alpha, estimate_coarse_to_fine_motion_offset,
+        estimate_symmetric_motion_offset, mixed_patch_error, CoarseToFineSearchConfig,
         SymmetricSearchConfig,
     };
 
@@ -291,5 +385,55 @@ mod tests {
     fn disocclusion_bias_respects_partial_disocclusion() {
         let alpha = disocclusion_biased_fallback_alpha(0.5, 0.5, 0.75);
         assert!((alpha - 0.6875).abs() < 1e-6);
+    }
+
+    #[test]
+    fn coarse_to_fine_search_recovers_large_motion_with_small_local_radius() {
+        let prev = (0..17).map(|value| value as f32).collect::<Vec<_>>();
+        let curr = vec![
+            0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0,
+        ];
+        let result = estimate_coarse_to_fine_motion_offset(
+            &prev,
+            &curr,
+            17,
+            1,
+            8,
+            0,
+            CoarseToFineSearchConfig {
+                search_radius: 1,
+                patch_radius: 0,
+                confidence_scale: 0.5,
+                motion_penalty: 0.01,
+                levels: 3,
+            },
+        );
+        assert_eq!((result.offset_x, result.offset_y), (-4, 0));
+        assert!(result.best_error < result.zero_error);
+        assert!(result.confidence > 0.0);
+    }
+
+    #[test]
+    fn coarse_to_fine_search_uses_local_step_penalty_not_total_offset_penalty() {
+        let prev = (0..17).map(|value| value as f32).collect::<Vec<_>>();
+        let curr = vec![
+            0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0,
+        ];
+        let result = estimate_coarse_to_fine_motion_offset(
+            &prev,
+            &curr,
+            17,
+            1,
+            8,
+            0,
+            CoarseToFineSearchConfig {
+                search_radius: 1,
+                patch_radius: 0,
+                confidence_scale: 0.5,
+                motion_penalty: 0.05,
+                levels: 3,
+            },
+        );
+        assert_eq!((result.offset_x, result.offset_y), (-4, 0));
     }
 }

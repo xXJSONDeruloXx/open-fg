@@ -121,8 +121,9 @@ void coarse_to_fine_half_offset(
                     continue;
                 }
                 ivec2 candidate_half_offset = best_half_offset + ivec2(ox * step_px, oy * step_px);
+                ivec2 step_offset = ivec2(ox * step_px, oy * step_px);
                 float motion_penalty = motion_penalty_scale * float(
-                    candidate_half_offset.x * candidate_half_offset.x + candidate_half_offset.y * candidate_half_offset.y
+                    step_offset.x * step_offset.x + step_offset.y * step_offset.y
                 );
                 float error = symmetric_patch_error(center_uv, candidate_half_offset, patch_radius, texel, chroma_weight) + motion_penalty;
                 if (error < level_best_error) {

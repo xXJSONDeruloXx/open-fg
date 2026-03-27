@@ -327,7 +327,7 @@ It now also exposes tunable quality controls via:
 - `OMFG_REPROJECT_CHROMA_WEIGHT` (blends between luma-only and full RGB patch matching; default `0.3`, range `0.0-1.0`)
 - `OMFG_REPROJECT_AMBIGUITY_SCALE` (suppresses confidence when multiple reprojection candidates are nearly tied; default `6.0`)
 The `reproject-adaptive-blend` mode combines that stronger reprojection path with adaptive current-frame weighting.
-The `optflow-blend` mode is the first hardware-agnostic optical-flow-style single-FG experiment. Its current v0 uses a coarse-to-fine block-matching search inside the generated-frame shader rather than a separate flow texture stage, making it a practical stepping stone toward a richer analytical motion-estimation stack.
+The `optflow-blend` mode is the first hardware-agnostic optical-flow-style single-FG experiment. Its current v0 uses a coarse-to-fine block-matching search inside the generated-frame shader rather than a separate flow texture stage, making it a practical stepping stone toward a richer analytical motion-estimation stack. The latest refinement changed the coarse-to-fine motion penalty to act on each local refinement step rather than repeatedly penalizing the full accumulated offset, which is intended to preserve larger motion discovered at coarse levels without blowing up the fast profile.
 The current debug-view path also works on `optflow-blend`; Deck-validated examples include:
 - `artifacts/steamdeck/rust/vkcube/optflow-blend-debug-motion-fast/`
 - `artifacts/steamdeck/rust/vkcube/optflow-blend-debug-confidence-fast/`

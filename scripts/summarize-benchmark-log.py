@@ -42,7 +42,7 @@ def parse_value(value: str):
 
 def parse_summary(path: Path):
     summary_line = None
-    for line in path.read_text().splitlines():
+    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
         if "benchmark summary;" in line:
             summary_line = line
     if summary_line is None:
