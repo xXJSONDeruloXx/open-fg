@@ -219,6 +219,9 @@ export OMFG_LAYER_IMPL=rust
 
 # Fast decision subset only
 OMFG_BENCHMARK_PRESET=decision ./scripts/run-steamdeck-benchmark-suite.sh
+
+# Focused reprojection-quality ablation preset
+OMFG_BENCHMARK_PRESET=reproject-quality ./scripts/run-steamdeck-benchmark-suite.sh
 ```
 
 ### Multi-count sweep
