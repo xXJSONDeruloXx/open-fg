@@ -51,9 +51,9 @@ Interpretation:
 Start with a **single-FG path first**.
 
 Recommended new modes:
-- `optflow-blend`
-- later: `optflow-adaptive-blend`
-- much later: `optflow-multi-blend`
+- `optflow-blend` ← **DONE** (v0)
+- ~~later: `optflow-adaptive-blend`~~ → **DONE**: landed as shader mode 7
+- ~~much later: `optflow-multi-blend`~~ → **DONE**: landed, uses shader mode 6 per frame
 
 Why single-FG first:
 - smaller implementation surface
@@ -227,8 +227,25 @@ If it is strictly more expensive with no visible gain, it should remain experime
 ## Longer-term path after v0
 
 If v0 is promising, the follow-up order should be:
-1. improve confidence with stronger consistency checks
-2. improve disocclusion masking and hole fill
-3. add adaptive variant
-4. evaluate propagation into multi-FG
+1. improve confidence with stronger consistency checks ← **in progress**
+2. improve disocclusion masking and hole fill ← **in progress** (shared with reprojection path)
+3. ~~add adaptive variant~~ → **DONE**: `optflow-adaptive-blend` (shader mode 7) landed
+   - combines coarse-to-fine block-matching with difference-weighted blend alpha
+   - all optflow knobs apply; debug views work
+   - locally validated: 71 tests pass, Docker build succeeds
+   - Deck validation pending (no credentials in current host)
+4. ~~evaluate propagation into multi-FG~~ → **DONE**: `optflow-multi-blend` landed
+   - extends optical-flow generation to 2+ generated frames per real frame
+   - uses shader mode 6 per frame with per-frame temporal alpha
+   - shares `OMFG_MULTI_BLEND_COUNT` and headroom expansion with other multi-FG paths
+   - locally validated: 71 tests pass, Docker build succeeds
+   - Deck validation pending (no credentials in current host)
 5. compare against vendor optical flow or ML oracle outputs where helpful
+
+## Current next steps for the optflow stack
+
+After Deck validation of the new modes:
+1. run `OMFG_BENCHMARK_PRESET=optflow-quality` on Deck to measure `optflow-adaptive-blend` and `optflow-multi-blend` cost vs reprojection baseline
+2. improve the coarse-to-fine search: larger per-level search radius, sub-pixel refinement, or temporal seed from previous frame
+3. consider a separated multi-pass flow texture stage to reuse the motion field cleanly across multi-FG frames
+4. compare `optflow-adaptive-blend` quality against `reproject-adaptive-blend` using real game captures or RIFE as oracle

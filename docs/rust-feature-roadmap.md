@@ -199,10 +199,25 @@ Likely path:
 Goal:
 - move from patch-search reprojection toward a more FSR3-like analytical motion-estimation core without requiring engine metadata
 
-Likely path:
-- start with a cross-vendor compute optical-flow / pyramid / block-matching prototype
-- benchmark its GPU and wall-clock cost against the current reprojection baseline
-- land it first in single-FG paths before propagating it into multi-FG
+Current status:
+- first `optflow-blend` single-FG v0 landed as a coarse-to-fine block-matching half-offset search
+- validated on Deck; fast profile competitive with reprojection baseline
+- `optflow-adaptive-blend` (shader mode 7) now adds adaptive current-frame bias on top of optflow
+  - combines the coarse-to-fine pyramid search with the difference-weighted blend alpha from `adaptive-blend`
+  - all optflow knobs apply; debug views work
+  - validated locally: 71 tests pass, Docker build succeeds
+- `optflow-multi-blend` now extends optical-flow generation to multi-FG (2+ frames per real frame)
+  - uses shader mode 6 per generated frame position with per-frame temporal alpha
+  - shares `OMFG_MULTI_BLEND_COUNT` with other multi-FG paths
+  - dynamic swapchain headroom expansion applies
+  - validated locally: 71 tests pass, Docker build succeeds
+- `optflow-quality` benchmark preset now covers all three optflow variants vs reprojection-blend baseline
+  - run with `OMFG_BENCHMARK_PRESET=optflow-quality ./scripts/run-steamdeck-benchmark-suite.sh`
+
+Next likely path:
+- Deck validation of `optflow-adaptive-blend` and `optflow-multi-blend` once credentials available
+- improve confidence model: larger search window or better patch metrics for the coarse-to-fine path
+- consider a separate multi-pass flow texture stage for cleaner motion field reuse in multi-FG
 - keep vendor optical flow and ML as optional side branches rather than the default mainline
 
 ### 7. Pacing / latency improvements
@@ -245,17 +260,19 @@ New capability work should continue following this loop:
 
 ## Current practical priority
 
-With `reproject-multi-blend` and `reproject-adaptive-multi-blend` now working, the current mainline priority is:
+With `optflow-adaptive-blend` and `optflow-multi-blend` now implemented locally (pending Deck validation),
+the current mainline focus is:
 
-## **make the reprojection-backed path easier to see, measure, and then improve toward a more FSR3-like analytical stack**
+## **validate the new optical-flow mode family on Deck, then improve quality across the full optflow stack**
 
 More specifically, the current ordering is:
-1. debug / observability views for motion, confidence, ambiguity, disocclusion, and hole-fill behavior
-2. hardware-agnostic post-process optical-flow experiments with explicit benchmark cost comparison versus the current reprojection path
-3. richer confidence / disocclusion / hole-filling improvements inside reprojection-backed multi-FG
-4. stronger patch metrics / search-window experiments / temporal stability tuning
-5. cleaner controller-vs-backend separation for adaptive higher-quality multi-FG
-6. pacing / present-timing follow-through as a validation/support track rather than assuming current vsync-paced waiting is the primary bottleneck
+1. Steam Deck smoke validation for `optflow-adaptive-blend` and `optflow-multi-blend` once credentials available
+2. `optflow-quality` benchmark run comparing new modes vs reprojection baseline on real hardware
+3. improve optflow confidence model: stronger search, better patch metrics, or temporal flow stability
+4. consider a separate multi-pass flow texture stage for cleaner motion field reuse across multi-FG frames
+5. richer confidence / disocclusion / hole-filling improvements inside reprojection-backed multi-FG
+6. cleaner controller-vs-backend separation for adaptive higher-quality multi-FG
+7. pacing / present-timing follow-through as a validation/support track rather than assuming current vsync-paced waiting is the primary bottleneck
 
 In parallel, but not as the default mainline:
 - use `RIFE` / `rife-ncnn-vulkan` as a quality oracle on captured frame pairs

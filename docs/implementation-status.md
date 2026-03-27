@@ -67,6 +67,8 @@ Rust also now has additional next-step backend modes:
 - `reproject-blend`
 - `reproject-adaptive-blend`
 - `optflow-blend`
+- `optflow-adaptive-blend`
+- `optflow-multi-blend`
 - `multi-blend`
 - `adaptive-multi-blend`
 - `reproject-multi-blend`
@@ -287,6 +289,42 @@ Observed:
   - `artifacts/steamdeck/rust/vkcube/optflow-blend-debug-motion-fast/`
   - `artifacts/steamdeck/rust/vkcube/optflow-blend-debug-confidence-fast/`
 - those runs confirm the same debug-view plumbing used for reprojection-backed modes is also useful on the fast optical-flow v0 path
+
+#### 8d. `optflow-adaptive-blend` (Rust)
+Working as the adaptive variant of the optical-flow single-FG path.
+
+Validated locally:
+- local `cargo test --locked` (71 tests pass)
+- `./scripts/test-rust-layer.sh`
+- `OMFG_LAYER_IMPL=rust ./scripts/build-linux-amd64.sh`
+
+Observed:
+- extends `optflow-blend` with adaptive current-frame bias (same as `adaptive-blend` does for the pure blend path)
+- after the coarse-to-fine block-matching search produces a confidence-weighted reprojection, a difference-based adaptive alpha is applied to bias the blend toward the current frame in high-motion regions
+- uses shader mode `7` (new; modes 4/5/6 were reproject, optflow respectively)
+- all optflow knobs apply: `OMFG_OPTICAL_FLOW_SEARCH_RADIUS`, `OMFG_OPTICAL_FLOW_PATCH_RADIUS`, `OMFG_OPTICAL_FLOW_LEVELS`, `OMFG_OPTICAL_FLOW_CONFIDENCE_SCALE`, `OMFG_OPTICAL_FLOW_MOTION_PENALTY`
+- debug views (`OMFG_DEBUG_VIEW=motion|confidence|ambiguity|disocclusion|hole-fill|fallback`) work on this mode via the shared reprojection debug-view plumbing
+- env aliases: `optflow-adaptive-blend`, `optflow-adaptive`, `optical-flow-adaptive`
+- Steam Deck validation: pending (no credentials in current host environment)
+
+#### 8e. `optflow-multi-blend` (Rust)
+Working as the first optical-flow-backed multi-FG path.
+
+Validated locally:
+- local `cargo test --locked` (71 tests pass)
+- `./scripts/test-rust-layer.sh`
+- `OMFG_LAYER_IMPL=rust ./scripts/build-linux-amd64.sh`
+
+Observed:
+- extends optical-flow generation to multi-FG (2+ generated frames per real frame)
+- each generated frame uses shader mode 6 (optflow) with a per-frame temporal blend alpha
+- shares `OMFG_MULTI_BLEND_COUNT` env with `multi-blend` and `reproject-multi-blend`
+- inherits all optflow quality knobs (search radius, patch radius, levels, motion penalty, confidence/disocclusion/hole-fill)
+- dynamic swapchain headroom expansion applies at the same rules as `multi-blend`
+- debug views work per generated frame via the shared reprojection debug-view plumbing
+- env aliases: `optflow-multi-blend`, `optflow-multi-fg`, `optflow-multi`, `optical-flow-multi`
+- benchmark preset: use `OMFG_BENCHMARK_PRESET=optflow-quality` with the `optflow-multi-blend-count2` case for Deck cost comparison
+- Steam Deck validation: pending (no credentials in current host environment)
 
 #### 9. `multi-blend` (Rust)
 Working as the first multi-FG stepping stone.
