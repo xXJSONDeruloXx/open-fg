@@ -18,19 +18,20 @@ use planner::{
     mark_injection_result, mutate_swapchain, planned_sequence, smooth_present_interval_ms,
 };
 use std::collections::HashMap;
-use std::ffi::{c_char, CStr};
+use std::ffi::{c_char, c_void, CStr};
 use std::fs::OpenOptions;
 use std::io::{Cursor, Write};
 use std::mem;
 use std::ptr;
 use std::sync::{Mutex, OnceLock};
 use std::thread;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 const LAYER_NAME_BYTES: &[u8] = b"VK_LAYER_PPFG_rust\0";
 const LAYER_DESCRIPTION_BYTES: &[u8] = b"Post-process frame generation Rust Vulkan layer\0";
 const BLEND_VERT_SPV: &[u8] = include_bytes!("../shaders/blend.vert.spv");
 const BLEND_FRAG_SPV: &[u8] = include_bytes!("../shaders/blend.frag.spv");
+const BENCHMARK_QUERY_CAPACITY: u32 = 4096;
 
 fn layer_name() -> &'static CStr {
     unsafe { CStr::from_bytes_with_nul_unchecked(LAYER_NAME_BYTES) }
@@ -320,8 +321,28 @@ type PfnVkCmdPushConstants = unsafe extern "system" fn(
     vk::ShaderStageFlags,
     u32,
     u32,
-    *const std::ffi::c_void,
+    *const c_void,
 );
+type PfnVkCreateQueryPool = unsafe extern "system" fn(
+    vk::Device,
+    *const vk::QueryPoolCreateInfo<'static>,
+    *const AllocationCallbacks,
+    *mut vk::QueryPool,
+) -> vk::Result;
+type PfnVkDestroyQueryPool =
+    unsafe extern "system" fn(vk::Device, vk::QueryPool, *const AllocationCallbacks);
+type PfnVkGetQueryPoolResults = unsafe extern "system" fn(
+    vk::Device,
+    vk::QueryPool,
+    u32,
+    u32,
+    usize,
+    *mut c_void,
+    vk::DeviceSize,
+    vk::QueryResultFlags,
+) -> vk::Result;
+type PfnVkCmdWriteTimestamp =
+    unsafe extern "system" fn(vk::CommandBuffer, vk::PipelineStageFlags, vk::QueryPool, u32);
 
 #[derive(Default)]
 struct LoggerSink {
@@ -453,6 +474,10 @@ struct DeviceDispatch {
     cmd_bind_descriptor_sets: Option<PfnVkCmdBindDescriptorSets>,
     cmd_draw: Option<PfnVkCmdDraw>,
     cmd_push_constants: Option<PfnVkCmdPushConstants>,
+    create_query_pool: Option<PfnVkCreateQueryPool>,
+    destroy_query_pool: Option<PfnVkDestroyQueryPool>,
+    get_query_pool_results: Option<PfnVkGetQueryPoolResults>,
+    cmd_write_timestamp: Option<PfnVkCmdWriteTimestamp>,
 }
 
 #[derive(Clone, Copy, Default)]
@@ -462,6 +487,7 @@ struct QueueInfo {
     queue_index: u32,
     supports_graphics: bool,
     supports_transfer: bool,
+    timestamp_valid_bits: u32,
 }
 
 #[derive(Clone, Copy, Default)]
@@ -475,6 +501,8 @@ struct InjectResources {
     ready_generated_semaphore: vk::Semaphore,
     submit_fence: vk::Fence,
     acquire_fence: vk::Fence,
+    benchmark_query_pool: vk::QueryPool,
+    benchmark_next_query: u32,
 }
 
 #[derive(Clone, Copy, Default)]
@@ -488,6 +516,59 @@ struct BlendResources {
     descriptor_set: vk::DescriptorSet,
     sampler: vk::Sampler,
     history_view: vk::ImageView,
+}
+
+#[derive(Clone, Copy, Default)]
+struct BenchmarkQuerySpan {
+    start_query: u32,
+    end_query: u32,
+}
+
+#[derive(Clone, Copy, Default)]
+struct BenchmarkSample {
+    generated_frames: u32,
+    cpu_acquire_ms: f64,
+    cpu_setup_ms: f64,
+    cpu_record_ms: f64,
+    cpu_submit_ms: f64,
+    cpu_submit_wait_ms: f64,
+    cpu_generated_present_ms: f64,
+    cpu_original_present_ms: f64,
+    cpu_queue_idle_ms: f64,
+    gpu_cmd_ms: f64,
+    has_gpu_cmd: bool,
+}
+
+impl BenchmarkSample {
+    fn total_ms(self) -> f64 {
+        self.cpu_acquire_ms
+            + self.cpu_setup_ms
+            + self.cpu_record_ms
+            + self.cpu_submit_ms
+            + self.cpu_submit_wait_ms
+            + self.cpu_generated_present_ms
+            + self.cpu_original_present_ms
+            + self.cpu_queue_idle_ms
+    }
+}
+
+#[derive(Clone, Copy, Default)]
+struct BenchmarkStats {
+    samples: u64,
+    generated_frames: u64,
+    gpu_samples: u64,
+    total_cpu_acquire_ms: f64,
+    total_cpu_setup_ms: f64,
+    total_cpu_record_ms: f64,
+    total_cpu_submit_ms: f64,
+    total_cpu_submit_wait_ms: f64,
+    total_cpu_generated_present_ms: f64,
+    total_cpu_original_present_ms: f64,
+    total_cpu_queue_idle_ms: f64,
+    total_cpu_total_ms: f64,
+    max_cpu_total_ms: f64,
+    total_gpu_cmd_ms: f64,
+    max_gpu_cmd_ms: f64,
 }
 
 #[repr(C)]
@@ -529,6 +610,7 @@ struct SwapchainState {
     generated_present_count: u64,
     injection_attempted: bool,
     injection_works: bool,
+    benchmark: BenchmarkStats,
     inject: InjectResources,
     blend: BlendResources,
 }
@@ -560,6 +642,7 @@ impl Default for SwapchainState {
             generated_present_count: 0,
             injection_attempted: false,
             injection_works: false,
+            benchmark: BenchmarkStats::default(),
             inject: InjectResources::default(),
             blend: BlendResources::default(),
         }
@@ -571,6 +654,7 @@ struct DeviceInfo {
     instance: vk::Instance,
     physical_device: vk::PhysicalDevice,
     device: vk::Device,
+    timestamp_period_ns: f32,
     instance_dispatch: InstanceDispatch,
     dispatch: DeviceDispatch,
 }
@@ -733,6 +817,10 @@ unsafe fn fill_device_dispatch(device: vk::Device, gdpa: PfnVkGetDeviceProcAddr)
         cmd_bind_descriptor_sets: load_device_fn(gdpa, device, cstr!("vkCmdBindDescriptorSets")),
         cmd_draw: load_device_fn(gdpa, device, cstr!("vkCmdDraw")),
         cmd_push_constants: load_device_fn(gdpa, device, cstr!("vkCmdPushConstants")),
+        create_query_pool: load_device_fn(gdpa, device, cstr!("vkCreateQueryPool")),
+        destroy_query_pool: load_device_fn(gdpa, device, cstr!("vkDestroyQueryPool")),
+        get_query_pool_results: load_device_fn(gdpa, device, cstr!("vkGetQueryPoolResults")),
+        cmd_write_timestamp: load_device_fn(gdpa, device, cstr!("vkCmdWriteTimestamp")),
     }
 }
 
@@ -810,6 +898,261 @@ fn env_f32(name: &str, default_value: f32) -> f32 {
         .unwrap_or(default_value)
 }
 
+fn env_bool(name: &str, default_value: bool) -> bool {
+    match std::env::var(name) {
+        Ok(value) => match value.trim().to_ascii_lowercase().as_str() {
+            "1" | "true" | "yes" | "on" => true,
+            "0" | "false" | "no" | "off" => false,
+            _ => default_value,
+        },
+        Err(_) => default_value,
+    }
+}
+
+fn benchmark_enabled() -> bool {
+    env_bool("PPFG_BENCHMARK", false)
+}
+
+fn benchmark_label() -> String {
+    std::env::var("PPFG_BENCHMARK_LABEL")
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or_else(|| "default".to_string())
+}
+
+fn record_benchmark_sample(
+    mode: Mode,
+    present_count: u64,
+    stats: &mut BenchmarkStats,
+    sample: BenchmarkSample,
+) {
+    if !benchmark_enabled() || sample.generated_frames == 0 {
+        return;
+    }
+
+    let total_ms = sample.total_ms();
+    stats.samples += 1;
+    stats.generated_frames += sample.generated_frames as u64;
+    stats.total_cpu_acquire_ms += sample.cpu_acquire_ms;
+    stats.total_cpu_setup_ms += sample.cpu_setup_ms;
+    stats.total_cpu_record_ms += sample.cpu_record_ms;
+    stats.total_cpu_submit_ms += sample.cpu_submit_ms;
+    stats.total_cpu_submit_wait_ms += sample.cpu_submit_wait_ms;
+    stats.total_cpu_generated_present_ms += sample.cpu_generated_present_ms;
+    stats.total_cpu_original_present_ms += sample.cpu_original_present_ms;
+    stats.total_cpu_queue_idle_ms += sample.cpu_queue_idle_ms;
+    stats.total_cpu_total_ms += total_ms;
+    stats.max_cpu_total_ms = stats.max_cpu_total_ms.max(total_ms);
+    if sample.has_gpu_cmd {
+        stats.gpu_samples += 1;
+        stats.total_gpu_cmd_ms += sample.gpu_cmd_ms;
+        stats.max_gpu_cmd_ms = stats.max_gpu_cmd_ms.max(sample.gpu_cmd_ms);
+    }
+
+    if stats.samples <= 5 || stats.samples % 60 == 0 {
+        log_info(format!(
+            "benchmark sample; label={}; mode={}; sample={}; present={}; generatedFrames={}; cpuAcquireMs={:.3}; cpuSetupMs={:.3}; cpuRecordMs={:.3}; cpuSubmitMs={:.3}; cpuSubmitWaitMs={:.3}; cpuGeneratedPresentMs={:.3}; cpuOriginalPresentMs={:.3}; cpuQueueIdleMs={:.3}; cpuTotalMs={:.3}; gpuCmdMs={:.3}; gpuAvailable={}",
+            benchmark_label(),
+            mode.name(),
+            stats.samples,
+            present_count,
+            sample.generated_frames,
+            sample.cpu_acquire_ms,
+            sample.cpu_setup_ms,
+            sample.cpu_record_ms,
+            sample.cpu_submit_ms,
+            sample.cpu_submit_wait_ms,
+            sample.cpu_generated_present_ms,
+            sample.cpu_original_present_ms,
+            sample.cpu_queue_idle_ms,
+            total_ms,
+            sample.gpu_cmd_ms,
+            if sample.has_gpu_cmd { 1 } else { 0 },
+        ));
+    }
+}
+
+fn log_benchmark_summary(mode: Mode, stats: &BenchmarkStats) {
+    if !benchmark_enabled() || stats.samples == 0 {
+        return;
+    }
+
+    let sample_divisor = stats.samples as f64;
+    let generated_divisor = stats.generated_frames.max(1) as f64;
+    let gpu_sample_divisor = stats.gpu_samples.max(1) as f64;
+    log_info(format!(
+        "benchmark summary; label={}; mode={}; samples={}; generatedFrames={}; gpuSamples={}; avgCpuAcquireMs={:.3}; avgCpuSetupMs={:.3}; avgCpuRecordMs={:.3}; avgCpuSubmitMs={:.3}; avgCpuSubmitWaitMs={:.3}; avgCpuGeneratedPresentMs={:.3}; avgCpuOriginalPresentMs={:.3}; avgCpuQueueIdleMs={:.3}; avgCpuTotalMs={:.3}; avgCpuPerGeneratedFrameMs={:.3}; maxCpuTotalMs={:.3}; avgGpuCmdMs={:.3}; avgGpuPerGeneratedFrameMs={:.3}; maxGpuCmdMs={:.3}",
+        benchmark_label(),
+        mode.name(),
+        stats.samples,
+        stats.generated_frames,
+        stats.gpu_samples,
+        stats.total_cpu_acquire_ms / sample_divisor,
+        stats.total_cpu_setup_ms / sample_divisor,
+        stats.total_cpu_record_ms / sample_divisor,
+        stats.total_cpu_submit_ms / sample_divisor,
+        stats.total_cpu_submit_wait_ms / sample_divisor,
+        stats.total_cpu_generated_present_ms / sample_divisor,
+        stats.total_cpu_original_present_ms / sample_divisor,
+        stats.total_cpu_queue_idle_ms / sample_divisor,
+        stats.total_cpu_total_ms / sample_divisor,
+        stats.total_cpu_total_ms / generated_divisor,
+        stats.max_cpu_total_ms,
+        stats.total_gpu_cmd_ms / gpu_sample_divisor,
+        stats.total_gpu_cmd_ms / generated_divisor,
+        stats.max_gpu_cmd_ms,
+    ));
+}
+
+fn benchmark_query_supported(device_info: &DeviceInfo, queue_info: &QueueInfo) -> bool {
+    benchmark_enabled()
+        && queue_info.timestamp_valid_bits > 0
+        && device_info.timestamp_period_ns > 0.0
+        && device_info.dispatch.create_query_pool.is_some()
+        && device_info.dispatch.destroy_query_pool.is_some()
+        && device_info.dispatch.get_query_pool_results.is_some()
+        && device_info.dispatch.cmd_write_timestamp.is_some()
+}
+
+unsafe fn init_benchmark_query_pool(
+    inject: &mut InjectResources,
+    device_info: &DeviceInfo,
+    queue_info: &QueueInfo,
+) {
+    if inject.benchmark_query_pool != vk::QueryPool::null()
+        || !benchmark_query_supported(device_info, queue_info)
+    {
+        return;
+    }
+
+    let Some(create_query_pool) = device_info.dispatch.create_query_pool else {
+        return;
+    };
+
+    let query_pool_info = vk::QueryPoolCreateInfo {
+        s_type: vk::StructureType::QUERY_POOL_CREATE_INFO,
+        query_type: vk::QueryType::TIMESTAMP,
+        query_count: BENCHMARK_QUERY_CAPACITY,
+        ..Default::default()
+    };
+    let result = create_query_pool(
+        device_info.device,
+        &query_pool_info,
+        ptr::null(),
+        &mut inject.benchmark_query_pool,
+    );
+    if result != vk::Result::SUCCESS {
+        log_warn(format!(
+            "CreateQueryPool failed for benchmark timestamps: {}",
+            result.as_raw()
+        ));
+        inject.benchmark_query_pool = vk::QueryPool::null();
+        inject.benchmark_next_query = 0;
+        return;
+    }
+    inject.benchmark_next_query = 0;
+    log_info(format!(
+        "initialized benchmark timestamp query pool; capacity={}; timestampPeriodNs={:.3}; timestampValidBits={}",
+        BENCHMARK_QUERY_CAPACITY,
+        device_info.timestamp_period_ns,
+        queue_info.timestamp_valid_bits,
+    ));
+}
+
+fn reserve_benchmark_query_span(inject: &mut InjectResources) -> Option<BenchmarkQuerySpan> {
+    if inject.benchmark_query_pool == vk::QueryPool::null() {
+        return None;
+    }
+    if inject.benchmark_next_query + 2 > BENCHMARK_QUERY_CAPACITY {
+        log_warn(
+            "benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples",
+        );
+        return None;
+    }
+    let span = BenchmarkQuerySpan {
+        start_query: inject.benchmark_next_query,
+        end_query: inject.benchmark_next_query + 1,
+    };
+    inject.benchmark_next_query += 2;
+    Some(span)
+}
+
+unsafe fn write_benchmark_timestamp(
+    device_info: &DeviceInfo,
+    command_buffer: vk::CommandBuffer,
+    inject: &InjectResources,
+    span: Option<BenchmarkQuerySpan>,
+    start: bool,
+) {
+    let Some(span) = span else {
+        return;
+    };
+    let Some(cmd_write_timestamp) = device_info.dispatch.cmd_write_timestamp else {
+        return;
+    };
+    let query = if start {
+        span.start_query
+    } else {
+        span.end_query
+    };
+    let stage = if start {
+        vk::PipelineStageFlags::TOP_OF_PIPE
+    } else {
+        vk::PipelineStageFlags::BOTTOM_OF_PIPE
+    };
+    cmd_write_timestamp(command_buffer, stage, inject.benchmark_query_pool, query);
+}
+
+fn benchmark_timestamp_delta(start: u64, end: u64, valid_bits: u32) -> u64 {
+    if valid_bits == 0 || valid_bits >= 64 {
+        return end.saturating_sub(start);
+    }
+    let modulo = 1u64 << valid_bits;
+    if end >= start {
+        end - start
+    } else {
+        (modulo - start) + end
+    }
+}
+
+unsafe fn resolve_benchmark_gpu_cmd_ms(
+    device_info: &DeviceInfo,
+    queue_info: &QueueInfo,
+    inject: &InjectResources,
+    span: Option<BenchmarkQuerySpan>,
+) -> Option<f64> {
+    let Some(span) = span else {
+        return None;
+    };
+    let Some(get_query_pool_results) = device_info.dispatch.get_query_pool_results else {
+        return None;
+    };
+    let mut timestamps = [0u64; 2];
+    let result = get_query_pool_results(
+        device_info.device,
+        inject.benchmark_query_pool,
+        span.start_query,
+        2,
+        std::mem::size_of_val(&timestamps),
+        timestamps.as_mut_ptr().cast(),
+        std::mem::size_of::<u64>() as u64,
+        vk::QueryResultFlags::TYPE_64,
+    );
+    if result != vk::Result::SUCCESS {
+        log_warn(format!(
+            "GetQueryPoolResults failed for benchmark timestamps: {}",
+            result.as_raw()
+        ));
+        return None;
+    }
+    let delta = benchmark_timestamp_delta(
+        timestamps[0],
+        timestamps[1],
+        queue_info.timestamp_valid_bits,
+    );
+    Some(delta as f64 * device_info.timestamp_period_ns as f64 / 1_000_000.0)
+}
+
 fn remember_queue(
     queue: vk::Queue,
     device: vk::Device,
@@ -817,6 +1160,7 @@ fn remember_queue(
     queue_index: u32,
     supports_graphics: bool,
     supports_transfer: bool,
+    timestamp_valid_bits: u32,
 ) {
     if queue.is_null() {
         return;
@@ -828,6 +1172,7 @@ fn remember_queue(
         queue_index,
         supports_graphics,
         supports_transfer,
+        timestamp_valid_bits,
     };
 
     let mut state = global_state().lock().expect("global state mutex poisoned");
@@ -870,6 +1215,13 @@ unsafe fn destroy_inject_resources(
             inject.acquire_fence = vk::Fence::null();
         }
     }
+    if let Some(destroy_query_pool) = dispatch.destroy_query_pool {
+        if !inject.benchmark_query_pool.is_null() {
+            destroy_query_pool(device, inject.benchmark_query_pool, ptr::null());
+            inject.benchmark_query_pool = vk::QueryPool::null();
+            inject.benchmark_next_query = 0;
+        }
+    }
     if let (Some(free_command_buffers), Some(destroy_command_pool)) =
         (dispatch.free_command_buffers, dispatch.destroy_command_pool)
     {
@@ -882,6 +1234,8 @@ unsafe fn destroy_inject_resources(
             inject.command_pool = vk::CommandPool::null();
         }
     }
+    inject.family_index = 0;
+    inject.benchmark_next_query = 0;
     inject.initialized = false;
 }
 
@@ -1550,6 +1904,7 @@ unsafe fn init_blend_resources(swapchain: &mut SwapchainState, device_info: &Dev
 }
 
 unsafe fn destroy_swapchain_resources(device_info: &DeviceInfo, swapchain: &mut SwapchainState) {
+    log_benchmark_summary(Mode::from_env(), &swapchain.benchmark);
     if let Some(device_wait_idle) = device_info.dispatch.device_wait_idle {
         let _ = device_wait_idle(device_info.device);
     }
@@ -1585,6 +1940,7 @@ unsafe fn init_inject_resources(
 ) -> bool {
     if swapchain.inject.initialized {
         if swapchain.inject.family_index == queue_info.family_index {
+            init_benchmark_query_pool(&mut swapchain.inject, device_info, queue_info);
             return true;
         }
         destroy_inject_resources(
@@ -1746,6 +2102,8 @@ unsafe fn init_inject_resources(
         );
         return false;
     }
+
+    init_benchmark_query_pool(&mut swapchain.inject, device_info, queue_info);
 
     swapchain.inject.initialized = true;
     swapchain.inject.family_index = queue_info.family_index;
@@ -2204,6 +2562,17 @@ unsafe fn try_present_blend_frame(
     let source_image = state.images[source_index as usize];
 
     let have_generated = state.history_valid;
+    let benchmark_active = benchmark_enabled() && have_generated;
+    let mut benchmark_sample = BenchmarkSample {
+        generated_frames: if have_generated { 1 } else { 0 },
+        ..Default::default()
+    };
+    let benchmark_query_span = if benchmark_active {
+        reserve_benchmark_query_span(&mut state.inject)
+    } else {
+        None
+    };
+    let acquire_timer = benchmark_active.then(Instant::now);
     let mut generated_image_index = 0;
     if have_generated {
         let acquire_result = acquire_next_image(
@@ -2239,7 +2608,11 @@ unsafe fn try_present_blend_frame(
             return false;
         }
     }
+    if let Some(timer) = acquire_timer {
+        benchmark_sample.cpu_acquire_ms = timer.elapsed().as_secs_f64() * 1000.0;
+    }
 
+    let setup_timer = benchmark_active.then(Instant::now);
     let mut current_view = match create_simple_image_view(device_info, source_image, state.format) {
         Some(view) => view,
         None => {
@@ -2312,7 +2685,11 @@ unsafe fn try_present_blend_frame(
         );
         return false;
     }
+    if let Some(timer) = setup_timer {
+        benchmark_sample.cpu_setup_ms = timer.elapsed().as_secs_f64() * 1000.0;
+    }
 
+    let record_timer = benchmark_active.then(Instant::now);
     if reset_command_pool(
         device_info.device,
         state.inject.command_pool,
@@ -2345,6 +2722,13 @@ unsafe fn try_present_blend_frame(
         );
         return false;
     }
+    write_benchmark_timestamp(
+        device_info,
+        state.inject.command_buffer,
+        &state.inject,
+        benchmark_query_span,
+        true,
+    );
 
     if have_generated {
         let barriers_before = [
@@ -2553,6 +2937,13 @@ unsafe fn try_present_blend_frame(
         barriers_after_copy.len() as u32,
         barriers_after_copy.as_ptr(),
     );
+    write_benchmark_timestamp(
+        device_info,
+        state.inject.command_buffer,
+        &state.inject,
+        benchmark_query_span,
+        false,
+    );
 
     if end_command_buffer(state.inject.command_buffer) != vk::Result::SUCCESS {
         log_warn("EndCommandBuffer failed in blend mode");
@@ -2564,6 +2955,9 @@ unsafe fn try_present_blend_frame(
             &mut framebuffer,
         );
         return false;
+    }
+    if let Some(timer) = record_timer {
+        benchmark_sample.cpu_record_ms = timer.elapsed().as_secs_f64() * 1000.0;
     }
 
     let mut wait_semaphores = Vec::with_capacity(
@@ -2616,7 +3010,11 @@ unsafe fn try_present_blend_frame(
         );
         return false;
     }
+    let submit_timer = benchmark_active.then(Instant::now);
     let submit_result = queue_submit(queue, 1, &submit_info, state.inject.submit_fence);
+    if let Some(timer) = submit_timer {
+        benchmark_sample.cpu_submit_ms = timer.elapsed().as_secs_f64() * 1000.0;
+    }
     if submit_result != vk::Result::SUCCESS {
         log_warn(format!(
             "QueueSubmit failed for blend frame: {}",
@@ -2634,6 +3032,7 @@ unsafe fn try_present_blend_frame(
 
     let first_success = !state.injection_works;
     if have_generated {
+        let generated_present_timer = benchmark_active.then(Instant::now);
         let generated_present = PresentInfoKHR {
             s_type: vk::StructureType::PRESENT_INFO_KHR,
             wait_semaphore_count: 1,
@@ -2643,7 +3042,11 @@ unsafe fn try_present_blend_frame(
             p_image_indices: &generated_image_index,
             ..Default::default()
         };
+        maybe_sleep_ms(visual_hold_ms());
         let generated_result = queue_present(queue, &generated_present);
+        if let Some(timer) = generated_present_timer {
+            benchmark_sample.cpu_generated_present_ms = timer.elapsed().as_secs_f64() * 1000.0;
+        }
         if generated_result != vk::Result::SUCCESS && generated_result != vk::Result::SUBOPTIMAL_KHR
         {
             log_warn(format!(
@@ -2664,7 +3067,14 @@ unsafe fn try_present_blend_frame(
     let mut original_present = *present_info;
     original_present.wait_semaphore_count = 1;
     original_present.p_wait_semaphores = &state.inject.ready_original_semaphore;
+    let original_present_timer = benchmark_active.then(Instant::now);
+    if have_generated {
+        maybe_sleep_ms(visual_hold_ms());
+    }
     let original_result = queue_present(queue, &original_present);
+    if let Some(timer) = original_present_timer {
+        benchmark_sample.cpu_original_present_ms = timer.elapsed().as_secs_f64() * 1000.0;
+    }
     if original_result != vk::Result::SUCCESS && original_result != vk::Result::SUBOPTIMAL_KHR {
         log_warn(format!(
             "original QueuePresentKHR failed in blend mode: {}",
@@ -2680,6 +3090,7 @@ unsafe fn try_present_blend_frame(
         return false;
     }
 
+    let queue_wait_idle_timer = benchmark_active.then(Instant::now);
     if queue_wait_idle(queue) != vk::Result::SUCCESS {
         log_warn("QueueWaitIdle failed in blend mode");
         destroy_ephemeral_blend_frame_resources(
@@ -2690,6 +3101,15 @@ unsafe fn try_present_blend_frame(
             &mut framebuffer,
         );
         return false;
+    }
+    if let Some(timer) = queue_wait_idle_timer {
+        benchmark_sample.cpu_queue_idle_ms = timer.elapsed().as_secs_f64() * 1000.0;
+    }
+    if let Some(gpu_cmd_ms) =
+        resolve_benchmark_gpu_cmd_ms(device_info, queue_info, &state.inject, benchmark_query_span)
+    {
+        benchmark_sample.gpu_cmd_ms = gpu_cmd_ms;
+        benchmark_sample.has_gpu_cmd = true;
     }
 
     destroy_ephemeral_blend_frame_resources(
@@ -2703,6 +3123,12 @@ unsafe fn try_present_blend_frame(
     state.history_valid = true;
     state.injection_works = state.injection_works || have_generated;
     if have_generated {
+        record_benchmark_sample(
+            mode,
+            state.present_count,
+            &mut state.benchmark,
+            benchmark_sample,
+        );
         state.generated_present_count += 1;
         if first_success {
             log_info(first_success_label);
@@ -2788,6 +3214,13 @@ unsafe fn try_present_multi_blend_frame(
     };
     let generated_plan = multi_blend_push_constants_plan(mode, requested_generated_frame_count);
     let (prime_label, first_success_label, generated_label_prefix) = blend_mode_labels(mode);
+    let benchmark_active = benchmark_enabled();
+    let mut benchmark_sample = BenchmarkSample::default();
+    let benchmark_query_span = if benchmark_active {
+        reserve_benchmark_query_span(&mut state.inject)
+    } else {
+        None
+    };
 
     if let Some(request) = adaptive_request {
         let count_changed = state.last_adaptive_requested_generated_frames
@@ -2878,6 +3311,12 @@ unsafe fn try_present_multi_blend_frame(
 
     let have_history = state.history_valid;
     let emit_generated = have_history && !generated_plan.is_empty();
+    benchmark_sample.generated_frames = if emit_generated {
+        generated_plan.len() as u32
+    } else {
+        0
+    };
+    let acquire_timer = (benchmark_active && emit_generated).then(Instant::now);
     let mut generated_image_indices = Vec::new();
     if emit_generated {
         for _ in 0..generated_plan.len() {
@@ -2938,7 +3377,11 @@ unsafe fn try_present_multi_blend_frame(
             generated_image_indices.push(generated_image_index);
         }
     }
+    if let Some(timer) = acquire_timer {
+        benchmark_sample.cpu_acquire_ms = timer.elapsed().as_secs_f64() * 1000.0;
+    }
 
+    let setup_timer = (benchmark_active && emit_generated).then(Instant::now);
     let mut current_view = vk::ImageView::null();
     let mut generated_views = Vec::new();
     let mut framebuffers = Vec::new();
@@ -3021,7 +3464,11 @@ unsafe fn try_present_multi_blend_frame(
             return false;
         }
     }
+    if let Some(timer) = setup_timer {
+        benchmark_sample.cpu_setup_ms = timer.elapsed().as_secs_f64() * 1000.0;
+    }
 
+    let record_timer = (benchmark_active && emit_generated).then(Instant::now);
     if reset_command_pool(
         device_info.device,
         state.inject.command_pool,
@@ -3054,6 +3501,13 @@ unsafe fn try_present_multi_blend_frame(
         );
         return false;
     }
+    write_benchmark_timestamp(
+        device_info,
+        state.inject.command_buffer,
+        &state.inject,
+        benchmark_query_span,
+        true,
+    );
 
     if emit_generated {
         let mut barriers_before = Vec::with_capacity(2 + generated_image_indices.len());
@@ -3295,6 +3749,13 @@ unsafe fn try_present_multi_blend_frame(
         barriers_after_copy.len() as u32,
         barriers_after_copy.as_ptr(),
     );
+    write_benchmark_timestamp(
+        device_info,
+        state.inject.command_buffer,
+        &state.inject,
+        benchmark_query_span,
+        false,
+    );
 
     if end_command_buffer(state.inject.command_buffer) != vk::Result::SUCCESS {
         log_warn("EndCommandBuffer failed in multi-blend mode");
@@ -3306,6 +3767,9 @@ unsafe fn try_present_multi_blend_frame(
             &mut framebuffers,
         );
         return false;
+    }
+    if let Some(timer) = record_timer {
+        benchmark_sample.cpu_record_ms = timer.elapsed().as_secs_f64() * 1000.0;
     }
 
     let mut wait_semaphores = Vec::with_capacity(present_info.wait_semaphore_count as usize);
@@ -3345,7 +3809,11 @@ unsafe fn try_present_multi_blend_frame(
         );
         return false;
     }
+    let submit_timer = (benchmark_active && emit_generated).then(Instant::now);
     let submit_result = queue_submit(queue, 1, &submit_info, state.inject.submit_fence);
+    if let Some(timer) = submit_timer {
+        benchmark_sample.cpu_submit_ms = timer.elapsed().as_secs_f64() * 1000.0;
+    }
     if submit_result != vk::Result::SUCCESS {
         log_warn(format!(
             "QueueSubmit failed for multi-blend frame: {}",
@@ -3361,6 +3829,7 @@ unsafe fn try_present_multi_blend_frame(
         return false;
     }
 
+    let submit_wait_timer = (benchmark_active && emit_generated).then(Instant::now);
     let submit_wait = wait_for_fences(
         device_info.device,
         1,
@@ -3368,6 +3837,9 @@ unsafe fn try_present_multi_blend_frame(
         vk::TRUE,
         5_000_000_000,
     );
+    if let Some(timer) = submit_wait_timer {
+        benchmark_sample.cpu_submit_wait_ms = timer.elapsed().as_secs_f64() * 1000.0;
+    }
     if submit_wait != vk::Result::SUCCESS {
         log_warn(format!(
             "WaitForFences failed after multi-blend submit: {}",
@@ -3385,6 +3857,7 @@ unsafe fn try_present_multi_blend_frame(
 
     const EMPTY_WAIT_SEMAPHORE_COUNT: u32 = 0;
     let first_success = !state.injection_works;
+    let generated_present_timer = (benchmark_active && emit_generated).then(Instant::now);
     if emit_generated {
         for &generated_image_index in &generated_image_indices {
             let generated_present = PresentInfoKHR {
@@ -3396,6 +3869,7 @@ unsafe fn try_present_multi_blend_frame(
                 p_image_indices: &generated_image_index,
                 ..Default::default()
             };
+            maybe_sleep_ms(visual_hold_ms());
             let generated_result = queue_present(queue, &generated_present);
             if generated_result != vk::Result::SUCCESS
                 && generated_result != vk::Result::SUBOPTIMAL_KHR
@@ -3415,11 +3889,21 @@ unsafe fn try_present_multi_blend_frame(
             }
         }
     }
+    if let Some(timer) = generated_present_timer {
+        benchmark_sample.cpu_generated_present_ms = timer.elapsed().as_secs_f64() * 1000.0;
+    }
 
     let mut original_present = *present_info;
     original_present.wait_semaphore_count = 0;
     original_present.p_wait_semaphores = ptr::null();
+    let original_present_timer = (benchmark_active && emit_generated).then(Instant::now);
+    if emit_generated {
+        maybe_sleep_ms(visual_hold_ms());
+    }
     let original_result = queue_present(queue, &original_present);
+    if let Some(timer) = original_present_timer {
+        benchmark_sample.cpu_original_present_ms = timer.elapsed().as_secs_f64() * 1000.0;
+    }
     if original_result != vk::Result::SUCCESS && original_result != vk::Result::SUBOPTIMAL_KHR {
         log_warn(format!(
             "original QueuePresentKHR failed in multi-blend mode: {}",
@@ -3435,6 +3919,7 @@ unsafe fn try_present_multi_blend_frame(
         return false;
     }
 
+    let queue_wait_idle_timer = (benchmark_active && emit_generated).then(Instant::now);
     if queue_wait_idle(queue) != vk::Result::SUCCESS {
         log_warn("QueueWaitIdle failed in multi-blend mode");
         destroy_multi_blend_frame_resources(
@@ -3445,6 +3930,15 @@ unsafe fn try_present_multi_blend_frame(
             &mut framebuffers,
         );
         return false;
+    }
+    if let Some(timer) = queue_wait_idle_timer {
+        benchmark_sample.cpu_queue_idle_ms = timer.elapsed().as_secs_f64() * 1000.0;
+    }
+    if let Some(gpu_cmd_ms) =
+        resolve_benchmark_gpu_cmd_ms(device_info, queue_info, &state.inject, benchmark_query_span)
+    {
+        benchmark_sample.gpu_cmd_ms = gpu_cmd_ms;
+        benchmark_sample.has_gpu_cmd = true;
     }
 
     destroy_multi_blend_frame_resources(
@@ -3458,6 +3952,12 @@ unsafe fn try_present_multi_blend_frame(
     state.history_valid = true;
     state.injection_works = state.injection_works || emit_generated;
     if emit_generated {
+        record_benchmark_sample(
+            mode,
+            state.present_count,
+            &mut state.benchmark,
+            benchmark_sample,
+        );
         state.generated_present_count += generated_image_indices.len() as u64;
         if first_success {
             log_info(first_success_label);
@@ -4210,6 +4710,10 @@ fn bfi_hold_ms() -> u32 {
     env_u32("PPFG_BFI_HOLD_MS", 0)
 }
 
+fn visual_hold_ms() -> u32 {
+    env_u32("PPFG_VISUAL_HOLD_MS", 0)
+}
+
 fn maybe_sleep_ms(duration_ms: u32) {
     if duration_ms > 0 {
         thread::sleep(Duration::from_millis(duration_ms as u64));
@@ -4670,10 +5174,15 @@ unsafe extern "system" fn layer_create_device(
     };
 
     let device_dispatch = fill_device_dispatch(*device, next_gdpa);
+    let mut properties = vk::PhysicalDeviceProperties::default();
+    if let Some(get_properties) = instance_dispatch.get_physical_device_properties {
+        get_properties(physical_device, &mut properties);
+    }
     let device_info = DeviceInfo {
         instance,
         physical_device,
         device: *device,
+        timestamp_period_ns: properties.limits.timestamp_period,
         instance_dispatch,
         dispatch: device_dispatch,
     };
@@ -4702,6 +5211,10 @@ unsafe extern "system" fn layer_create_device(
                 .get(queue_create_info.queue_family_index as usize)
                 .map(|family| family.queue_flags.contains(vk::QueueFlags::TRANSFER))
                 .unwrap_or(false);
+            let timestamp_valid_bits = queue_families
+                .get(queue_create_info.queue_family_index as usize)
+                .map(|family| family.timestamp_valid_bits)
+                .unwrap_or(0);
 
             for queue_index in 0..queue_create_info.queue_count {
                 let mut queue = vk::Queue::null();
@@ -4719,15 +5232,11 @@ unsafe extern "system" fn layer_create_device(
                         queue_index,
                         supports_graphics,
                         supports_transfer,
+                        timestamp_valid_bits,
                     );
                 }
             }
         }
-    }
-
-    let mut properties = vk::PhysicalDeviceProperties::default();
-    if let Some(get_properties) = instance_dispatch.get_physical_device_properties {
-        get_properties(physical_device, &mut properties);
     }
 
     {
@@ -4808,6 +5317,7 @@ unsafe extern "system" fn layer_get_device_queue(
 
     let mut supports_graphics = false;
     let mut supports_transfer = false;
+    let mut timestamp_valid_bits = 0;
     if let Some(get_queue_family_properties) = device_info
         .instance_dispatch
         .get_physical_device_queue_family_properties
@@ -4828,6 +5338,7 @@ unsafe extern "system" fn layer_get_device_queue(
         if let Some(queue_family) = queue_families.get(queue_family_index as usize) {
             supports_graphics = queue_family.queue_flags.contains(vk::QueueFlags::GRAPHICS);
             supports_transfer = queue_family.queue_flags.contains(vk::QueueFlags::TRANSFER);
+            timestamp_valid_bits = queue_family.timestamp_valid_bits;
         }
     }
     remember_queue(
@@ -4837,6 +5348,7 @@ unsafe extern "system" fn layer_get_device_queue(
         queue_index,
         supports_graphics,
         supports_transfer,
+        timestamp_valid_bits,
     );
 }
 
@@ -4861,6 +5373,7 @@ unsafe extern "system" fn layer_get_device_queue2(
     let queue_info = *queue_info;
     let mut supports_graphics = false;
     let mut supports_transfer = false;
+    let mut timestamp_valid_bits = 0;
     if let Some(get_queue_family_properties) = device_info
         .instance_dispatch
         .get_physical_device_queue_family_properties
@@ -4881,6 +5394,7 @@ unsafe extern "system" fn layer_get_device_queue2(
         if let Some(queue_family) = queue_families.get(queue_info.queue_family_index as usize) {
             supports_graphics = queue_family.queue_flags.contains(vk::QueueFlags::GRAPHICS);
             supports_transfer = queue_family.queue_flags.contains(vk::QueueFlags::TRANSFER);
+            timestamp_valid_bits = queue_family.timestamp_valid_bits;
         }
     }
     remember_queue(
@@ -4890,6 +5404,7 @@ unsafe extern "system" fn layer_get_device_queue2(
         queue_info.queue_index,
         supports_graphics,
         supports_transfer,
+        timestamp_valid_bits,
     );
 }
 

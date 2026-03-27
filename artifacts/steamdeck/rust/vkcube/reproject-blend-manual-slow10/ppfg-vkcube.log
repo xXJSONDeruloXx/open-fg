@@ -1,0 +1,22 @@
+[ppfg][info][1774569520155] vkNegotiateLoaderLayerInterfaceVersion ok; mode=reproject-blend-test
+[ppfg][info][1774569520157] vkCreateInstance ok; mode=reproject-blend-test; app=vkcube; engine=vkcube; apiVersion=1.0.0
+[ppfg][info][1774569520180] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH)
+[ppfg][info][1774569520184] created history image for swapchain
+[ppfg][info][1774569520184] vkCreateSwapchainKHR ok; extent=500x500; format=44; presentMode=FIFO; minImages=3->5; usage=COLOR_ATTACHMENT (0x10) -> TRANSFER_SRC|SAMPLED|COLOR_ATTACHMENT (0x15); images=5; mode=reproject-blend-test
+[ppfg][info][1774569520186] vkQueuePresentKHR frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
+[ppfg][info][1774569520186] initialized injection resources for queue family 0
+[ppfg][info][1774569520187] initialized blend resources for swapchain
+[ppfg][info][1774569520187] reproject-blend primed previous frame history
+[ppfg][info][1774569520187] vkQueuePresentKHR frame=2; queueFamily=0; imageIndex=1; waitSemaphores=1
+[ppfg][info][1774569521188] first reproject blended generated-frame present succeeded
+[ppfg][info][1774569521188] reproject blended frame present=1; generatedImageIndex=2; currentImageIndex=1
+[ppfg][info][1774569521188] vkQueuePresentKHR frame=3; queueFamily=0; imageIndex=3; waitSemaphores=1
+[ppfg][info][1774569522189] reproject blended frame present=2; generatedImageIndex=4; currentImageIndex=3
+[ppfg][info][1774569522190] vkQueuePresentKHR frame=4; queueFamily=0; imageIndex=0; waitSemaphores=1
+[ppfg][info][1774569523190] reproject blended frame present=3; generatedImageIndex=2; currentImageIndex=0
+[ppfg][info][1774569523191] vkQueuePresentKHR frame=5; queueFamily=0; imageIndex=1; waitSemaphores=1
+[ppfg][info][1774569524192] reproject blended frame present=4; generatedImageIndex=4; currentImageIndex=1
+[ppfg][info][1774569525193] reproject blended frame present=5; generatedImageIndex=2; currentImageIndex=3
+[ppfg][info][1774569529199] vkDestroySwapchainKHR
+[ppfg][info][1774569529201] vkDestroyDevice
+[ppfg][info][1774569529295] vkDestroyInstance

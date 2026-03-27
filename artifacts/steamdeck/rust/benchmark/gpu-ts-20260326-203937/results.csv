@@ -1,0 +1,7 @@
+label,mode,samples,generatedFrames,gpuSamples,avgCpuAcquireMs,avgCpuSetupMs,avgCpuRecordMs,avgCpuSubmitMs,avgCpuSubmitWaitMs,avgCpuGeneratedPresentMs,avgCpuOriginalPresentMs,avgCpuQueueIdleMs,avgCpuTotalMs,avgCpuPerGeneratedFrameMs,maxCpuTotalMs,avgGpuCmdMs,avgGpuPerGeneratedFrameMs,maxGpuCmdMs
+blend,blend-test,119,119,119,10.794,0.015,0.091,0.106,0.0,0.082,0.06,1.183,12.33,12.33,13.08,0.228,0.228,0.25
+adaptive-blend,adaptive-blend-test,119,119,119,10.79,0.015,0.095,0.1,0.0,0.076,0.058,1.254,12.387,12.387,13.261,0.213,0.213,0.242
+search-blend-r1,search-blend-test,119,119,119,10.78,0.015,0.102,0.107,0.0,0.077,0.059,1.21,12.349,12.349,13.223,0.252,0.252,0.28
+reproject-blend-default,reproject-blend-test,119,119,119,10.792,0.015,0.1,0.109,0.0,0.079,0.06,4.959,16.113,16.113,17.11,3.814,3.814,3.843
+multi-blend-count2,multi-blend-test,119,238,119,23.138,0.019,0.085,0.098,0.482,0.096,0.032,0.015,23.963,11.982,25.068,0.342,0.171,0.399
+multi-blend-count3,multi-blend-test,119,357,119,34.29,0.019,0.088,0.104,0.644,0.135,0.034,0.015,35.327,11.776,36.729,0.463,0.154,0.574
