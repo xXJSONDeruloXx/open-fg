@@ -1,7 +1,7 @@
 spawn ssh -tt -o StrictHostKeyChecking=accept-new -o PreferredAuthentications=password -o PubkeyAuthentication=no deck@192.168.0.241 bash -lc 'set -euo pipefail
 chmod +x /home/deck/omfg.sh
 mkdir -p /home/deck/post-proc-fg-research/logs
-rm -f /home/deck/post-proc-fg-research/logs/beyond-reproject-blend.log /tmp/omfg-beyond-reproject-blend.steam.log
+rm -f /home/deck/post-proc-fg-research/logs/beyond-reproject-blend.log /tmp/omfg-beyond-reproject-blend.steam.log /home/deck/post-proc-fg-research/logs/beyond-reproject-blend.windows.txt /home/deck/post-proc-fg-research/logs/beyond-reproject-blend.png
 set -a
 source /run/user/1000/gamescope-environment
 set +a
@@ -9,94 +9,211 @@ export DISPLAY=:0
 export XDG_RUNTIME_DIR=/run/user/1000
 xauth=$(ls -1 /run/user/1000/xauth_* 2>/dev/null | head -1 || true)
 if [ -n "$xauth" ]; then export XAUTHORITY="$xauth"; fi
+kill_all_steam_games() {
+  python3 - <<'"'"'PY'"'"'
+import os, re, subprocess, signal
+self_pid = os.getpid()
+ancestors = {self_pid}
+try:
+    pid = self_pid
+    while True:
+        with open(f'"'"'/proc/{pid}/status'"'"', '"'"'r'"'"', encoding='"'"'utf-8'"'"', errors='"'"'ignore'"'"') as f:
+            ppid = None
+            for line in f:
+                if line.startswith('"'"'PPid:'"'"'):
+                    ppid = int(line.split()[1])
+                    break
+        if not ppid or ppid in ancestors:
+            break
+        ancestors.add(ppid)
+        pid = ppid
+except Exception:
+    pass
+appid_re = re.compile(r'"'"'AppId=\d+'"'"')
+proton_markers = ('"'"'SteamLaunch'"'"', '"'"'waitforexitandrun'"'"', '"'"'reaper steam'"'"', '"'"'wineserver'"'"', '"'"'wine64'"'"', '"'"'wine '"'"')
+out = subprocess.check_output(['"'"'ps'"'"', '"'"'-eo'"'"', '"'"'pid=,args='"'"'], text=True, errors='"'"'ignore'"'"')
+for line in out.splitlines():
+    s = line.strip()
+    if not s:
+        continue
+    parts = s.split(None, 1)
+    if len(parts) != 2:
+        continue
+    pid = int(parts[0])
+    args = parts[1]
+    if pid in ancestors:
+        continue
+    if appid_re.search(args) or any(m in args for m in proton_markers):
+        try:
+            os.kill(pid, signal.SIGKILL)
+            print(f'"'"'killed pid={pid} args={args}'"'"')
+        except ProcessLookupError:
+            pass
+        except PermissionError:
+            pass
+PY
+}
+cleanup_matches() {
+  APPID='"'"'960990'"'"' python3 - <<'"'"'PY'"'"'
+import os, re, subprocess, signal
+appid = os.environ['"'"'APPID'"'"']
+patterns = [
+    f'"'"'AppId={appid}'"'"',
+    '"'"'BeyondTwoSouls_Steam.exe'"'"',
+    '"'"'/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe'"'"',
+    '"'"'/proton run /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe'"'"',
+]
+self_pid = os.getpid()
+ancestors = {self_pid}
+try:
+    pid = self_pid
+    while True:
+        with open(f'"'"'/proc/{pid}/status'"'"', '"'"'r'"'"', encoding='"'"'utf-8'"'"', errors='"'"'ignore'"'"') as f:
+            ppid = None
+            for line in f:
+                if line.startswith('"'"'PPid:'"'"'):
+                    ppid = int(line.split()[1])
+                    break
+        if not ppid or ppid in ancestors:
+            break
+        ancestors.add(ppid)
+        pid = ppid
+except Exception:
+    pass
+out = subprocess.check_output(['"'"'ps'"'"', '"'"'-eo'"'"', '"'"'pid=,args='"'"'], text=True, errors='"'"'ignore'"'"')
+for line in out.splitlines():
+    s = line.strip()
+    if not s:
+        continue
+    parts = s.split(None, 1)
+    if len(parts) != 2:
+        continue
+    pid = int(parts[0])
+    args = parts[1]
+    if pid in ancestors:
+        continue
+    if any(p and p in args for p in patterns):
+        try:
+            os.kill(pid, signal.SIGKILL)
+            print(f'"'"'killed pid={pid} args={args}'"'"')
+        except ProcessLookupError:
+            pass
+        except PermissionError:
+            pass
+PY
+}
+kill_all_steam_games || true
+sleep 3
+cleanup_matches || true
+sleep 2
 nohup steam steam://rungameid/960990 >/tmp/omfg-beyond-launch-reproject-blend.log 2>&1 &
-sleep 45
+elapsed=0
+while [ "$elapsed" -lt 60 ]; do
+  sleep 15
+  elapsed=$((elapsed + 15))
+  echo "=== beyond mode=reproject-blend process-snapshot t=${elapsed}s ==="
+  ps -ef | grep -E "BeyondTwoSouls|AppId=960990|proton waitforexitandrun|proton run|wineserver" | grep -v grep || true
+  if [ -n "" ] && [ "0" -gt 0 ] && [ $((elapsed % 0)) -eq 0 ]; then
+    echo "=== beyond mode=reproject-blend auto-input t=${elapsed}s keys= window=Beyond: Two Souls ==="
+    win_id=$(xdotool search --name "Beyond: Two Souls" 2>/dev/null | head -1 || true)
+    if [ -n "$win_id" ]; then
+      xdotool windowactivate --sync "$win_id" || true
+      # shellcheck disable=SC2086
+      xdotool key --window "$win_id"  || true
+      echo "sent-input win_id=$win_id"
+    else
+      echo missing-window-for-input
+    fi
+  fi
+done
 echo "=== beyond mode=reproject-blend process ==="
 ps -ef | grep -E "BeyondTwoSouls|AppId=960990|proton waitforexitandrun|proton run|wineserver" | grep -v grep || true
 echo "=== beyond mode=reproject-blend omfg log ==="
 if [ -f /home/deck/post-proc-fg-research/logs/beyond-reproject-blend.log ]; then tail -200 /home/deck/post-proc-fg-research/logs/beyond-reproject-blend.log; else echo missing-log; fi
 echo "=== beyond mode=reproject-blend steam log ==="
 if [ -f /tmp/omfg-beyond-launch-reproject-blend.log ]; then tail -80 /tmp/omfg-beyond-launch-reproject-blend.log; else echo missing-steam-log; fi
-pkill -f BeyondTwoSouls_Steam.exe || true
-pkill -f "AppId=960990" || true
-pkill -f "/proton waitforexitandrun .*BEYOND Two Souls" || true
-pkill -f "/proton run .*BEYOND Two Souls" || true'
+if [ -n "" ]; then
+  echo "=== beyond mode=reproject-blend window tree ==="
+  if xwininfo -root -tree > /home/deck/post-proc-fg-research/logs/beyond-reproject-blend.windows.txt 2>/dev/null; then
+    sed -n '"'"'1,200p'"'"' /home/deck/post-proc-fg-research/logs/beyond-reproject-blend.windows.txt
+  else
+    echo missing-window-tree
+  fi
+  echo "=== beyond mode=reproject-blend screenshot capture ==="
+  if ffmpeg -loglevel error -y -f x11grab -draw_mouse 0 -i :0 -frames:v 1 /home/deck/post-proc-fg-research/logs/beyond-reproject-blend.png; then
+    ls -lh /home/deck/post-proc-fg-research/logs/beyond-reproject-blend.png
+  else
+    echo missing-screenshot
+  fi
+fi
+cleanup_matches || true'
 deck@192.168.0.241's password: 
+=== beyond mode=reproject-blend process-snapshot t=15s ===
+deck        8224    1738  2 21:12 ?        00:00:00 /home/deck/.local/share/Steam/ubuntu12_32/reaper SteamLaunch AppId=960990 -- /home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/_v2-entry-point --verb=waitforexitandrun -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
+deck        8229    8224 20 21:12 ?        00:00:01 /home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/pressure-vessel/libexec/steam-runtime-tools-0/srt-bwrap --args 26 /usr/lib/pressure-vessel/from-host/libexec/steam-runtime-tools-0/pv-adverb --prefix=/usr/lib/pressure-vessel/from-host --generate-locales --fd 10 --regenerate-ld.so-cache /var/pressure-vessel/ldso --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu --set-ld-library-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu/aliases:/usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu/aliases --overrides-path /usr/lib/pressure-vessel/overrides --exit-with-parent --subreaper --assign-fd=1=3 --assign-fd=2=4 --ld-preload=/home/deck/.local/share/Steam/ubuntu12_32/gameoverlayrenderer.so --ld-preload=/home/deck/.local/share/Steam/ubuntu12_64/gameoverlayrenderer.so -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
+deck        8310    8229  2 21:12 ?        00:00:00 /usr/lib/pressure-vessel/from-host/libexec/steam-runtime-tools-0/pv-adverb --prefix=/usr/lib/pressure-vessel/from-host --generate-locales --fd 10 --regenerate-ld.so-cache /var/pressure-vessel/ldso --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu --set-ld-library-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu/aliases:/usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu/aliases --overrides-path /usr/lib/pressure-vessel/overrides --exit-with-parent --subreaper --assign-fd=1=3 --assign-fd=2=4 --ld-preload=/home/deck/.local/share/Steam/ubuntu12_32/gameoverlayrenderer.so --ld-preload=/home/deck/.local/share/Steam/ubuntu12_64/gameoverlayrenderer.so -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
+deck        8334    8310  7 21:12 ?        00:00:00 python3 /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
+deck        8336    8334  5 21:12 ?        00:00:00 c:\windows\system32\steam.exe /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
+deck        8338    8310 11 21:12 ?        00:00:00 /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/files/bin/wineserver
+=== beyond mode=reproject-blend process-snapshot t=30s ===
+deck        8224    1738  0 21:12 ?        00:00:00 /home/deck/.local/share/Steam/ubuntu12_32/reaper SteamLaunch AppId=960990 -- /home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/_v2-entry-point --verb=waitforexitandrun -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
+deck        8229    8224  5 21:12 ?        00:00:01 /home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/pressure-vessel/libexec/steam-runtime-tools-0/srt-bwrap --args 26 /usr/lib/pressure-vessel/from-host/libexec/steam-runtime-tools-0/pv-adverb --prefix=/usr/lib/pressure-vessel/from-host --generate-locales --fd 10 --regenerate-ld.so-cache /var/pressure-vessel/ldso --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu --set-ld-library-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu/aliases:/usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu/aliases --overrides-path /usr/lib/pressure-vessel/overrides --exit-with-parent --subreaper --assign-fd=1=3 --assign-fd=2=4 --ld-preload=/home/deck/.local/share/Steam/ubuntu12_32/gameoverlayrenderer.so --ld-preload=/home/deck/.local/share/Steam/ubuntu12_64/gameoverlayrenderer.so -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
+deck        8310    8229  0 21:12 ?        00:00:00 /usr/lib/pressure-vessel/from-host/libexec/steam-runtime-tools-0/pv-adverb --prefix=/usr/lib/pressure-vessel/from-host --generate-locales --fd 10 --regenerate-ld.so-cache /var/pressure-vessel/ldso --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu --set-ld-library-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu/aliases:/usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu/aliases --overrides-path /usr/lib/pressure-vessel/overrides --exit-with-parent --subreaper --assign-fd=1=3 --assign-fd=2=4 --ld-preload=/home/deck/.local/share/Steam/ubuntu12_32/gameoverlayrenderer.so --ld-preload=/home/deck/.local/share/Steam/ubuntu12_64/gameoverlayrenderer.so -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
+deck        8334    8310  1 21:12 ?        00:00:00 python3 /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
+deck        8336    8334  1 21:12 ?        00:00:00 c:\windows\system32\steam.exe /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
+deck        8338    8310  3 21:12 ?        00:00:00 /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/files/bin/wineserver
+deck        8442    8310 99 21:12 ?        00:00:16 Z:\home\deck\.local\share\Steam\steamapps\common\BEYOND Two Souls\BeyondTwoSouls_Steam.exe
+=== beyond mode=reproject-blend process-snapshot t=45s ===
+deck        8224    1738  0 21:12 ?        00:00:00 /home/deck/.local/share/Steam/ubuntu12_32/reaper SteamLaunch AppId=960990 -- /home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/_v2-entry-point --verb=waitforexitandrun -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
+deck        8229    8224  2 21:12 ?        00:00:01 /home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/pressure-vessel/libexec/steam-runtime-tools-0/srt-bwrap --args 26 /usr/lib/pressure-vessel/from-host/libexec/steam-runtime-tools-0/pv-adverb --prefix=/usr/lib/pressure-vessel/from-host --generate-locales --fd 10 --regenerate-ld.so-cache /var/pressure-vessel/ldso --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu --set-ld-library-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu/aliases:/usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu/aliases --overrides-path /usr/lib/pressure-vessel/overrides --exit-with-parent --subreaper --assign-fd=1=3 --assign-fd=2=4 --ld-preload=/home/deck/.local/share/Steam/ubuntu12_32/gameoverlayrenderer.so --ld-preload=/home/deck/.local/share/Steam/ubuntu12_64/gameoverlayrenderer.so -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
+deck        8310    8229  0 21:12 ?        00:00:00 /usr/lib/pressure-vessel/from-host/libexec/steam-runtime-tools-0/pv-adverb --prefix=/usr/lib/pressure-vessel/from-host --generate-locales --fd 10 --regenerate-ld.so-cache /var/pressure-vessel/ldso --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu --set-ld-library-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu/aliases:/usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu/aliases --overrides-path /usr/lib/pressure-vessel/overrides --exit-with-parent --subreaper --assign-fd=1=3 --assign-fd=2=4 --ld-preload=/home/deck/.local/share/Steam/ubuntu12_32/gameoverlayrenderer.so --ld-preload=/home/deck/.local/share/Steam/ubuntu12_64/gameoverlayrenderer.so -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
+deck        8334    8310  0 21:12 ?        00:00:00 python3 /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
+deck        8336    8334  0 21:12 ?        00:00:00 c:\windows\system32\steam.exe /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
+deck        8338    8310  2 21:12 ?        00:00:00 /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/files/bin/wineserver
+deck        8442    8310 99 21:12 ?        00:00:33 Z:\home\deck\.local\share\Steam\steamapps\common\BEYOND Two Souls\BeyondTwoSouls_Steam.exe
+=== beyond mode=reproject-blend process-snapshot t=60s ===
+deck        8224    1738  0 21:12 ?        00:00:00 /home/deck/.local/share/Steam/ubuntu12_32/reaper SteamLaunch AppId=960990 -- /home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/_v2-entry-point --verb=waitforexitandrun -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
+deck        8229    8224  2 21:12 ?        00:00:01 /home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/pressure-vessel/libexec/steam-runtime-tools-0/srt-bwrap --args 26 /usr/lib/pressure-vessel/from-host/libexec/steam-runtime-tools-0/pv-adverb --prefix=/usr/lib/pressure-vessel/from-host --generate-locales --fd 10 --regenerate-ld.so-cache /var/pressure-vessel/ldso --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu --set-ld-library-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu/aliases:/usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu/aliases --overrides-path /usr/lib/pressure-vessel/overrides --exit-with-parent --subreaper --assign-fd=1=3 --assign-fd=2=4 --ld-preload=/home/deck/.local/share/Steam/ubuntu12_32/gameoverlayrenderer.so --ld-preload=/home/deck/.local/share/Steam/ubuntu12_64/gameoverlayrenderer.so -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
+deck        8310    8229  0 21:12 ?        00:00:00 /usr/lib/pressure-vessel/from-host/libexec/steam-runtime-tools-0/pv-adverb --prefix=/usr/lib/pressure-vessel/from-host --generate-locales --fd 10 --regenerate-ld.so-cache /var/pressure-vessel/ldso --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu --set-ld-library-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu/aliases:/usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu/aliases --overrides-path /usr/lib/pressure-vessel/overrides --exit-with-parent --subreaper --assign-fd=1=3 --assign-fd=2=4 --ld-preload=/home/deck/.local/share/Steam/ubuntu12_32/gameoverlayrenderer.so --ld-preload=/home/deck/.local/share/Steam/ubuntu12_64/gameoverlayrenderer.so -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
+deck        8334    8310  0 21:12 ?        00:00:00 python3 /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
+deck        8336    8334  0 21:12 ?        00:00:00 c:\windows\system32\steam.exe /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
+deck        8338    8310  1 21:12 ?        00:00:00 /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/files/bin/wineserver
+deck        8442    8310 99 21:12 ?        00:00:49 Z:\home\deck\.local\share\Steam\steamapps\common\BEYOND Two Souls\BeyondTwoSouls_Steam.exe
 === beyond mode=reproject-blend process ===
-deck       26342    1738  0 14:23 ?        00:00:00 /home/deck/.local/share/Steam/ubuntu12_32/reaper SteamLaunch AppId=960990 -- /home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/_v2-entry-point --verb=waitforexitandrun -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
-deck       26350   26342  2 14:23 ?        00:00:00 /home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/pressure-vessel/libexec/steam-runtime-tools-0/srt-bwrap --args 26 /usr/lib/pressure-vessel/from-host/libexec/steam-runtime-tools-0/pv-adverb --prefix=/usr/lib/pressure-vessel/from-host --generate-locales --fd 12 --regenerate-ld.so-cache /var/pressure-vessel/ldso --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu --set-ld-library-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu/aliases:/usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu/aliases --overrides-path /usr/lib/pressure-vessel/overrides --exit-with-parent --subreaper --assign-fd=1=3 --assign-fd=2=4 --ld-preload=/home/deck/.local/share/Steam/ubuntu12_32/gameoverlayrenderer.so --ld-preload=/home/deck/.local/share/Steam/ubuntu12_64/gameoverlayrenderer.so -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
-deck       26431   26350  0 14:23 ?        00:00:00 /usr/lib/pressure-vessel/from-host/libexec/steam-runtime-tools-0/pv-adverb --prefix=/usr/lib/pressure-vessel/from-host --generate-locales --fd 12 --regenerate-ld.so-cache /var/pressure-vessel/ldso --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu --set-ld-library-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu/aliases:/usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu/aliases --overrides-path /usr/lib/pressure-vessel/overrides --exit-with-parent --subreaper --assign-fd=1=3 --assign-fd=2=4 --ld-preload=/home/deck/.local/share/Steam/ubuntu12_32/gameoverlayrenderer.so --ld-preload=/home/deck/.local/share/Steam/ubuntu12_64/gameoverlayrenderer.so -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
-deck       26455   26431  0 14:23 ?        00:00:00 python3 /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
-deck       26457   26455  0 14:23 ?        00:00:00 c:\windows\system32\steam.exe /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
-deck       26459   26431  2 14:23 ?        00:00:00 /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/files/bin/wineserver
-deck       26529   26431 99 14:23 ?        00:00:59 Z:\home\deck\.local\share\Steam\steamapps\common\BEYOND Two Souls\BeyondTwoSouls_Steam.exe
+deck        8224    1738  0 21:12 ?        00:00:00 /home/deck/.local/share/Steam/ubuntu12_32/reaper SteamLaunch AppId=960990 -- /home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/_v2-entry-point --verb=waitforexitandrun -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
+deck        8229    8224  2 21:12 ?        00:00:01 /home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/pressure-vessel/libexec/steam-runtime-tools-0/srt-bwrap --args 26 /usr/lib/pressure-vessel/from-host/libexec/steam-runtime-tools-0/pv-adverb --prefix=/usr/lib/pressure-vessel/from-host --generate-locales --fd 10 --regenerate-ld.so-cache /var/pressure-vessel/ldso --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu --set-ld-library-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu/aliases:/usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu/aliases --overrides-path /usr/lib/pressure-vessel/overrides --exit-with-parent --subreaper --assign-fd=1=3 --assign-fd=2=4 --ld-preload=/home/deck/.local/share/Steam/ubuntu12_32/gameoverlayrenderer.so --ld-preload=/home/deck/.local/share/Steam/ubuntu12_64/gameoverlayrenderer.so -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
+deck        8310    8229  0 21:12 ?        00:00:00 /usr/lib/pressure-vessel/from-host/libexec/steam-runtime-tools-0/pv-adverb --prefix=/usr/lib/pressure-vessel/from-host --generate-locales --fd 10 --regenerate-ld.so-cache /var/pressure-vessel/ldso --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu --set-ld-library-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu/aliases:/usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu/aliases --overrides-path /usr/lib/pressure-vessel/overrides --exit-with-parent --subreaper --assign-fd=1=3 --assign-fd=2=4 --ld-preload=/home/deck/.local/share/Steam/ubuntu12_32/gameoverlayrenderer.so --ld-preload=/home/deck/.local/share/Steam/ubuntu12_64/gameoverlayrenderer.so -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
+deck        8334    8310  0 21:12 ?        00:00:00 python3 /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
+deck        8336    8334  0 21:12 ?        00:00:00 c:\windows\system32\steam.exe /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
+deck        8338    8310  1 21:12 ?        00:00:00 /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/files/bin/wineserver
+deck        8442    8310 99 21:12 ?        00:00:49 Z:\home\deck\.local\share\Steam\steamapps\common\BEYOND Two Souls\BeyondTwoSouls_Steam.exe
 === beyond mode=reproject-blend omfg log ===
-[omfg][info][1774635827055] vkNegotiateLoaderLayerInterfaceVersion ok; mode=reproject-blend-test
-[omfg][info][1774635827058] vkCreateInstance ok; mode=reproject-blend-test; apiVersion=1.1.0
-[omfg][info][1774635828726] vkNegotiateLoaderLayerInterfaceVersion ok; mode=reproject-blend-test
-[omfg][info][1774635828728] vkCreateInstance ok; mode=reproject-blend-test; app=BeyondTwoSouls_Steam.exe; engine=DXVK; apiVersion=1.3.0
-[omfg][info][1774635829058] vkNegotiateLoaderLayerInterfaceVersion ok; mode=reproject-blend-test
-[omfg][info][1774635829060] vkCreateInstance ok; mode=reproject-blend-test; apiVersion=1.1.0
-[omfg][info][1774635829340] vkDestroyInstance
-[omfg][info][1774635829375] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH); presentId=1; presentWait=1; displayTiming=0
-[omfg][info][1774635831782] created history image for swapchain
-[omfg][info][1774635831782] vkCreateSwapchainKHR ok; extent=1280x800; format=37; presentMode=MAILBOX; minImages=4->6; usage=TRANSFER_SRC|TRANSFER_DST|STORAGE|COLOR_ATTACHMENT (0x1b) -> TRANSFER_SRC|TRANSFER_DST|SAMPLED|STORAGE|COLOR_ATTACHMENT (0x1f); images=6; mode=reproject-blend-test
-[omfg][info][1774635831786] vkQueuePresentKHR frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
-[omfg][info][1774635831786] initialized injection resources for queue family 0
-[omfg][info][1774635831786] initialized blend resources for swapchain
-[omfg][info][1774635831787] reproject-blend primed previous frame history
-[omfg][info][1774635831813] vkQueuePresentKHR frame=2; queueFamily=0; imageIndex=1; waitSemaphores=1
-[omfg][info][1774635831835] first reproject blended generated-frame present succeeded
-[omfg][info][1774635831835] blend original-first mode enabled
-[omfg][info][1774635831835] reproject blended frame present=1; generatedImageIndex=2; currentImageIndex=1; originalFirst=1
-[omfg][info][1774635831836] vkQueuePresentKHR frame=3; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635831859] reproject blended frame present=2; generatedImageIndex=4; currentImageIndex=3; originalFirst=1
-[omfg][info][1774635831860] vkQueuePresentKHR frame=4; queueFamily=0; imageIndex=5; waitSemaphores=1
-[omfg][info][1774635831882] reproject blended frame present=3; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635831882] vkQueuePresentKHR frame=5; queueFamily=0; imageIndex=1; waitSemaphores=1
-[omfg][info][1774635831904] reproject blended frame present=4; generatedImageIndex=2; currentImageIndex=1; originalFirst=1
-[omfg][info][1774635831926] reproject blended frame present=5; generatedImageIndex=4; currentImageIndex=3; originalFirst=1
-[omfg][info][1774635833510] vkQueuePresentKHR frame=60; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635833547] reproject blended frame present=60; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635834668] vkQueuePresentKHR frame=120; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635834706] reproject blended frame present=120; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635835798] vkQueuePresentKHR frame=180; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635835831] reproject blended frame present=180; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635836929] vkQueuePresentKHR frame=240; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635836968] reproject blended frame present=240; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635838086] vkQueuePresentKHR frame=300; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635838125] reproject blended frame present=300; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635839250] vkQueuePresentKHR frame=360; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635839288] reproject blended frame present=360; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635840405] vkQueuePresentKHR frame=420; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635840443] reproject blended frame present=420; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635841567] vkQueuePresentKHR frame=480; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635841606] reproject blended frame present=480; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635842732] vkQueuePresentKHR frame=540; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635842770] reproject blended frame present=540; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635843897] vkQueuePresentKHR frame=600; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635843934] reproject blended frame present=600; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635845069] vkQueuePresentKHR frame=660; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635845107] reproject blended frame present=660; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635846227] vkQueuePresentKHR frame=720; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635846264] reproject blended frame present=720; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635847571] vkQueuePresentKHR frame=780; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635847621] reproject blended frame present=780; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635849130] vkQueuePresentKHR frame=840; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635849182] reproject blended frame present=840; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635850697] vkQueuePresentKHR frame=900; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635850750] reproject blended frame present=900; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635852273] vkQueuePresentKHR frame=960; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635852325] reproject blended frame present=960; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635853839] vkQueuePresentKHR frame=1020; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635853889] reproject blended frame present=1020; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635855418] vkQueuePresentKHR frame=1080; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635855471] reproject blended frame present=1080; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635856935] vkQueuePresentKHR frame=1140; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635856987] reproject blended frame present=1140; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635858465] vkQueuePresentKHR frame=1200; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635858519] reproject blended frame present=1200; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635860036] vkQueuePresentKHR frame=1260; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635860088] reproject blended frame present=1260; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
+[omfg][info][1774660379875] hot config reloaded: path=/home/deck/post-proc-fg-research/logs/beyond-hot.toml; values=1
+[omfg][info][1774660379875] vkNegotiateLoaderLayerInterfaceVersion ok; mode=blend-test
+[omfg][info][1774660379877] vkCreateInstance ok; mode=blend-test; apiVersion=1.1.0
+[omfg][info][1774660382073] hot config reloaded: path=/home/deck/post-proc-fg-research/logs/beyond-hot.toml; values=1
+[omfg][info][1774660382073] vkNegotiateLoaderLayerInterfaceVersion ok; mode=blend-test
+[omfg][info][1774660382076] vkCreateInstance ok; mode=blend-test; app=BeyondTwoSouls_Steam.exe; engine=DXVK; apiVersion=1.3.0
+[omfg][info][1774660382519] vkNegotiateLoaderLayerInterfaceVersion ok; mode=blend-test
+[omfg][info][1774660382520] vkCreateInstance ok; mode=blend-test; apiVersion=1.1.0
+[omfg][info][1774660382878] vkDestroyInstance
+[omfg][info][1774660382923] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH); presentId=1; presentWait=1; displayTiming=0
+[omfg][info][1774660385595] created history image for swapchain
+[omfg][info][1774660385595] vkCreateSwapchainKHR ok; extent=1280x800; format=37; presentMode=MAILBOX; minImages=4->6; usage=TRANSFER_SRC|TRANSFER_DST|STORAGE|COLOR_ATTACHMENT (0x1b) -> TRANSFER_SRC|TRANSFER_DST|SAMPLED|STORAGE|COLOR_ATTACHMENT (0x1f); images=6; mode=blend-test
+[omfg][info][1774660385602] vkQueuePresentKHR frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774660385602] initialized injection resources for queue family 0
+[omfg][info][1774660385663] initialized blend resources for swapchain
+[omfg][info][1774660385665] blend primed previous frame history
+[omfg][info][1774660385682] vkQueuePresentKHR frame=2; queueFamily=0; imageIndex=1; waitSemaphores=1
+[omfg][info][1774660385691] first blended generated-frame present succeeded
+[omfg][info][1774660385691] blended frame present=1; generatedImageIndex=2; currentImageIndex=1; originalFirst=0
+[omfg][info][1774660385692] vkQueuePresentKHR frame=3; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774660385698] blended frame present=2; generatedImageIndex=4; currentImageIndex=3; originalFirst=0
 === beyond mode=reproject-blend steam log ===
+killed pid=8224 args=/home/deck/.local/share/Steam/ubuntu12_32/reaper SteamLaunch AppId=960990 -- /home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/_v2-entry-point --verb=waitforexitandrun -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
+killed pid=8229 args=/home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/pressure-vessel/libexec/steam-runtime-tools-0/srt-bwrap --args 26 /usr/lib/pressure-vessel/from-host/libexec/steam-runtime-tools-0/pv-adverb --prefix=/usr/lib/pressure-vessel/from-host --generate-locales --fd 10 --regenerate-ld.so-cache /var/pressure-vessel/ldso --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu --set-ld-library-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu/aliases:/usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu/aliases --overrides-path /usr/lib/pressure-vessel/overrides --exit-with-parent --subreaper --assign-fd=1=3 --assign-fd=2=4 --ld-preload=/home/deck/.local/share/Steam/ubuntu12_32/gameoverlayrenderer.so --ld-preload=/home/deck/.local/share/Steam/ubuntu12_64/gameoverlayrenderer.so -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
+killed pid=8310 args=/usr/lib/pressure-vessel/from-host/libexec/steam-runtime-tools-0/pv-adverb --prefix=/usr/lib/pressure-vessel/from-host --generate-locales --fd 10 --regenerate-ld.so-cache /var/pressure-vessel/ldso --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu --set-ld-library-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu/aliases:/usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu/aliases --overrides-path /usr/lib/pressure-vessel/overrides --exit-with-parent --subreaper --assign-fd=1=3 --assign-fd=2=4 --ld-preload=/home/deck/.local/share/Steam/ubuntu12_32/gameoverlayrenderer.so --ld-preload=/home/deck/.local/share/Steam/ubuntu12_64/gameoverlayrenderer.so -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
+killed pid=8334 args=python3 /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
+killed pid=8336 args=c:\windows\system32\steam.exe /home/deck/.local/share/Steam/steamapps/common/BEYOND Two Souls/BeyondTwoSouls_Steam.exe
+killed pid=8442 args=Z:\home\deck\.local\share\Steam\steamapps\common\BEYOND Two Souls\BeyondTwoSouls_Steam.exe
 Connection to 192.168.0.241 closed.

@@ -1,0 +1,6 @@
+run_id	appid	slug	title	mode	status	device_ok	swapchain_ok	first_generated	sustained_progress	log_path
+20260327-190214	960990	beyond-two-souls	Beyond: Two Souls	passthrough	device-ok	1	0	0	0	/Users/dhimebauch/Developer/personal/post-proc-fg-research/artifacts/steamdeck/rust/real-games/beyond-two-souls/passthrough/omfg.log
+20260327-190214	960990	beyond-two-souls	Beyond: Two Souls	clear	device-ok	1	0	0	0	/Users/dhimebauch/Developer/personal/post-proc-fg-research/artifacts/steamdeck/rust/real-games/beyond-two-souls/clear/omfg.log
+20260327-190214	960990	beyond-two-souls	Beyond: Two Souls	bfi	device-ok	1	0	0	0	/Users/dhimebauch/Developer/personal/post-proc-fg-research/artifacts/steamdeck/rust/real-games/beyond-two-souls/bfi/omfg.log
+20260327-190214	960990	beyond-two-souls	Beyond: Two Souls	copy	device-ok	1	0	0	0	/Users/dhimebauch/Developer/personal/post-proc-fg-research/artifacts/steamdeck/rust/real-games/beyond-two-souls/copy/omfg.log
+20260327-190214	960990	beyond-two-souls	Beyond: Two Souls	history-copy	device-ok	1	0	0	0	/Users/dhimebauch/Developer/personal/post-proc-fg-research/artifacts/steamdeck/rust/real-games/beyond-two-souls/history-copy/omfg.log

@@ -84,7 +84,8 @@ impl Mode {
     }
 
     pub fn from_env() -> Self {
-        Self::from_env_value(std::env::var("OMFG_LAYER_MODE").ok().as_deref())
+        let value = crate::env_string("OMFG_LAYER_MODE");
+        Self::from_env_value(value.as_deref())
     }
 
     pub const fn name(self) -> &'static str {
@@ -137,7 +138,8 @@ impl DebugView {
     }
 
     pub fn from_env() -> Self {
-        Self::from_env_value(std::env::var("OMFG_DEBUG_VIEW").ok().as_deref())
+        let value = crate::env_string("OMFG_DEBUG_VIEW");
+        Self::from_env_value(value.as_deref())
     }
 
     pub const fn name(self) -> &'static str {

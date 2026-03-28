@@ -1,0 +1,14 @@
+[omfg][info][1774658623189] vkNegotiateLoaderLayerInterfaceVersion ok; mode=search-blend-test
+[omfg][info][1774658623191] vkCreateInstance ok; mode=search-blend-test; apiVersion=1.1.0
+[omfg][info][1774658625428] vkNegotiateLoaderLayerInterfaceVersion ok; mode=search-blend-test
+[omfg][info][1774658625431] vkCreateInstance ok; mode=search-blend-test; app=SB-Win64-Shipping.exe; engine=DXVK; apiVersion=1.3.0
+[omfg][info][1774658626588] vkNegotiateLoaderLayerInterfaceVersion ok; mode=search-blend-test
+[omfg][info][1774658626590] vkCreateInstance ok; mode=search-blend-test; app=SB-Win64-Shipping.exe; engine=vkd3d; apiVersion=1.3.0
+[omfg][info][1774658626849] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH); presentId=1; presentWait=1; displayTiming=0
+[omfg][info][1774658626865] vkNegotiateLoaderLayerInterfaceVersion ok; mode=search-blend-test
+[omfg][info][1774658626867] vkCreateInstance ok; mode=search-blend-test; apiVersion=1.1.0
+[omfg][info][1774658626952] vkDestroyDevice
+[omfg][info][1774658627047] vkDestroyInstance
+[omfg][info][1774658627071] vkNegotiateLoaderLayerInterfaceVersion ok; mode=search-blend-test
+[omfg][info][1774658627073] vkCreateInstance ok; mode=search-blend-test; app=SB-Win64-Shipping.exe; engine=vkd3d; apiVersion=1.3.0
+[omfg][info][1774658627332] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH); presentId=1; presentWait=1; displayTiming=0

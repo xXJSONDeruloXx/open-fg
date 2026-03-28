@@ -1,25 +1,25 @@
-[omfg][info][1774568263448] vkNegotiateLoaderLayerInterfaceVersion ok; mode=reproject-blend-test
-[omfg][info][1774568263451] vkCreateInstance ok; mode=reproject-blend-test; app=vkcube; engine=vkcube; apiVersion=1.0.0
-[omfg][info][1774568263475] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH)
-[omfg][info][1774568263481] created history image for swapchain
-[omfg][info][1774568263481] vkCreateSwapchainKHR ok; extent=500x500; format=44; presentMode=FIFO; minImages=3->5; usage=COLOR_ATTACHMENT (0x10) -> TRANSFER_SRC|SAMPLED|COLOR_ATTACHMENT (0x15); images=5; mode=reproject-blend-test
-[omfg][info][1774568263483] vkQueuePresentKHR frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
-[omfg][info][1774568263483] initialized injection resources for queue family 0
-[omfg][info][1774568263484] initialized blend resources for swapchain
-[omfg][info][1774568263484] reproject-blend primed previous frame history
-[omfg][info][1774568263484] vkQueuePresentKHR frame=2; queueFamily=0; imageIndex=1; waitSemaphores=1
-[omfg][info][1774568263488] first reproject blended generated-frame present succeeded
-[omfg][info][1774568263488] reproject blended frame present=1; generatedImageIndex=2; currentImageIndex=1
-[omfg][info][1774568263488] vkQueuePresentKHR frame=3; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774568263492] reproject blended frame present=2; generatedImageIndex=4; currentImageIndex=3
-[omfg][info][1774568263492] vkQueuePresentKHR frame=4; queueFamily=0; imageIndex=0; waitSemaphores=1
-[omfg][info][1774568263502] reproject blended frame present=3; generatedImageIndex=2; currentImageIndex=0
-[omfg][info][1774568263508] vkQueuePresentKHR frame=5; queueFamily=0; imageIndex=1; waitSemaphores=1
-[omfg][info][1774568263525] reproject blended frame present=4; generatedImageIndex=4; currentImageIndex=1
-[omfg][info][1774568263547] reproject blended frame present=5; generatedImageIndex=2; currentImageIndex=3
-[omfg][info][1774568264731] vkQueuePresentKHR frame=60; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774568264769] reproject blended frame present=60; generatedImageIndex=4; currentImageIndex=0
-[omfg][info][1774568266064] vkQueuePresentKHR frame=120; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774568266080] vkDestroySwapchainKHR
-[omfg][info][1774568266087] vkDestroyDevice
-[omfg][info][1774568266172] vkDestroyInstance
+[omfg][info][1774660500142] vkNegotiateLoaderLayerInterfaceVersion ok; mode=reproject-blend-test
+[omfg][info][1774660500143] vkCreateInstance ok; mode=reproject-blend-test; app=vkcube; engine=vkcube; apiVersion=1.0.0
+[omfg][info][1774660500162] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH); presentId=0; presentWait=0; displayTiming=0
+[omfg][info][1774660500167] created history image for swapchain
+[omfg][info][1774660500167] vkCreateSwapchainKHR ok; extent=500x500; format=44; presentMode=FIFO; minImages=3->5; usage=COLOR_ATTACHMENT (0x10) -> TRANSFER_SRC|SAMPLED|COLOR_ATTACHMENT (0x15); images=5; mode=reproject-blend-test
+[omfg][info][1774660500169] vkQueuePresentKHR frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774660500169] initialized injection resources for queue family 0
+[omfg][info][1774660500170] initialized blend resources for swapchain
+[omfg][info][1774660500170] reproject-blend primed previous frame history
+[omfg][info][1774660500170] vkQueuePresentKHR frame=2; queueFamily=0; imageIndex=1; waitSemaphores=1
+[omfg][info][1774660500174] first reproject blended generated-frame present succeeded
+[omfg][info][1774660500174] reproject blended frame present=1; generatedImageIndex=2; currentImageIndex=1; originalFirst=0
+[omfg][info][1774660500174] vkQueuePresentKHR frame=3; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774660500178] reproject blended frame present=2; generatedImageIndex=4; currentImageIndex=3; originalFirst=0
+[omfg][info][1774660500187] vkQueuePresentKHR frame=4; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774660500205] reproject blended frame present=3; generatedImageIndex=2; currentImageIndex=0; originalFirst=0
+[omfg][info][1774660500209] vkQueuePresentKHR frame=5; queueFamily=0; imageIndex=1; waitSemaphores=1
+[omfg][info][1774660500226] reproject blended frame present=4; generatedImageIndex=4; currentImageIndex=1; originalFirst=0
+[omfg][info][1774660500238] reproject blended frame present=5; generatedImageIndex=2; currentImageIndex=3; originalFirst=0
+[omfg][info][1774660501432] vkQueuePresentKHR frame=60; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774660501471] reproject blended frame present=60; generatedImageIndex=4; currentImageIndex=0; originalFirst=0
+[omfg][info][1774660502765] vkQueuePresentKHR frame=120; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774660502770] vkDestroySwapchainKHR
+[omfg][info][1774660502777] vkDestroyDevice
+[omfg][info][1774660502856] vkDestroyInstance

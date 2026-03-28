@@ -1,0 +1,10 @@
+[omfg][info][1774652683723] vkNegotiateLoaderLayerInterfaceVersion ok; mode=clear-test
+[omfg][info][1774652683725] vkCreateInstance ok; mode=clear-test; apiVersion=1.1.0
+[omfg][info][1774652684079] vkNegotiateLoaderLayerInterfaceVersion ok; mode=clear-test
+[omfg][info][1774652684080] vkCreateInstance ok; mode=clear-test; apiVersion=1.1.0
+[omfg][info][1774652686226] vkNegotiateLoaderLayerInterfaceVersion ok; mode=clear-test
+[omfg][info][1774652686229] vkCreateInstance ok; mode=clear-test; app=BeyondTwoSouls_Steam.exe; engine=DXVK; apiVersion=1.3.0
+[omfg][info][1774652686646] vkNegotiateLoaderLayerInterfaceVersion ok; mode=clear-test
+[omfg][info][1774652686648] vkCreateInstance ok; mode=clear-test; apiVersion=1.1.0
+[omfg][info][1774652687002] vkDestroyInstance
+[omfg][info][1774652687047] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH); presentId=1; presentWait=1; displayTiming=0

@@ -1,0 +1,96 @@
+[omfg][info][1774647005189] vkNegotiateLoaderLayerInterfaceVersion ok; mode=adaptive-blend-test
+[omfg][info][1774647005192] vkCreateInstance ok; mode=adaptive-blend-test; apiVersion=1.1.0
+[omfg][info][1774647005331] vkNegotiateLoaderLayerInterfaceVersion ok; mode=adaptive-blend-test
+[omfg][info][1774647005332] vkCreateInstance ok; mode=adaptive-blend-test; apiVersion=1.1.0
+[omfg][info][1774647006639] vkNegotiateLoaderLayerInterfaceVersion ok; mode=adaptive-blend-test
+[omfg][info][1774647006642] vkCreateInstance ok; mode=adaptive-blend-test; apiVersion=1.1.0
+[omfg][info][1774647007666] vkNegotiateLoaderLayerInterfaceVersion ok; mode=adaptive-blend-test
+[omfg][info][1774647007668] vkCreateInstance ok; mode=adaptive-blend-test; app=re8.exe; engine=DXVK; apiVersion=1.3.0
+[omfg][info][1774647007810] vkNegotiateLoaderLayerInterfaceVersion ok; mode=adaptive-blend-test
+[omfg][info][1774647007812] vkCreateInstance ok; mode=adaptive-blend-test; app=re8.exe; engine=vkd3d; apiVersion=1.3.0
+[omfg][info][1774647008112] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH); presentId=1; presentWait=1; displayTiming=0
+[omfg][info][1774647008130] vkDestroyDevice
+[omfg][info][1774647008132] vkDestroyInstance
+[omfg][info][1774647008147] vkNegotiateLoaderLayerInterfaceVersion ok; mode=adaptive-blend-test
+[omfg][info][1774647008148] vkCreateInstance ok; mode=adaptive-blend-test; app=re8.exe; engine=vkd3d; apiVersion=1.3.0
+[omfg][info][1774647008435] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH); presentId=1; presentWait=1; displayTiming=0
+[omfg][info][1774647008450] vkNegotiateLoaderLayerInterfaceVersion ok; mode=adaptive-blend-test
+[omfg][info][1774647008452] vkCreateInstance ok; mode=adaptive-blend-test; apiVersion=1.1.0
+[omfg][info][1774647008586] vkDestroyInstance
+[omfg][info][1774647009786] created history image for swapchain
+[omfg][info][1774647009786] vkCreateSwapchainKHR ok; extent=1274x775; format=44; presentMode=FIFO; minImages=3->5; usage=TRANSFER_SRC|STORAGE|COLOR_ATTACHMENT (0x19) -> TRANSFER_SRC|SAMPLED|STORAGE|COLOR_ATTACHMENT (0x1d); images=5; mode=adaptive-blend-test
+[omfg][info][1774647009790] vkQueuePresentKHR frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774647009791] initialized injection resources for queue family 0
+[omfg][info][1774647009791] initialized blend resources for swapchain
+[omfg][info][1774647009794] adaptive-blend primed previous frame history
+[omfg][info][1774647009900] vkDestroySwapchainKHR
+[omfg][info][1774647009906] created history image for swapchain
+[omfg][info][1774647009906] vkCreateSwapchainKHR ok; extent=1280x787; format=44; presentMode=FIFO; minImages=3->5; usage=TRANSFER_SRC|STORAGE|COLOR_ATTACHMENT (0x19) -> TRANSFER_SRC|SAMPLED|STORAGE|COLOR_ATTACHMENT (0x1d); images=5; mode=adaptive-blend-test
+[omfg][info][1774647009907] vkQueuePresentKHR frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774647009907] initialized injection resources for queue family 0
+[omfg][info][1774647009907] initialized blend resources for swapchain
+[omfg][info][1774647009908] adaptive-blend primed previous frame history
+[omfg][info][1774647009912] vkQueuePresentKHR frame=2; queueFamily=0; imageIndex=1; waitSemaphores=1
+[omfg][info][1774647009912] first adaptive blended generated-frame present succeeded
+[omfg][info][1774647009912] adaptive blended frame present=1; generatedImageIndex=2; currentImageIndex=1; originalFirst=0
+[omfg][info][1774647009938] vkQueuePresentKHR frame=3; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774647009939] adaptive blended frame present=2; generatedImageIndex=4; currentImageIndex=3; originalFirst=0
+[omfg][info][1774647009940] vkQueuePresentKHR frame=4; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774647009941] adaptive blended frame present=3; generatedImageIndex=2; currentImageIndex=0; originalFirst=0
+[omfg][info][1774647009970] vkQueuePresentKHR frame=5; queueFamily=0; imageIndex=1; waitSemaphores=1
+[omfg][info][1774647009971] adaptive blended frame present=4; generatedImageIndex=4; currentImageIndex=1; originalFirst=0
+[omfg][info][1774647009976] adaptive blended frame present=5; generatedImageIndex=2; currentImageIndex=3; originalFirst=0
+[omfg][info][1774647012229] vkQueuePresentKHR frame=60; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774647012263] adaptive blended frame present=60; generatedImageIndex=4; currentImageIndex=0; originalFirst=0
+[omfg][info][1774647013530] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH); presentId=1; presentWait=1; displayTiming=0
+[omfg][info][1774647013562] vkQueuePresentKHR frame=120; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774647013596] adaptive blended frame present=120; generatedImageIndex=4; currentImageIndex=0; originalFirst=0
+[omfg][info][1774647014895] vkQueuePresentKHR frame=180; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774647014930] adaptive blended frame present=180; generatedImageIndex=4; currentImageIndex=0; originalFirst=0
+[omfg][info][1774647016228] vkQueuePresentKHR frame=240; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774647016263] adaptive blended frame present=240; generatedImageIndex=4; currentImageIndex=0; originalFirst=0
+[omfg][info][1774647017562] vkQueuePresentKHR frame=300; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774647017596] adaptive blended frame present=300; generatedImageIndex=4; currentImageIndex=0; originalFirst=0
+[omfg][info][1774647018895] vkQueuePresentKHR frame=360; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774647018930] adaptive blended frame present=360; generatedImageIndex=4; currentImageIndex=0; originalFirst=0
+[omfg][info][1774647020228] vkQueuePresentKHR frame=420; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774647020263] adaptive blended frame present=420; generatedImageIndex=4; currentImageIndex=0; originalFirst=0
+[omfg][info][1774647021565] vkQueuePresentKHR frame=480; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774647021598] adaptive blended frame present=480; generatedImageIndex=4; currentImageIndex=0; originalFirst=0
+[omfg][info][1774647022895] vkQueuePresentKHR frame=540; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774647022929] adaptive blended frame present=540; generatedImageIndex=4; currentImageIndex=0; originalFirst=0
+[omfg][info][1774647024228] vkQueuePresentKHR frame=600; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774647024263] adaptive blended frame present=600; generatedImageIndex=4; currentImageIndex=0; originalFirst=0
+[omfg][info][1774647025561] vkQueuePresentKHR frame=660; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774647025596] adaptive blended frame present=660; generatedImageIndex=4; currentImageIndex=0; originalFirst=0
+[omfg][info][1774647026894] vkQueuePresentKHR frame=720; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774647026929] adaptive blended frame present=720; generatedImageIndex=4; currentImageIndex=0; originalFirst=0
+[omfg][info][1774647028228] vkQueuePresentKHR frame=780; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774647028263] adaptive blended frame present=780; generatedImageIndex=4; currentImageIndex=0; originalFirst=0
+[omfg][info][1774647029561] vkQueuePresentKHR frame=840; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774647029596] adaptive blended frame present=840; generatedImageIndex=4; currentImageIndex=0; originalFirst=0
+[omfg][info][1774647030714] vkDestroyDevice
+[omfg][info][1774647030894] vkQueuePresentKHR frame=900; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774647030929] adaptive blended frame present=900; generatedImageIndex=4; currentImageIndex=0; originalFirst=0
+[omfg][info][1774647032227] vkQueuePresentKHR frame=960; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774647032262] adaptive blended frame present=960; generatedImageIndex=4; currentImageIndex=0; originalFirst=0
+[omfg][info][1774647033561] vkQueuePresentKHR frame=1020; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774647033596] adaptive blended frame present=1020; generatedImageIndex=4; currentImageIndex=0; originalFirst=0
+[omfg][info][1774647034901] vkQueuePresentKHR frame=1080; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774647034940] adaptive blended frame present=1080; generatedImageIndex=4; currentImageIndex=0; originalFirst=0
+[omfg][info][1774647036901] vkQueuePresentKHR frame=1140; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774647036942] adaptive blended frame present=1140; generatedImageIndex=4; currentImageIndex=0; originalFirst=0
+[omfg][info][1774647038907] vkQueuePresentKHR frame=1200; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774647038954] adaptive blended frame present=1200; generatedImageIndex=4; currentImageIndex=0; originalFirst=0
+[omfg][info][1774647040904] vkQueuePresentKHR frame=1260; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774647040956] adaptive blended frame present=1260; generatedImageIndex=4; currentImageIndex=0; originalFirst=0
+[omfg][info][1774647042904] vkQueuePresentKHR frame=1320; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774647042955] adaptive blended frame present=1320; generatedImageIndex=4; currentImageIndex=0; originalFirst=0
+[omfg][info][1774647044904] vkQueuePresentKHR frame=1380; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774647044954] adaptive blended frame present=1380; generatedImageIndex=4; currentImageIndex=0; originalFirst=0
+[omfg][info][1774647046904] vkQueuePresentKHR frame=1440; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774647046954] adaptive blended frame present=1440; generatedImageIndex=4; currentImageIndex=0; originalFirst=0
+[omfg][info][1774647048904] vkQueuePresentKHR frame=1500; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774647048954] adaptive blended frame present=1500; generatedImageIndex=4; currentImageIndex=0; originalFirst=0
+[omfg][info][1774647050904] vkQueuePresentKHR frame=1560; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774647050954] adaptive blended frame present=1560; generatedImageIndex=4; currentImageIndex=0; originalFirst=0

@@ -1,30 +1,30 @@
-[omfg][info][1774568278451] vkNegotiateLoaderLayerInterfaceVersion ok; mode=adaptive-multi-blend-test
-[omfg][info][1774568278453] vkCreateInstance ok; mode=adaptive-multi-blend-test; app=vkcube; engine=vkcube; apiVersion=1.0.0
-[omfg][info][1774568278477] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH)
-[omfg][info][1774568278482] created history image for swapchain
-[omfg][info][1774568278482] vkCreateSwapchainKHR ok; extent=500x500; format=44; presentMode=FIFO; minImages=3->6; usage=COLOR_ATTACHMENT (0x10) -> TRANSFER_SRC|SAMPLED|COLOR_ATTACHMENT (0x15); images=6; mode=adaptive-multi-blend-test
-[omfg][info][1774568278484] vkQueuePresentKHR frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
-[omfg][info][1774568278484] initialized injection resources for queue family 0
-[omfg][info][1774568278484] initialized blend resources for swapchain
-[omfg][info][1774568278484] adaptive-multi target controller; present=1; targetFps=0.0; baseFps=0.0; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=0.000; smoothedIntervalMs=0.000
-[omfg][info][1774568278485] adaptive-multi-blend primed previous frame history
-[omfg][info][1774568278485] vkQueuePresentKHR frame=2; queueFamily=0; imageIndex=1; waitSemaphores=1
-[omfg][info][1774568278485] adaptive-multi target controller; present=2; targetFps=0.0; baseFps=1140.3; desiredGeneratedFrames=1.000; emittedGeneratedFrames=1; carry=0.000; intervalMs=0.877; smoothedIntervalMs=0.877
-[omfg][info][1774568278485] first adaptive multi blended generated-frame present succeeded
-[omfg][info][1774568278485] adaptive multi blended frame present=1; generatedImageIndices=[2]; currentImageIndex=1
-[omfg][info][1774568278485] vkQueuePresentKHR frame=3; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774568278485] adaptive-multi target controller; present=3; targetFps=0.0; baseFps=2127.7; desiredGeneratedFrames=1.000; emittedGeneratedFrames=1; carry=0.000; intervalMs=0.470; smoothedIntervalMs=0.775
-[omfg][info][1774568278485] adaptive multi blended frame present=2; generatedImageIndices=[4]; currentImageIndex=3
-[omfg][info][1774568278486] vkQueuePresentKHR frame=4; queueFamily=0; imageIndex=5; waitSemaphores=1
-[omfg][info][1774568278486] adaptive-multi target controller; present=4; targetFps=0.0; baseFps=2283.1; desiredGeneratedFrames=1.000; emittedGeneratedFrames=1; carry=0.000; intervalMs=0.438; smoothedIntervalMs=0.691
-[omfg][info][1774568278486] adaptive multi blended frame present=3; generatedImageIndices=[0]; currentImageIndex=5
-[omfg][info][1774568278497] vkQueuePresentKHR frame=5; queueFamily=0; imageIndex=2; waitSemaphores=1
-[omfg][info][1774568278497] adaptive-multi target controller; present=5; targetFps=0.0; baseFps=88.4; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=11.316; smoothedIntervalMs=3.347
-[omfg][info][1774568278521] adaptive multi blended frame present=5; generatedImageIndices=[1, 4]; currentImageIndex=2
-[omfg][info][1774568280330] vkQueuePresentKHR frame=60; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774568280330] adaptive-multi target controller; present=60; targetFps=0.0; baseFps=30.1; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=33.262; smoothedIntervalMs=33.358
-[omfg][info][1774568282330] vkQueuePresentKHR frame=120; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774568282330] adaptive-multi target controller; present=120; targetFps=0.0; baseFps=30.0; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=33.295; smoothedIntervalMs=33.317
-[omfg][info][1774568282355] vkDestroySwapchainKHR
-[omfg][info][1774568282365] vkDestroyDevice
-[omfg][info][1774568282482] vkDestroyInstance
+[omfg][info][1774660536727] vkNegotiateLoaderLayerInterfaceVersion ok; mode=adaptive-multi-blend-test
+[omfg][info][1774660536729] vkCreateInstance ok; mode=adaptive-multi-blend-test; app=vkcube; engine=vkcube; apiVersion=1.0.0
+[omfg][info][1774660536747] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH); presentId=0; presentWait=0; displayTiming=0
+[omfg][info][1774660536754] created history image for swapchain
+[omfg][info][1774660536754] vkCreateSwapchainKHR ok; extent=500x500; format=44; presentMode=FIFO; minImages=3->6; usage=COLOR_ATTACHMENT (0x10) -> TRANSFER_SRC|SAMPLED|COLOR_ATTACHMENT (0x15); images=6; mode=adaptive-multi-blend-test
+[omfg][info][1774660536756] vkQueuePresentKHR frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774660536756] initialized injection resources for queue family 0
+[omfg][info][1774660536756] initialized blend resources for swapchain
+[omfg][info][1774660536756] adaptive-multi target controller; present=1; targetFps=0.0; baseFps=0.0; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=0.000; smoothedIntervalMs=0.000
+[omfg][info][1774660536756] adaptive-multi-blend primed previous frame history
+[omfg][info][1774660536756] vkQueuePresentKHR frame=2; queueFamily=0; imageIndex=1; waitSemaphores=1
+[omfg][info][1774660536756] adaptive-multi target controller; present=2; targetFps=0.0; baseFps=1470.6; desiredGeneratedFrames=1.000; emittedGeneratedFrames=1; carry=0.000; intervalMs=0.680; smoothedIntervalMs=0.680
+[omfg][info][1774660536756] first adaptive multi blended generated-frame present succeeded
+[omfg][info][1774660536757] adaptive multi blended frame present=1; generatedImageIndices=[2]; currentImageIndex=1; originalFirst=0
+[omfg][info][1774660536757] vkQueuePresentKHR frame=3; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774660536757] adaptive-multi target controller; present=3; targetFps=0.0; baseFps=3174.6; desiredGeneratedFrames=1.000; emittedGeneratedFrames=1; carry=0.000; intervalMs=0.315; smoothedIntervalMs=0.589
+[omfg][info][1774660536757] adaptive multi blended frame present=2; generatedImageIndices=[4]; currentImageIndex=3; originalFirst=0
+[omfg][info][1774660536757] vkQueuePresentKHR frame=4; queueFamily=0; imageIndex=5; waitSemaphores=1
+[omfg][info][1774660536757] adaptive-multi target controller; present=4; targetFps=0.0; baseFps=3355.7; desiredGeneratedFrames=1.000; emittedGeneratedFrames=1; carry=0.000; intervalMs=0.298; smoothedIntervalMs=0.516
+[omfg][info][1774660536779] adaptive multi blended frame present=3; generatedImageIndices=[0]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774660536787] vkQueuePresentKHR frame=5; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774660536787] adaptive-multi target controller; present=5; targetFps=0.0; baseFps=32.8; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=30.484; smoothedIntervalMs=8.008
+[omfg][info][1774660536811] adaptive multi blended frame present=5; generatedImageIndices=[1, 4]; currentImageIndex=2; originalFirst=0
+[omfg][info][1774660538610] vkQueuePresentKHR frame=60; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774660538610] adaptive-multi target controller; present=60; targetFps=0.0; baseFps=30.1; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=33.260; smoothedIntervalMs=32.726
+[omfg][info][1774660540621] vkQueuePresentKHR frame=120; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774660540621] adaptive-multi target controller; present=120; targetFps=0.0; baseFps=24.1; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=41.543; smoothedIntervalMs=34.730
+[omfg][info][1774660540648] vkDestroySwapchainKHR
+[omfg][info][1774660540655] vkDestroyDevice
+[omfg][info][1774660540742] vkDestroyInstance

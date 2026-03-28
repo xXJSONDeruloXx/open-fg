@@ -1,0 +1,416 @@
+spawn ssh -tt -o StrictHostKeyChecking=accept-new -o PreferredAuthentications=password -o PubkeyAuthentication=no deck@192.168.0.241 bash -lc 'set -euo pipefail
+chmod +x /home/deck/omfg.sh
+mkdir -p /home/deck/post-proc-fg-research/logs
+rm -f /home/deck/post-proc-fg-research/logs/stellar-blade-bfi-20260327-201448-36706.log /home/deck/post-proc-fg-research/logs/stellar-blade-bfi-20260327-201448-36706.wrapper.log /home/deck/post-proc-fg-research/logs/stellar-blade-bfi-20260327-201448-36706.windows.txt /home/deck/post-proc-fg-research/logs/stellar-blade-bfi-20260327-201448-36706.png /tmp/omfg-stellar-blade-bfi-20260327-201448-36706.steam.log /tmp/omfg-steam-client-stellar-blade-bfi-20260327-201448-36706.log /home/deck/steam-3489700.log
+set -a
+source /run/user/1000/gamescope-environment
+set +a
+export DISPLAY=:0
+export XDG_RUNTIME_DIR=/run/user/1000
+xauth=$(ls -1 /run/user/1000/xauth_* 2>/dev/null | head -1 || true)
+if [ -n "$xauth" ]; then export XAUTHORITY="$xauth"; fi
+if [ -n "" ]; then export PROTON_LOG=""; fi
+POLL_INTERVAL="15"
+kill_all_steam_games() {
+  # Broad pre-kill: terminates any running Steam game processes regardless of AppID.
+  # This prevents cross-game contamination when multiple probes run back-to-back.
+  python3 - <<'"'"'PY'"'"'
+import os, re, subprocess, signal
+self_pid = os.getpid()
+ancestors = {self_pid}
+try:
+    pid = self_pid
+    while True:
+        with open(f'"'"'/proc/{pid}/status'"'"', '"'"'r'"'"', encoding='"'"'utf-8'"'"', errors='"'"'ignore'"'"') as f:
+            ppid = None
+            for line in f:
+                if line.startswith('"'"'PPid:'"'"'):
+                    ppid = int(line.split()[1])
+                    break
+        if not ppid or ppid in ancestors:
+            break
+        ancestors.add(ppid)
+        pid = ppid
+except Exception:
+    pass
+appid_re = re.compile(r'"'"'AppId=\d+'"'"')
+proton_markers = ('"'"'SteamLaunch'"'"', '"'"'waitforexitandrun'"'"', '"'"'reaper steam'"'"', '"'"'wineserver'"'"', '"'"'wine64'"'"', '"'"'wine '"'"')
+out = subprocess.check_output(['"'"'ps'"'"', '"'"'-eo'"'"', '"'"'pid=,args='"'"'], text=True, errors='"'"'ignore'"'"')
+for line in out.splitlines():
+    s = line.strip()
+    if not s:
+        continue
+    parts = s.split(None, 1)
+    if len(parts) != 2:
+        continue
+    pid = int(parts[0])
+    args = parts[1]
+    if pid in ancestors:
+        continue
+    if appid_re.search(args) or any(m in args for m in proton_markers):
+        try:
+            os.kill(pid, signal.SIGKILL)
+            print(f'"'"'killed pid={pid} args={args}'"'"')
+        except ProcessLookupError:
+            pass
+        except PermissionError:
+            pass
+PY
+}
+cleanup_matches() {
+  APPID='"'"'3489700'"'"' EXE_REGEX='"'"'SB.exe|SB-Win64-Shipping.exe'"'"' python3 - <<'"'"'PY'"'"'
+import os, re, subprocess, signal
+appid = os.environ['"'"'APPID'"'"']
+exe_regex = os.environ.get('"'"'EXE_REGEX'"'"', '"'"''"'"')
+exe_re = re.compile(exe_regex) if exe_regex else None
+appid_marker = f'"'"'AppId={appid}'"'"'
+self_pid = os.getpid()
+ancestors = {self_pid}
+try:
+    pid = self_pid
+    while True:
+        with open(f'"'"'/proc/{pid}/status'"'"', '"'"'r'"'"', encoding='"'"'utf-8'"'"', errors='"'"'ignore'"'"') as f:
+            ppid = None
+            for line in f:
+                if line.startswith('"'"'PPid:'"'"'):
+                    ppid = int(line.split()[1])
+                    break
+        if not ppid or ppid in ancestors:
+            break
+        ancestors.add(ppid)
+        pid = ppid
+except Exception:
+    pass
+out = subprocess.check_output(['"'"'ps'"'"', '"'"'-eo'"'"', '"'"'pid=,args='"'"'], text=True, errors='"'"'ignore'"'"')
+for line in out.splitlines():
+    s = line.strip()
+    if not s:
+        continue
+    parts = s.split(None, 1)
+    if len(parts) != 2:
+        continue
+    pid = int(parts[0])
+    args = parts[1]
+    if pid in ancestors:
+        continue
+    if appid_marker in args or (exe_re and exe_re.search(args)):
+        try:
+            os.kill(pid, signal.SIGKILL)
+            print(f'"'"'killed pid={pid} args={args}'"'"')
+        except ProcessLookupError:
+            pass
+        except PermissionError:
+            pass
+PY
+}
+wait_for_no_matches() {
+  local remaining
+  for _ in $(seq 1 30); do
+    remaining=$(ps -ef | grep -E "AppId=3489700|SB.exe|SB-Win64-Shipping.exe" | grep -v grep || true)
+    if [ -z "$remaining" ]; then
+      echo "cleanup-settled"
+      return 0
+    fi
+    sleep 1
+  done
+  echo "cleanup-timeout"
+  ps -ef | grep -E "AppId=3489700|SB.exe|SB-Win64-Shipping.exe" | grep -v grep || true
+  return 0
+}
+kill_all_steam_games || true
+sleep 3
+cleanup_matches || true
+wait_for_no_matches || true
+sleep 2
+echo "=== title=Stellar Blade™ appid=3489700 mode=bfi run=20260327-201448-36706 paths ==="
+echo "remote_log=/home/deck/post-proc-fg-research/logs/stellar-blade-bfi-20260327-201448-36706.log"
+echo "remote_wrapper_log=/home/deck/post-proc-fg-research/logs/stellar-blade-bfi-20260327-201448-36706.wrapper.log"
+echo "remote_steam_log=/tmp/omfg-stellar-blade-bfi-20260327-201448-36706.steam.log"
+if [ "1" = "1" ]; then echo "remote_steam_client_log=/tmp/omfg-steam-client-stellar-blade-bfi-20260327-201448-36706.log"; fi
+if [ -n "" ]; then echo "remote_proton_log=/home/deck/steam-3489700.log"; fi
+if [ "1" = "1" ]; then
+  echo "=== title=Stellar Blade™ appid=3489700 mode=bfi restarting-steam-client ==="
+  steam -shutdown || true
+  sleep 8
+  nohup steam >/tmp/omfg-steam-client-stellar-blade-bfi-20260327-201448-36706.log 2>&1 &
+  for _ in $(seq 1 30); do
+    if pgrep -f '"'"'steamwebhelper|steam -srt-logger-opened'"'"' >/dev/null 2>&1; then
+      echo '"'"'steam-client-ready'"'"'
+      break
+    fi
+    sleep 1
+  done
+  ps -ef | grep -E '"'"'steamwebhelper|steam -srt-logger-opened'"'"' | grep -v grep || true
+fi
+nohup steam steam://rungameid/3489700 >/tmp/omfg-stellar-blade-bfi-20260327-201448-36706.steam.log 2>&1 &
+elapsed=0
+while [ "$elapsed" -lt 120 ]; do
+  sleep "$POLL_INTERVAL"
+  elapsed=$((elapsed + POLL_INTERVAL))
+  echo "=== title=Stellar Blade™ appid=3489700 mode=bfi process-snapshot t=${elapsed}s ==="
+  ps -ef | grep -E "AppId=3489700|SB.exe|SB-Win64-Shipping.exe" | grep -v grep || true
+  if [ -f /home/deck/post-proc-fg-research/logs/stellar-blade-bfi-20260327-201448-36706.wrapper.log ]; then
+    echo "=== title=Stellar Blade™ appid=3489700 mode=bfi wrapper-log-tail t=${elapsed}s ==="
+    tail -40 /home/deck/post-proc-fg-research/logs/stellar-blade-bfi-20260327-201448-36706.wrapper.log
+  fi
+  if [ -n "" ] && [ "0" -gt 0 ] && [ $((elapsed % 0)) -eq 0 ]; then
+    echo "=== title=Stellar Blade™ appid=3489700 mode=bfi auto-input t=${elapsed}s keys= window=Stellar Blade™ ==="
+    win_id=$(xdotool search --name "Stellar Blade™" 2>/dev/null | head -1 || true)
+    if [ -n "$win_id" ]; then
+      xdotool windowactivate --sync "$win_id" || true
+      # shellcheck disable=SC2086
+      xdotool key --window "$win_id"  || true
+      echo "sent-input win_id=$win_id"
+    else
+      echo missing-window-for-input
+    fi
+  fi
+done
+echo "=== title=Stellar Blade™ appid=3489700 mode=bfi process ==="
+ps -ef | grep -E "AppId=3489700|SB.exe|SB-Win64-Shipping.exe" | grep -v grep || true
+echo "=== title=Stellar Blade™ appid=3489700 mode=bfi omfg log ==="
+if [ -f /home/deck/post-proc-fg-research/logs/stellar-blade-bfi-20260327-201448-36706.log ]; then tail -200 /home/deck/post-proc-fg-research/logs/stellar-blade-bfi-20260327-201448-36706.log; else echo missing-log; fi
+echo "=== title=Stellar Blade™ appid=3489700 mode=bfi wrapper log ==="
+if [ -f /home/deck/post-proc-fg-research/logs/stellar-blade-bfi-20260327-201448-36706.wrapper.log ]; then tail -120 /home/deck/post-proc-fg-research/logs/stellar-blade-bfi-20260327-201448-36706.wrapper.log; else echo missing-wrapper-log; fi
+echo "=== title=Stellar Blade™ appid=3489700 mode=bfi steam log ==="
+if [ -f /tmp/omfg-stellar-blade-bfi-20260327-201448-36706.steam.log ]; then tail -80 /tmp/omfg-stellar-blade-bfi-20260327-201448-36706.steam.log; else echo missing-steam-log; fi
+if [ "1" = "1" ]; then
+  echo "=== title=Stellar Blade™ appid=3489700 mode=bfi steam client log ==="
+  if [ -f /tmp/omfg-steam-client-stellar-blade-bfi-20260327-201448-36706.log ]; then tail -120 /tmp/omfg-steam-client-stellar-blade-bfi-20260327-201448-36706.log; else echo missing-steam-client-log; fi
+fi
+if [ -n "" ]; then
+  echo "=== title=Stellar Blade™ appid=3489700 mode=bfi proton log ==="
+  if [ -f /home/deck/steam-3489700.log ]; then tail -120 /home/deck/steam-3489700.log; else echo missing-proton-log; fi
+fi
+if [ -n "" ]; then
+  echo "=== title=Stellar Blade™ appid=3489700 mode=bfi window tree ==="
+  if xwininfo -root -tree > /home/deck/post-proc-fg-research/logs/stellar-blade-bfi-20260327-201448-36706.windows.txt 2>/dev/null; then
+    sed -n '"'"'1,200p'"'"' /home/deck/post-proc-fg-research/logs/stellar-blade-bfi-20260327-201448-36706.windows.txt
+  else
+    echo missing-window-tree
+  fi
+  echo "=== title=Stellar Blade™ appid=3489700 mode=bfi screenshot capture ==="
+  if ffmpeg -loglevel error -y -f x11grab -draw_mouse 0 -i :0 -frames:v 1 /home/deck/post-proc-fg-research/logs/stellar-blade-bfi-20260327-201448-36706.png; then
+    ls -lh /home/deck/post-proc-fg-research/logs/stellar-blade-bfi-20260327-201448-36706.png
+  else
+    echo missing-screenshot
+  fi
+fi
+cleanup_matches || true
+echo "=== title=Stellar Blade™ appid=3489700 mode=bfi post-clean process check ==="
+ps -ef | grep -E "AppId=3489700|SB.exe|SB-Win64-Shipping.exe" | grep -v grep || true'
+deck@192.168.0.241's password: 
+cleanup-settled
+=== title=Stellar Blade™ appid=3489700 mode=bfi run=20260327-201448-36706 paths ===
+remote_log=/home/deck/post-proc-fg-research/logs/stellar-blade-bfi-20260327-201448-36706.log
+remote_wrapper_log=/home/deck/post-proc-fg-research/logs/stellar-blade-bfi-20260327-201448-36706.wrapper.log
+remote_steam_log=/tmp/omfg-stellar-blade-bfi-20260327-201448-36706.steam.log
+remote_steam_client_log=/tmp/omfg-steam-client-stellar-blade-bfi-20260327-201448-36706.log
+=== title=Stellar Blade™ appid=3489700 mode=bfi restarting-steam-client ===
+steam.sh[44034]: Running Steam on steamos rolling 64-bit
+steam.sh[44034]: STEAM_RUNTIME is enabled automatically
+setup.sh[44082]: Steam runtime environment up-to-date!
+[0msteam.sh[44034]: Steam client's requirements are satisfied[0m
+[0mCProcessEnvironmentManager is ready, 6 preallocated environment variables.[0m
+[0m[2026-03-27 20:14:56] Startup - updater built Mar 13 2026 01:52:12[0m
+[0m[2026-03-27 20:14:56] Startup - Steam Client launched with: '/home/deck/.local/share/Steam/ubuntu12_32/steam' '-srt-logger-opened' '-steamdeck' '-shutdown'[0m
+[0m[2026-03-27 20:14:56] Opted in to client beta 'steamdeck_stable' via beta file[0m
+[0mYou are in the 'steamdeck_stable' client beta.[0m
+[0m03/27 20:14:56 minidumps folder is set to /tmp/dumps[0m
+[0m03/27 20:14:56 Init: Installing breakpad exception handler for appid(steam)/version(1773426488)/tid(44151)[0m
+[0mLooks like steam didn't shutdown cleanly, scheduling immediate update check[0m
+[0mCProcessEnvironmentManager is ready, 6 preallocated environment variables.[0m
+[0m[2026-03-27 20:14:56] Process started with command-line: '/home/deck/.local/share/Steam/ubuntu12_32/steam' '-child-update-ui' '-child-update-ui-socket' '8' '-srt-logger-opened' '-steamdeck' '-shutdown'[0m
+[0m03/27 20:14:56 minidumps folder is set to /tmp/dumps[0m
+[0m[2026-03-27 20:14:56] Using update UI: glx[0m
+[0m03/27 20:14:56 Init: Installing breakpad exception handler for appid(steam)/version(0)/tid(44152)[0m
+[0m[2026-03-27 20:14:56] Create window[0m
+[0m[2026-03-27 20:14:56] Loading cached metrics from disk (/home/deck/.local/share/Steam/package/steam_client_metrics.bin)[0m
+[0m[2026-03-27 20:14:56] Using the following download hosts for Public, Realm steamglobal[0m
+[0m[2026-03-27 20:14:56] 1. https://client-update.fastly.steamstatic.com, /, Realm 'steamglobal', weight was 900, source = 'update_hosts_cached.vdf'[0m
+[0m[2026-03-27 20:14:56] 2. https://client-update.akamai.steamstatic.com, /, Realm 'steamglobal', weight was 400, source = 'update_hosts_cached.vdf'[0m
+[0m[2026-03-27 20:14:56] 3. https://client-update.steamstatic.com, /, Realm 'steamglobal', weight was 1, source = 'baked in'[0m
+[0m[2026-03-27 20:14:56] Checking for update on startup[0m
+[0m[2026-03-27 20:14:56] Checking for available updates...[0m
+[0m[2026-03-27 20:14:56] Downloading manifest: https://client-update.fastly.steamstatic.com/steam_client_steamdeck_stable_ubuntu12[0m
+[0m[2026-03-27 20:14:56] Manifest download: send request[0m
+[0m[2026-03-27 20:14:56] Set percent complete: 0[0m
+[0m[2026-03-27 20:14:56] Set status message: Checking for available updates...[0m
+[0m[2026-03-27 20:14:56] Set percent complete: -1[0m
+[0m[2026-03-27 20:14:57] Manifest download: waiting for download to finish[0m
+[0m[2026-03-27 20:14:57] Manifest download: finished[0m
+[0m[2026-03-27 20:14:57] Download skipped: /steam_client_steamdeck_stable_ubuntu12 version 1773426488, installed version 1773426488, existing pending version 0[0m
+[0m[2026-03-27 20:14:57] Nothing to do[0m
+[0m[2026-03-27 20:14:57] Verifying installation...[0m
+[0m[2026-03-27 20:14:57] Verifying all executable checksums[0m
+[0m[2026-03-27 20:14:57] Set percent complete: -1[0m
+[0m[2026-03-27 20:14:57] Set status message: Verifying installation...[0m
+[0m[2026-03-27 20:14:58] Show window[0m
+[0m[2026-03-27 20:14:58] Verification complete[0m
+[0mUpdateUI: skip show logo[0m
+[0m[2026-03-27 20:14:58] Destroy window[0m
+[0m[2026-03-27 20:14:58] Shutdown[0m
+[0m[0m
+[0mSteam logging initialized: directory: /home/deck/.local/share/Steam/logs[0m
+[0m[0m
+[0mXOpenIM() failed, LANG = en_US.UTF-8[0m
+[0mXOpenIM() failed, LANG = en_US.UTF-8[0m[0mXRRGetOutputInfo Workaround: initialized with override: 1 real: 0xf63e6370[0m
+[0mXRRGetCrtcInfo Workaround: initialized with override: 1 real: 0xf63e4cc0[0m
+[0m03/27 20:14:59 minidumps folder is set to /tmp/dumps[0m
+[0m03/27 20:14:59 Init: Installing breakpad exception handler for appid(steamsysinfo)/version(1773426488)/tid(44179)[0m
+[0mRunning query: 1 - GpuTopology[0m
+[0mATTENTION: default value of option vk_khr_present_wait overridden by environment.[0m
+[0mATTENTION: default value of option vk_xwayland_wait_ready overridden by environment.[0m
+[0m[Gamescope WSI] Failed to connect to gamescope socket: gamescope-0. Bypass layer will be unavailable.[0m
+[0mResponse: gpu_topology {[0m
+[0m  gpus {[0m
+[0m    id: 1[0m
+[0m    name: "AMD Custom GPU 0932 (RADV VANGOGH)"[0m
+[0m    vram_size_bytes: 6442450944[0m
+[0m    driver_id: k_EGpuDriverId_MesaRadv[0m
+[0m    driver_version_major: 24[0m
+[0m    driver_version_minor: 2[0m
+[0m    driver_version_patch: 99[0m
+[0m    luid: 0[0m
+[0m  }[0m
+[0m  default_gpu_id: 1[0m
+[0m}[0m
+[0m[0m
+[0mExit code: 0[0m
+[0mSaving response to: /tmp/steamkPENfi - 60 bytes[0m
+[0msteamwebhelper.sh[44194]: Starting steamwebhelper under bootstrap steamrt steam runtime via: /home/deck/.local/share/Steam/steamrt64/pv-runtime/steam-runtime-steamrt/_v2-entry-point[0m
+[0msteamwebhelper.sh[44194]: CEF sandbox already disabled[0m
+[0msteamwebhelper.sh[44194]: Starting steamwebhelper with steamrt steam runtime at /home/deck/.local/share/Steam/steamrt64/pv-runtime/steam-runtime-steamrt/_v2-entry-point[0m
+[0mSteam Runtime Launch Service: starting steam-runtime-launcher-service[0m
+[0mSteam Runtime Launch Service: steam-runtime-launcher-service is running pid 44277[0m
+[0mbus_name=com.steampowered.PressureVessel.LaunchAlongsideSteam[0m
+[0m[1;35mi386-linux-gnu-capsule-capture-libs: warning: Dependencies of /usr/lib32/libMangoHud.so not found, ignoring: Missing dependencies: Could not find "libxkbcommon.so.0" in LD_LIBRARY_PATH "/home/deck/.local/share/Steam/ubuntu12_32:/home/deck/.local/share/Steam/ubuntu12_32/panorama:/usr/lib32:/usr/lib/perf:/usr/lib", ld.so.cache, DT_RUNPATH or fallback /lib/i386-linux-gnu:/usr/lib/i386-linux-gnu:/usr/i686-pc-linux-gnu/lib:/lib32:/usr/lib32:/lib:/usr/lib[0m
+[0mexec ./steamwebhelper -nocrashdialog -lang=en_US -cachedir=/home/deck/.local/share/Steam/config/htmlcache -steampid=44151 -buildid=1773426488 -steamid=0 -logdir=/home/deck/.local/share/Steam/logs -uimode=4 -startcount=0 -steamdeck -steamuniverse=Public -realm=Global -clientui=/home/deck/.local/share/Steam/clientui -steampath=/home/deck/.local/share/Steam/ubuntu12_32/steam -launcher=0 --valve-enable-site-isolation --remote-allow-origins=* --remote-debugging-address=127.0.0.1 --remote-debugging-port=8080 --enable-smooth-scrolling --no-sandbox --password-store=basic --log-file=/home/deck/.local/share/Steam/logs/cef_log.txt --disable-quick-menu --disable-component-update --gaia-url=http://disabled.invalid --enable-features=PlatformHEVCDecoderSupport --disable-features=WinRetrieveSuggestionsOnlyOnDemand,SpareRendererForSitePerProcess,DcheckIsFatal,BlockPromptsIfIgnoredOften,ValveFFmpegAllowLowDelayHEVC[0m
+[0mATTENTION: default value of option vk_khr_present_wait overridden by environment.[0m
+[0mATTENTION: default value of option vk_xwayland_wait_ready overridden by environment.[0m
+[0m[Gamescope WSI] Failed to connect to gamescope socket: gamescope-0. Bypass layer will be unavailable.[0m
+[0m[Gamescope WSI] Forcing on VK_EXT_swapchain_maintenance1.[0m
+[0mATTENTION: default value of option vk_khr_present_wait overridden by environment.[0m
+[0mATTENTION: default value of option vk_xwayland_wait_ready overridden by environment.[0m
+[0m[Gamescope WSI] Failed to connect to gamescope socket: gamescope-0. Bypass layer will be unavailable.[0m
+[0m[Gamescope WSI] Forcing on VK_EXT_swapchain_maintenance1.[0m
+[0m/usr/share/themes/Breeze-Dark/gtk-2.0/widgets/entry:70: error: unexpected identifier 'direction', expected character '}'[0m
+[0m/usr/share/themes/Breeze-Dark/gtk-2.0/widgets/styles:36: error: invalid string constant "combobox_entry", expected valid string constant[0m
+[0mDesktop state changed: desktop: { pos:    0,   0 size: 1280, 800 } primary: { pos:    0,   0 size: 1280, 800 }[0m
+[0mCaching cursor image for , size 1x1, serial 303, cache size = 0[0m
+[0mCouldn't open display :1, ignoring[0m
+[0mCDesktopCapturePipeWire: Opening DRM render node /dev/dri/renderD128[0m
+[0mFailed to connect to Wayland display[0m
+[0mTagLib: Could not open file /home/deck/.local/share/Steam/steamapps/music/Clair%20Obscur%20Expedition%2033%20%E2%80%93%20Nos%20Vies%20En%20Lumi%C3%A8re%20%28Bonus%20Edition%29/01%20-%20Lorien%20Testard%20-%20Nos%20vies%20en%20Lumi%C3%A8re.wav[0m
+[0mTagLib: FileRef::tag() - Called without a valid file.[0m
+[0mTagLib: Could not open file /home/deck/.local/share/Steam/steamapps/music/Clair%20Obscur%20Expedition%2033%20%E2%80%93%20Nos%20Vies%20En%20Lumi%C3%A8re%20%28Bonus%20Edition%29/02%20-%20Lorien%20Testard%20-%20World%20Map%20-%20Taking%20Down%20the%20Paintress%20%28Instrumental%29.wav[0m
+[0mTagLib: FileRef::tag() - Called without a valid file.[0m
+[0mTagLib: Could not open file /home/deck/.local/share/Steam/steamapps/music/Clair%20Obscur%20Expedition%2033%20%E2%80%93%20Nos%20Vies%20En%20Lumi%C3%A8re%20%28Bonus%20Edition%29/03%20-%20Lorien%20Testard%20-%20Flying%20Waters%20-%20Avasha%20Kapasatara.wav[0m
+[0mTagLib: FileRef::tag() - Called without a valid file.[0m
+[0mTagLib: Could not open file /home/deck/.local/share/Steam/steamapps/music/Clair%20Obscur%20Expedition%2033%20%E2%80%93%20Nos%20Vies%20En%20Lumi%C3%A8re%20%28Bonus%20Edition%29/04%20-%20Lorien%20Testard%20-%20Our%20Drafts%20Unite.wav[0m
+[0mTagLib: FileRef::tag() - Called without a valid file.[0m
+[0mTagLib: Could not open file /home/deck/.local/share/Steam/steamapps/music/Clair%20Obscur%20Expedition%2033%20%E2%80%93%20Nos%20Vies%20En%20Lumi%C3%A8re%20%28Bonus%20Edition%29/05%20-%20Lorien%20Testard%20-%20Gestral%20Village%20-%20Fight%20for%20the%20Win%20%28Uno%20Puncho%29.wav[0m
+[0mTagLib: FileRef::tag() - Called without a valid file.[0m
+[0mTagLib: Could not open file /home/deck/.local/share/Steam/steamapps/music/Clair%20Obscur%20Expedition%2033%20%E2%80%93%20Nos%20Vies%20En%20Lumi%C3%A8re%20%28Bonus%20Edition%29/06%20-%20Lorien%20Testard%20-%20Gestral%20Village%20-%20Gestral%20Private%20Club.wav[0m
+[0mTagLib: FileRef::tag() - Called without a valid file.[0m
+[0mTagLib: Could not open file /home/deck/.local/share/Steam/steamapps/music/Clair%20Obscur%20Expedition%2033%20%E2%80%93%20Nos%20Vies%20En%20Lumi%C3%A8re%20%28Bonus%20Edition%29/07%20-%20Lorien%20Testard%20-%20Monoco%20%28Release%20Date%20Reveal%29.wav[0m
+[0mTagLib: FileRef::tag() - Called without a valid file.[0m
+[0mTagLib: Could not open file /home/deck/.local/share/Steam/steamapps/music/Clair%20Obscur%20Expedition%2033%20%E2%80%93%20Nos%20Vies%20En%20Lumi%C3%A8re%20%28Bonus%20Edition%29/08%20-%20Lorien%20Testard%20-%20Le%20Carousel%20de%20Lumi%C3%A8re.wav[0m
+[0mTagLib: FileRef::tag() - Called without a valid file.[0m
+[0mTagLib: Could not open file /home/deck/.local/share/Steam/steamapps/music/Clair%20Obscur%20Expedition%2033%20%E2%80%93%20Nos%20Vies%20En%20Lumi%C3%A8re%20%28Bonus%20Edition%29/09%20-%20Lorien%20Testard%20-%20Hold%20me%20Esquie.wav[0m
+[0mTagLib: FileRef::tag() - Called without a valid file.[0m
+[0mTagLib: Could not open file /home/deck/.local/share/Steam/steamapps/music/Clair%20Obscur%20Expedition%2033%20%E2%80%93%20Nos%20Vies%20En%20Lumi%C3%A8re%20%28Bonus%20Edition%29/10%20-%20Lorien%20Testard%20-%20Sciel%20%28Piano%29.wav[0m
+[0mTagLib: FileRef::tag() - Called without a valid file.[0m
+[0mTagLib: Could not open file /home/deck/.local/share/Steam/steamapps/music/Clair%20Obscur%20Expedition%2033%20%E2%80%93%20Nos%20Vies%20En%20Lumi%C3%A8re%20%28Bonus%20Edition%29/11%20-%20Lorien%20Testard%20-%20Alicia%20%28Violin%29.wav[0m
+[0mTagLib: FileRef::tag() - Called without a valid file.[0m
+[0mTagLib: Could not open file /home/deck/.local/share/Steam/steamapps/music/Clair%20Obscur%20Expedition%2033%20%E2%80%93%20Nos%20Vies%20En%20Lumi%C3%A8re%20%28Bonus%20Edition%29/12%20-%20Lorien%20Testard%20-%20Whispers%20of%20Tomorrow.wav[0m
+[0mTagLib: FileRef::tag() - Called without a valid file.[0m
+[0mTagLib: Could not open file /home/deck/.local/share/Steam/steamapps/music/Clair%20Obscur%20Expedition%2033%20%E2%80%93%20Nos%20Vies%20En%20Lumi%C3%A8re%20%28Bonus%20Edition%29/13%20-%20Lorien%20Testard%20-%20Nocturne%20pour%20Lumi%C3%A8re.wav[0m
+[0mTagLib: FileRef::tag() - Called without a valid file.[0m
+[0mTagLib: Could not open file /home/deck/.local/share/Steam/steamapps/music/Clair%20Obscur%20Expedition%2033%20%E2%80%93%20Nos%20Vies%20En%20Lumi%C3%A8re%20%28Bonus%20Edition%29/14%20-%20Lorien%20Testard%20-%20Shadow%20of%20the%20Monolith%20%28Cast%20Reveal%20Trailer%29.wav[0m
+[0mTagLib: FileRef::tag() - Called without a valid file.[0m
+[0mTagLib: Could not open file /home/deck/.local/share/Steam/steamapps/music/Clair%20Obscur%20Expedition%2033%20%E2%80%93%20Nos%20Vies%20En%20Lumi%C3%A8re%20%28Bonus%20Edition%29/15%20-%20Lorien%20Testard%20-%20For%20Those%20Who%20Come%20After%20%28Release%20Date%20Reveal%20Trailer%29.wav[0m
+[0mTagLib: FileRef::tag() - Called without a valid file.[0m
+[0mTagLib: Could not open file /home/deck/.local/share/Steam/steamapps/music/Clair%20Obscur%20Expedition%2033%20%E2%80%93%20Nos%20Vies%20En%20Lumi%C3%A8re%20%28Bonus%20Edition%29/16%20-%20Lorien%20Testard%20-%20We%20are%20Expedition%2033%20%28Reveal%20Trailer%29.wav[0m
+[0mTagLib: FileRef::tag() - Called without a valid file.[0m
+[0mTagLib: Could not open file /home/deck/.local/share/Steam/steamapps/music/Clair%20Obscur%20Expedition%2033%20%E2%80%93%20Nos%20Vies%20En%20Lumi%C3%A8re%20%28Bonus%20Edition%29/17%20-%20Lorien%20Testard%20-%20World%20Map%20-%20Our%20Painted%20Death.wav[0m
+[0mTagLib: FileRef::tag() - Called without a valid file.[0m
+[0mTagLib: Could not open file /home/deck/.local/share/Steam/steamapps/music/Clair%20Obscur%20Expedition%2033%20%E2%80%93%20Nos%20Vies%20En%20Lumi%C3%A8re%20%28Bonus%20Edition%29/18%20-%20Lorien%20Testard%20-%20For%20Those%20Who%20Come%20After%20%28Instrumental%29.wav[0m
+[0mTagLib: FileRef::tag() - Called without a valid file.[0m
+[0mTagLib: Could not open file /home/deck/.local/share/Steam/steamapps/music/Clair%20Obscur%20Expedition%2033%20%E2%80%93%20Nos%20Vies%20En%20Lumi%C3%A8re%20%28Bonus%20Edition%29/19%20-%20Lorien%20Testard%20-%20For%20Those%20Who%20Come%20After.wav[0m
+[0mTagLib: FileRef::tag() - Called without a valid file.[0m
+[0mTagLib: Could not open file /home/deck/.local/share/Steam/steamapps/music/Clair%20Obscur%20Expedition%2033%20%E2%80%93%20Nos%20Vies%20En%20Lumi%C3%A8re%20%28Bonus%20Edition%29/20%20-%20Lorien%20Testard%20-%20Until%20Next%20Life%20%28Solo%20Voice%29.wav[0m
+[0mTagLib: FileRef::tag() - Called without a valid file.[0m
+[0mTagLib: Could not open file /home/deck/.local/share/Steam/steamapps/music/Clair%20Obscur%20Expedition%2033%20%E2%80%93%20Nos%20Vies%20En%20Lumi%C3%A8re%20%28Bonus%20Edition%29/21%20-%20Lorien%20Testard%20-%20Simon%2C%20The%20Divergent%20Star%20.wav[0m
+[0mTagLib: FileRef::tag() - Called without a valid file.[0m
+[0mTagLib: Could not open file /home/deck/.local/share/Steam/steamapps/music/Clair%20Obscur%20Expedition%2033%20%E2%80%93%20Nos%20Vies%20En%20Lumi%C3%A8re%20%28Bonus%20Edition%29/22%20-%20Lorien%20Testard%20-%20Alicia%20%28Reveal%20Trailer%29.wav[0m
+[0mTagLib: FileRef::tag() - Called without a valid file.[0m
+[0m[2026-03-27 20:15:09] Shutdown[0m
+steam-client-ready
+=== title=Stellar Blade™ appid=3489700 mode=bfi process-snapshot t=15s ===
+deck       45414   44897  0 20:15 pts/1    00:00:00 /home/deck/.local/share/Steam/ubuntu12_32/reaper SteamLaunch AppId=3489700 Install=1 -- /home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/_v2-entry-point --verb=run -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton run /home/deck/.local/share/Steam/legacycompat/iscriptevaluator.exe legacycompat\evaluatorscript_3489700.vdf
+=== title=Stellar Blade™ appid=3489700 mode=bfi process-snapshot t=30s ===
+=== title=Stellar Blade™ appid=3489700 mode=bfi wrapper-log-tail t=30s ===
+[1774656934] wrapper-exec mode=bfi cwd=/home/deck/.local/share/Steam/steamapps/common/StellarBlade argc=13 disableLayer=0
+argv=/home/deck/.local/share/Steam/ubuntu12_32/steam-launch-wrapper -- /home/deck/.local/share/Steam/ubuntu12_32/reaper SteamLaunch AppId=3489700 -- /home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/_v2-entry-point --verb=waitforexitandrun -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/StellarBlade/SB.exe -DistributionPlatform=Steam
+VK_INSTANCE_LAYERS=VK_LAYER_OMFG_rust ENABLE_OMFG_RUST=1 OMFG_LAYER_MODE=bfi OMFG_LAYER_LOG_FILE=/home/deck/post-proc-fg-research/logs/stellar-blade-bfi-20260327-201448-36706.log
+=== title=Stellar Blade™ appid=3489700 mode=bfi process-snapshot t=45s ===
+=== title=Stellar Blade™ appid=3489700 mode=bfi wrapper-log-tail t=45s ===
+[1774656934] wrapper-exec mode=bfi cwd=/home/deck/.local/share/Steam/steamapps/common/StellarBlade argc=13 disableLayer=0
+argv=/home/deck/.local/share/Steam/ubuntu12_32/steam-launch-wrapper -- /home/deck/.local/share/Steam/ubuntu12_32/reaper SteamLaunch AppId=3489700 -- /home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/_v2-entry-point --verb=waitforexitandrun -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/StellarBlade/SB.exe -DistributionPlatform=Steam
+VK_INSTANCE_LAYERS=VK_LAYER_OMFG_rust ENABLE_OMFG_RUST=1 OMFG_LAYER_MODE=bfi OMFG_LAYER_LOG_FILE=/home/deck/post-proc-fg-research/logs/stellar-blade-bfi-20260327-201448-36706.log
+=== title=Stellar Blade™ appid=3489700 mode=bfi process-snapshot t=60s ===
+=== title=Stellar Blade™ appid=3489700 mode=bfi wrapper-log-tail t=60s ===
+[1774656934] wrapper-exec mode=bfi cwd=/home/deck/.local/share/Steam/steamapps/common/StellarBlade argc=13 disableLayer=0
+argv=/home/deck/.local/share/Steam/ubuntu12_32/steam-launch-wrapper -- /home/deck/.local/share/Steam/ubuntu12_32/reaper SteamLaunch AppId=3489700 -- /home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/_v2-entry-point --verb=waitforexitandrun -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/StellarBlade/SB.exe -DistributionPlatform=Steam
+VK_INSTANCE_LAYERS=VK_LAYER_OMFG_rust ENABLE_OMFG_RUST=1 OMFG_LAYER_MODE=bfi OMFG_LAYER_LOG_FILE=/home/deck/post-proc-fg-research/logs/stellar-blade-bfi-20260327-201448-36706.log
+=== title=Stellar Blade™ appid=3489700 mode=bfi process-snapshot t=75s ===
+=== title=Stellar Blade™ appid=3489700 mode=bfi wrapper-log-tail t=75s ===
+[1774656934] wrapper-exec mode=bfi cwd=/home/deck/.local/share/Steam/steamapps/common/StellarBlade argc=13 disableLayer=0
+argv=/home/deck/.local/share/Steam/ubuntu12_32/steam-launch-wrapper -- /home/deck/.local/share/Steam/ubuntu12_32/reaper SteamLaunch AppId=3489700 -- /home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/_v2-entry-point --verb=waitforexitandrun -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/StellarBlade/SB.exe -DistributionPlatform=Steam
+VK_INSTANCE_LAYERS=VK_LAYER_OMFG_rust ENABLE_OMFG_RUST=1 OMFG_LAYER_MODE=bfi OMFG_LAYER_LOG_FILE=/home/deck/post-proc-fg-research/logs/stellar-blade-bfi-20260327-201448-36706.log
+=== title=Stellar Blade™ appid=3489700 mode=bfi process-snapshot t=90s ===
+=== title=Stellar Blade™ appid=3489700 mode=bfi wrapper-log-tail t=90s ===
+[1774656934] wrapper-exec mode=bfi cwd=/home/deck/.local/share/Steam/steamapps/common/StellarBlade argc=13 disableLayer=0
+argv=/home/deck/.local/share/Steam/ubuntu12_32/steam-launch-wrapper -- /home/deck/.local/share/Steam/ubuntu12_32/reaper SteamLaunch AppId=3489700 -- /home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/_v2-entry-point --verb=waitforexitandrun -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/StellarBlade/SB.exe -DistributionPlatform=Steam
+VK_INSTANCE_LAYERS=VK_LAYER_OMFG_rust ENABLE_OMFG_RUST=1 OMFG_LAYER_MODE=bfi OMFG_LAYER_LOG_FILE=/home/deck/post-proc-fg-research/logs/stellar-blade-bfi-20260327-201448-36706.log
+=== title=Stellar Blade™ appid=3489700 mode=bfi process-snapshot t=105s ===
+=== title=Stellar Blade™ appid=3489700 mode=bfi wrapper-log-tail t=105s ===
+[1774656934] wrapper-exec mode=bfi cwd=/home/deck/.local/share/Steam/steamapps/common/StellarBlade argc=13 disableLayer=0
+argv=/home/deck/.local/share/Steam/ubuntu12_32/steam-launch-wrapper -- /home/deck/.local/share/Steam/ubuntu12_32/reaper SteamLaunch AppId=3489700 -- /home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/_v2-entry-point --verb=waitforexitandrun -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/StellarBlade/SB.exe -DistributionPlatform=Steam
+VK_INSTANCE_LAYERS=VK_LAYER_OMFG_rust ENABLE_OMFG_RUST=1 OMFG_LAYER_MODE=bfi OMFG_LAYER_LOG_FILE=/home/deck/post-proc-fg-research/logs/stellar-blade-bfi-20260327-201448-36706.log
+=== title=Stellar Blade™ appid=3489700 mode=bfi process-snapshot t=120s ===
+=== title=Stellar Blade™ appid=3489700 mode=bfi wrapper-log-tail t=120s ===
+[1774656934] wrapper-exec mode=bfi cwd=/home/deck/.local/share/Steam/steamapps/common/StellarBlade argc=13 disableLayer=0
+argv=/home/deck/.local/share/Steam/ubuntu12_32/steam-launch-wrapper -- /home/deck/.local/share/Steam/ubuntu12_32/reaper SteamLaunch AppId=3489700 -- /home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/_v2-entry-point --verb=waitforexitandrun -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/StellarBlade/SB.exe -DistributionPlatform=Steam
+VK_INSTANCE_LAYERS=VK_LAYER_OMFG_rust ENABLE_OMFG_RUST=1 OMFG_LAYER_MODE=bfi OMFG_LAYER_LOG_FILE=/home/deck/post-proc-fg-research/logs/stellar-blade-bfi-20260327-201448-36706.log
+=== title=Stellar Blade™ appid=3489700 mode=bfi process ===
+=== title=Stellar Blade™ appid=3489700 mode=bfi omfg log ===
+[omfg][info][1774656939337] vkNegotiateLoaderLayerInterfaceVersion ok; mode=bfi-test
+[omfg][info][1774656939340] vkCreateInstance ok; mode=bfi-test; apiVersion=1.1.0
+[omfg][info][1774656941762] vkNegotiateLoaderLayerInterfaceVersion ok; mode=bfi-test
+[omfg][info][1774656941765] vkCreateInstance ok; mode=bfi-test; app=SB-Win64-Shipping.exe; engine=DXVK; apiVersion=1.3.0
+[omfg][info][1774656942956] vkNegotiateLoaderLayerInterfaceVersion ok; mode=bfi-test
+[omfg][info][1774656942958] vkCreateInstance ok; mode=bfi-test; app=SB-Win64-Shipping.exe; engine=vkd3d; apiVersion=1.3.0
+[omfg][info][1774656943238] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH); presentId=1; presentWait=1; displayTiming=0
+[omfg][info][1774656943265] vkNegotiateLoaderLayerInterfaceVersion ok; mode=bfi-test
+[omfg][info][1774656943267] vkCreateInstance ok; mode=bfi-test; apiVersion=1.1.0
+[omfg][info][1774656943356] vkDestroyDevice
+[omfg][info][1774656943437] vkDestroyInstance
+[omfg][info][1774656943466] vkNegotiateLoaderLayerInterfaceVersion ok; mode=bfi-test
+[omfg][info][1774656943468] vkCreateInstance ok; mode=bfi-test; app=SB-Win64-Shipping.exe; engine=vkd3d; apiVersion=1.3.0
+[omfg][info][1774656943733] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH); presentId=1; presentWait=1; displayTiming=0
+=== title=Stellar Blade™ appid=3489700 mode=bfi wrapper log ===
+[1774656934] wrapper-exec mode=bfi cwd=/home/deck/.local/share/Steam/steamapps/common/StellarBlade argc=13 disableLayer=0
+argv=/home/deck/.local/share/Steam/ubuntu12_32/steam-launch-wrapper -- /home/deck/.local/share/Steam/ubuntu12_32/reaper SteamLaunch AppId=3489700 -- /home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/_v2-entry-point --verb=waitforexitandrun -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/StellarBlade/SB.exe -DistributionPlatform=Steam
+VK_INSTANCE_LAYERS=VK_LAYER_OMFG_rust ENABLE_OMFG_RUST=1 OMFG_LAYER_MODE=bfi OMFG_LAYER_LOG_FILE=/home/deck/post-proc-fg-research/logs/stellar-blade-bfi-20260327-201448-36706.log
+=== title=Stellar Blade™ appid=3489700 mode=bfi steam log ===
+steam.sh[44702]: Running Steam on steamos rolling 64-bit
+steam.sh[44702]: STEAM_RUNTIME is enabled automatically
+setup.sh[44800]: Steam runtime environment up-to-date!
+=== title=Stellar Blade™ appid=3489700 mode=bfi steam client log ===
+steam.sh[44681]: Running Steam on steamos rolling 64-bit
+steam.sh[44681]: STEAM_RUNTIME is enabled automatically
+setup.sh[44763]: Steam runtime environment up-to-date!
+=== title=Stellar Blade™ appid=3489700 mode=bfi post-clean process check ===
+Connection to 192.168.0.241 closed.

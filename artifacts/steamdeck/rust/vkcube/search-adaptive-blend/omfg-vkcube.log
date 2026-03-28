@@ -1,25 +1,25 @@
-[omfg][info][1774568258902] vkNegotiateLoaderLayerInterfaceVersion ok; mode=search-adaptive-blend-test
-[omfg][info][1774568258904] vkCreateInstance ok; mode=search-adaptive-blend-test; app=vkcube; engine=vkcube; apiVersion=1.0.0
-[omfg][info][1774568258928] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH)
-[omfg][info][1774568258933] created history image for swapchain
-[omfg][info][1774568258933] vkCreateSwapchainKHR ok; extent=500x500; format=44; presentMode=FIFO; minImages=3->5; usage=COLOR_ATTACHMENT (0x10) -> TRANSFER_SRC|SAMPLED|COLOR_ATTACHMENT (0x15); images=5; mode=search-adaptive-blend-test
-[omfg][info][1774568258935] vkQueuePresentKHR frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
-[omfg][info][1774568258936] initialized injection resources for queue family 0
-[omfg][info][1774568258936] initialized blend resources for swapchain
-[omfg][info][1774568258936] search-adaptive-blend primed previous frame history
-[omfg][info][1774568258936] vkQueuePresentKHR frame=2; queueFamily=0; imageIndex=1; waitSemaphores=1
-[omfg][info][1774568258937] first search adaptive blended generated-frame present succeeded
-[omfg][info][1774568258937] search adaptive blended frame present=1; generatedImageIndex=2; currentImageIndex=1
-[omfg][info][1774568258937] vkQueuePresentKHR frame=3; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774568258937] search adaptive blended frame present=2; generatedImageIndex=4; currentImageIndex=3
-[omfg][info][1774568258942] vkQueuePresentKHR frame=4; queueFamily=0; imageIndex=0; waitSemaphores=1
-[omfg][info][1774568258954] search adaptive blended frame present=3; generatedImageIndex=2; currentImageIndex=0
-[omfg][info][1774568258964] vkQueuePresentKHR frame=5; queueFamily=0; imageIndex=1; waitSemaphores=1
-[omfg][info][1774568258977] search adaptive blended frame present=4; generatedImageIndex=4; currentImageIndex=1
-[omfg][info][1774568258999] search adaptive blended frame present=5; generatedImageIndex=2; currentImageIndex=3
-[omfg][info][1774568260186] vkQueuePresentKHR frame=60; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774568260221] search adaptive blended frame present=60; generatedImageIndex=4; currentImageIndex=0
-[omfg][info][1774568261520] vkQueuePresentKHR frame=120; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774568261533] vkDestroySwapchainKHR
-[omfg][info][1774568261543] vkDestroyDevice
-[omfg][info][1774568261632] vkDestroyInstance
+[omfg][info][1774660495835] vkNegotiateLoaderLayerInterfaceVersion ok; mode=search-adaptive-blend-test
+[omfg][info][1774660495837] vkCreateInstance ok; mode=search-adaptive-blend-test; app=vkcube; engine=vkcube; apiVersion=1.0.0
+[omfg][info][1774660495858] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH); presentId=0; presentWait=0; displayTiming=0
+[omfg][info][1774660495862] created history image for swapchain
+[omfg][info][1774660495862] vkCreateSwapchainKHR ok; extent=500x500; format=44; presentMode=FIFO; minImages=3->5; usage=COLOR_ATTACHMENT (0x10) -> TRANSFER_SRC|SAMPLED|COLOR_ATTACHMENT (0x15); images=5; mode=search-adaptive-blend-test
+[omfg][info][1774660495864] vkQueuePresentKHR frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774660495865] initialized injection resources for queue family 0
+[omfg][info][1774660495865] initialized blend resources for swapchain
+[omfg][info][1774660495865] search-adaptive-blend primed previous frame history
+[omfg][info][1774660495865] vkQueuePresentKHR frame=2; queueFamily=0; imageIndex=1; waitSemaphores=1
+[omfg][info][1774660495865] first search adaptive blended generated-frame present succeeded
+[omfg][info][1774660495865] search adaptive blended frame present=1; generatedImageIndex=2; currentImageIndex=1; originalFirst=0
+[omfg][info][1774660495866] vkQueuePresentKHR frame=3; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774660495866] search adaptive blended frame present=2; generatedImageIndex=4; currentImageIndex=3; originalFirst=0
+[omfg][info][1774660495887] vkQueuePresentKHR frame=4; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774660495901] search adaptive blended frame present=3; generatedImageIndex=2; currentImageIndex=0; originalFirst=0
+[omfg][info][1774660495909] vkQueuePresentKHR frame=5; queueFamily=0; imageIndex=1; waitSemaphores=1
+[omfg][info][1774660495922] search adaptive blended frame present=4; generatedImageIndex=4; currentImageIndex=1; originalFirst=0
+[omfg][info][1774660495934] search adaptive blended frame present=5; generatedImageIndex=2; currentImageIndex=3; originalFirst=0
+[omfg][info][1774660497121] vkQueuePresentKHR frame=60; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774660497156] search adaptive blended frame present=60; generatedImageIndex=4; currentImageIndex=0; originalFirst=0
+[omfg][info][1774660498465] vkQueuePresentKHR frame=120; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774660498478] vkDestroySwapchainKHR
+[omfg][info][1774660498488] vkDestroyDevice
+[omfg][info][1774660498548] vkDestroyInstance

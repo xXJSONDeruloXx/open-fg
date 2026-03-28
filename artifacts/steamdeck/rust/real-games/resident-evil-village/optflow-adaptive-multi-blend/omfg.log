@@ -1,0 +1,82 @@
+[omfg][info][1774648485941] vkNegotiateLoaderLayerInterfaceVersion ok; mode=optflow-adaptive-multi-blend-test
+[omfg][info][1774648485944] vkCreateInstance ok; mode=optflow-adaptive-multi-blend-test; apiVersion=1.1.0
+[omfg][info][1774648486083] vkNegotiateLoaderLayerInterfaceVersion ok; mode=optflow-adaptive-multi-blend-test
+[omfg][info][1774648486084] vkCreateInstance ok; mode=optflow-adaptive-multi-blend-test; apiVersion=1.1.0
+[omfg][info][1774648487374] vkNegotiateLoaderLayerInterfaceVersion ok; mode=optflow-adaptive-multi-blend-test
+[omfg][info][1774648487376] vkCreateInstance ok; mode=optflow-adaptive-multi-blend-test; apiVersion=1.1.0
+[omfg][info][1774648488385] vkNegotiateLoaderLayerInterfaceVersion ok; mode=optflow-adaptive-multi-blend-test
+[omfg][info][1774648488387] vkCreateInstance ok; mode=optflow-adaptive-multi-blend-test; app=re8.exe; engine=DXVK; apiVersion=1.3.0
+[omfg][info][1774648488529] vkNegotiateLoaderLayerInterfaceVersion ok; mode=optflow-adaptive-multi-blend-test
+[omfg][info][1774648488530] vkCreateInstance ok; mode=optflow-adaptive-multi-blend-test; app=re8.exe; engine=vkd3d; apiVersion=1.3.0
+[omfg][info][1774648488831] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH); presentId=1; presentWait=1; displayTiming=0
+[omfg][info][1774648488849] vkDestroyDevice
+[omfg][info][1774648488850] vkDestroyInstance
+[omfg][info][1774648488865] vkNegotiateLoaderLayerInterfaceVersion ok; mode=optflow-adaptive-multi-blend-test
+[omfg][info][1774648488866] vkCreateInstance ok; mode=optflow-adaptive-multi-blend-test; app=re8.exe; engine=vkd3d; apiVersion=1.3.0
+[omfg][info][1774648489148] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH); presentId=1; presentWait=1; displayTiming=0
+[omfg][info][1774648489162] vkNegotiateLoaderLayerInterfaceVersion ok; mode=optflow-adaptive-multi-blend-test
+[omfg][info][1774648489164] vkCreateInstance ok; mode=optflow-adaptive-multi-blend-test; apiVersion=1.1.0
+[omfg][info][1774648489302] vkDestroyInstance
+[omfg][info][1774648490489] created history image for swapchain
+[omfg][info][1774648490489] vkCreateSwapchainKHR ok; extent=1286x787; format=44; presentMode=FIFO; minImages=3->6; usage=TRANSFER_SRC|STORAGE|COLOR_ATTACHMENT (0x19) -> TRANSFER_SRC|SAMPLED|STORAGE|COLOR_ATTACHMENT (0x1d); images=6; mode=optflow-adaptive-multi-blend-test
+[omfg][info][1774648490493] vkQueuePresentKHR frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774648490493] initialized injection resources for queue family 0
+[omfg][info][1774648490493] initialized blend resources for swapchain
+[omfg][info][1774648490493] optflow-adaptive-multi target controller; present=1; targetFps=0.0; baseFps=0.0; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=0.000; smoothedIntervalMs=0.000
+[omfg][info][1774648490496] optflow-adaptive-multi-blend primed previous frame history
+[omfg][info][1774648490607] vkDestroySwapchainKHR
+[omfg][info][1774648490612] created history image for swapchain
+[omfg][info][1774648490612] vkCreateSwapchainKHR ok; extent=1280x787; format=44; presentMode=FIFO; minImages=3->6; usage=TRANSFER_SRC|STORAGE|COLOR_ATTACHMENT (0x19) -> TRANSFER_SRC|SAMPLED|STORAGE|COLOR_ATTACHMENT (0x1d); images=6; mode=optflow-adaptive-multi-blend-test
+[omfg][info][1774648490614] vkQueuePresentKHR frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774648490614] initialized injection resources for queue family 0
+[omfg][info][1774648490614] initialized blend resources for swapchain
+[omfg][info][1774648490614] optflow-adaptive-multi target controller; present=1; targetFps=0.0; baseFps=0.0; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=0.000; smoothedIntervalMs=0.000
+[omfg][info][1774648490614] optflow-adaptive-multi-blend primed previous frame history
+[omfg][info][1774648490618] vkQueuePresentKHR frame=2; queueFamily=0; imageIndex=1; waitSemaphores=1
+[omfg][info][1774648490618] optflow-adaptive-multi target controller; present=2; targetFps=0.0; baseFps=208.6; desiredGeneratedFrames=1.000; emittedGeneratedFrames=1; carry=0.000; intervalMs=4.793; smoothedIntervalMs=4.793
+[omfg][info][1774648490663] first optical-flow adaptive multi blended generated-frame present succeeded
+[omfg][info][1774648490663] optical-flow adaptive multi blended frame present=1; generatedImageIndices=[2]; currentImageIndex=1; originalFirst=0
+[omfg][info][1774648490666] vkQueuePresentKHR frame=3; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648490666] optflow-adaptive-multi target controller; present=3; targetFps=0.0; baseFps=21.1; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=47.357; smoothedIntervalMs=15.434
+[omfg][info][1774648490753] optical-flow adaptive multi blended frame present=3; generatedImageIndices=[4, 5]; currentImageIndex=3; originalFirst=0
+[omfg][info][1774648490754] vkQueuePresentKHR frame=4; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774648490754] optflow-adaptive-multi target controller; present=4; targetFps=0.0; baseFps=11.3; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=88.650; smoothedIntervalMs=33.738
+[omfg][info][1774648490841] optical-flow adaptive multi blended frame present=5; generatedImageIndices=[2, 1]; currentImageIndex=0; originalFirst=0
+[omfg][info][1774648490842] vkQueuePresentKHR frame=5; queueFamily=0; imageIndex=4; waitSemaphores=1
+[omfg][info][1774648490842] optflow-adaptive-multi target controller; present=5; targetFps=0.0; baseFps=11.4; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=87.710; smoothedIntervalMs=47.231
+[omfg][info][1774648495699] vkQueuePresentKHR frame=60; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774648495699] optflow-adaptive-multi target controller; present=60; targetFps=0.0; baseFps=15.1; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=66.182; smoothedIntervalMs=65.489
+[omfg][info][1774648499646] vkQueuePresentKHR frame=120; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774648499646] optflow-adaptive-multi target controller; present=120; targetFps=0.0; baseFps=14.9; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=67.290; smoothedIntervalMs=68.069
+[omfg][info][1774648501994] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH); presentId=1; presentWait=1; displayTiming=0
+[omfg][info][1774648503821] vkQueuePresentKHR frame=180; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774648503821] optflow-adaptive-multi target controller; present=180; targetFps=0.0; baseFps=15.0; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=66.716; smoothedIntervalMs=66.970
+[omfg][info][1774648507836] vkQueuePresentKHR frame=240; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774648507837] optflow-adaptive-multi target controller; present=240; targetFps=0.0; baseFps=14.9; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=66.989; smoothedIntervalMs=66.865
+[omfg][info][1774648511832] vkQueuePresentKHR frame=300; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774648511832] optflow-adaptive-multi target controller; present=300; targetFps=0.0; baseFps=15.0; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=66.608; smoothedIntervalMs=67.035
+[omfg][info][1774648515812] vkQueuePresentKHR frame=360; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774648515813] optflow-adaptive-multi target controller; present=360; targetFps=0.0; baseFps=15.2; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=65.915; smoothedIntervalMs=66.123
+[omfg][info][1774648519792] vkQueuePresentKHR frame=420; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774648519793] optflow-adaptive-multi target controller; present=420; targetFps=0.0; baseFps=15.0; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=66.595; smoothedIntervalMs=66.360
+[omfg][info][1774648523766] vkQueuePresentKHR frame=480; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774648523767] optflow-adaptive-multi target controller; present=480; targetFps=0.0; baseFps=14.8; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=67.700; smoothedIntervalMs=66.498
+[omfg][info][1774648527745] vkQueuePresentKHR frame=540; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774648527746] optflow-adaptive-multi target controller; present=540; targetFps=0.0; baseFps=14.6; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=68.611; smoothedIntervalMs=66.558
+[omfg][info][1774648531764] vkQueuePresentKHR frame=600; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774648531765] optflow-adaptive-multi target controller; present=600; targetFps=0.0; baseFps=14.6; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=68.677; smoothedIntervalMs=68.783
+[omfg][info][1774648535612] vkDestroyDevice
+[omfg][info][1774648535958] vkQueuePresentKHR frame=660; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774648535958] optflow-adaptive-multi target controller; present=660; targetFps=0.0; baseFps=15.2; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=66.000; smoothedIntervalMs=68.462
+[omfg][info][1774648539959] vkQueuePresentKHR frame=720; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774648539960] optflow-adaptive-multi target controller; present=720; targetFps=0.0; baseFps=15.0; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=66.874; smoothedIntervalMs=66.789
+[omfg][info][1774648543973] vkQueuePresentKHR frame=780; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774648543973] optflow-adaptive-multi target controller; present=780; targetFps=0.0; baseFps=15.1; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=66.316; smoothedIntervalMs=67.196
+[omfg][info][1774648548097] vkQueuePresentKHR frame=840; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774648548097] optflow-adaptive-multi target controller; present=840; targetFps=0.0; baseFps=15.0; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=66.517; smoothedIntervalMs=66.664
+[omfg][info][1774648552146] vkQueuePresentKHR frame=900; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774648552146] optflow-adaptive-multi target controller; present=900; targetFps=0.0; baseFps=14.8; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=67.548; smoothedIntervalMs=67.845
+[omfg][info][1774648556625] vkQueuePresentKHR frame=960; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774648556626] optflow-adaptive-multi target controller; present=960; targetFps=0.0; baseFps=12.7; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=78.519; smoothedIntervalMs=79.117
+[omfg][info][1774648561438] vkQueuePresentKHR frame=1020; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774648561438] optflow-adaptive-multi target controller; present=1020; targetFps=0.0; baseFps=12.5; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=79.811; smoothedIntervalMs=80.593

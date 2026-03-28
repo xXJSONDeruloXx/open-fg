@@ -1,0 +1,5 @@
+run_id	appid	slug	title	mode	status	device_ok	swapchain_ok	first_generated	sustained_progress	log_path
+20260327-173758	1196590	resident-evil-village	Resident Evil Village	reproject-blend	sustained	1	1	1	1	/Users/dhimebauch/Developer/personal/post-proc-fg-research/artifacts/steamdeck/rust/real-games/resident-evil-village/reproject-blend/omfg.log
+20260327-173758	1196590	resident-evil-village	Resident Evil Village	reproject-adaptive-blend	sustained	1	1	1	1	/Users/dhimebauch/Developer/personal/post-proc-fg-research/artifacts/steamdeck/rust/real-games/resident-evil-village/reproject-adaptive-blend/omfg.log
+20260327-173758	1196590	resident-evil-village	Resident Evil Village	optflow-blend	sustained	1	1	1	1	/Users/dhimebauch/Developer/personal/post-proc-fg-research/artifacts/steamdeck/rust/real-games/resident-evil-village/optflow-blend/omfg.log
+20260327-173758	1196590	resident-evil-village	Resident Evil Village	optflow-adaptive-blend	sustained	1	1	1	1	/Users/dhimebauch/Developer/personal/post-proc-fg-research/artifacts/steamdeck/rust/real-games/resident-evil-village/optflow-adaptive-blend/omfg.log

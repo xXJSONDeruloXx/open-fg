@@ -1,0 +1,226 @@
+spawn ssh -tt -o StrictHostKeyChecking=accept-new -o PreferredAuthentications=password -o PubkeyAuthentication=no deck@192.168.0.241 bash -lc 'set -euo pipefail
+chmod +x /home/deck/omfg.sh
+mkdir -p /home/deck/post-proc-fg-research/logs
+rm -f /home/deck/post-proc-fg-research/logs/resident-evil-village-optflow-adaptive-multi-blend-20260327-175425-52098.log /tmp/omfg-resident-evil-village-optflow-adaptive-multi-blend-20260327-175425-52098.steam.log
+set -a
+source /run/user/1000/gamescope-environment
+set +a
+export DISPLAY=:0
+export XDG_RUNTIME_DIR=/run/user/1000
+xauth=$(ls -1 /run/user/1000/xauth_* 2>/dev/null | head -1 || true)
+if [ -n "$xauth" ]; then export XAUTHORITY="$xauth"; fi
+kill_all_steam_games() {
+  # Broad pre-kill: terminates any running Steam game processes regardless of AppID.
+  # This prevents cross-game contamination when multiple probes run back-to-back.
+  python3 - <<'"'"'PY'"'"'
+import os, re, subprocess, signal
+self_pid = os.getpid()
+ancestors = {self_pid}
+try:
+    pid = self_pid
+    while True:
+        with open(f'"'"'/proc/{pid}/status'"'"', '"'"'r'"'"', encoding='"'"'utf-8'"'"', errors='"'"'ignore'"'"') as f:
+            ppid = None
+            for line in f:
+                if line.startswith('"'"'PPid:'"'"'):
+                    ppid = int(line.split()[1])
+                    break
+        if not ppid or ppid in ancestors:
+            break
+        ancestors.add(ppid)
+        pid = ppid
+except Exception:
+    pass
+appid_re = re.compile(r'"'"'AppId=\d+'"'"')
+proton_markers = ('"'"'SteamLaunch'"'"', '"'"'waitforexitandrun'"'"', '"'"'reaper steam'"'"', '"'"'wineserver'"'"', '"'"'wine64'"'"', '"'"'wine '"'"')
+out = subprocess.check_output(['"'"'ps'"'"', '"'"'-eo'"'"', '"'"'pid=,args='"'"'], text=True, errors='"'"'ignore'"'"')
+for line in out.splitlines():
+    s = line.strip()
+    if not s:
+        continue
+    parts = s.split(None, 1)
+    if len(parts) != 2:
+        continue
+    pid = int(parts[0])
+    args = parts[1]
+    if pid in ancestors:
+        continue
+    if appid_re.search(args) or any(m in args for m in proton_markers):
+        try:
+            os.kill(pid, signal.SIGKILL)
+            print(f'"'"'killed pid={pid} args={args}'"'"')
+        except ProcessLookupError:
+            pass
+        except PermissionError:
+            pass
+PY
+}
+cleanup_matches() {
+  APPID='"'"'1196590'"'"' EXE_REGEX='"'"'re8.exe'"'"' python3 - <<'"'"'PY'"'"'
+import os, subprocess, signal
+appid = os.environ['"'"'APPID'"'"']
+exe_regex = os.environ.get('"'"'EXE_REGEX'"'"', '"'"''"'"')
+patterns = [f'"'"'AppId={appid}'"'"']
+if exe_regex:
+    patterns.append(exe_regex)
+self_pid = os.getpid()
+ancestors = {self_pid}
+try:
+    pid = self_pid
+    while True:
+        with open(f'"'"'/proc/{pid}/status'"'"', '"'"'r'"'"', encoding='"'"'utf-8'"'"', errors='"'"'ignore'"'"') as f:
+            ppid = None
+            for line in f:
+                if line.startswith('"'"'PPid:'"'"'):
+                    ppid = int(line.split()[1])
+                    break
+        if not ppid or ppid in ancestors:
+            break
+        ancestors.add(ppid)
+        pid = ppid
+except Exception:
+    pass
+out = subprocess.check_output(['"'"'ps'"'"', '"'"'-eo'"'"', '"'"'pid=,args='"'"'], text=True, errors='"'"'ignore'"'"')
+for line in out.splitlines():
+    s = line.strip()
+    if not s:
+        continue
+    parts = s.split(None, 1)
+    if len(parts) != 2:
+        continue
+    pid = int(parts[0])
+    args = parts[1]
+    if pid in ancestors:
+        continue
+    if any(p and p in args for p in patterns):
+        try:
+            os.kill(pid, signal.SIGKILL)
+            print(f'"'"'killed pid={pid} args={args}'"'"')
+        except ProcessLookupError:
+            pass
+        except PermissionError:
+            pass
+PY
+}
+kill_all_steam_games || true
+sleep 3
+cleanup_matches || true
+sleep 2
+echo "=== title=Resident Evil Village appid=1196590 mode=optflow-adaptive-multi-blend run=20260327-175425-52098 paths ==="
+echo "remote_log=/home/deck/post-proc-fg-research/logs/resident-evil-village-optflow-adaptive-multi-blend-20260327-175425-52098.log"
+echo "remote_steam_log=/tmp/omfg-resident-evil-village-optflow-adaptive-multi-blend-20260327-175425-52098.steam.log"
+nohup steam steam://rungameid/1196590 >/tmp/omfg-resident-evil-village-optflow-adaptive-multi-blend-20260327-175425-52098.steam.log 2>&1 &
+sleep 90
+echo "=== title=Resident Evil Village appid=1196590 mode=optflow-adaptive-multi-blend process ==="
+ps -ef | grep -E "AppId=1196590|re8.exe" | grep -v grep || true
+echo "=== title=Resident Evil Village appid=1196590 mode=optflow-adaptive-multi-blend omfg log ==="
+if [ -f /home/deck/post-proc-fg-research/logs/resident-evil-village-optflow-adaptive-multi-blend-20260327-175425-52098.log ]; then tail -200 /home/deck/post-proc-fg-research/logs/resident-evil-village-optflow-adaptive-multi-blend-20260327-175425-52098.log; else echo missing-log; fi
+echo "=== title=Resident Evil Village appid=1196590 mode=optflow-adaptive-multi-blend steam log ==="
+if [ -f /tmp/omfg-resident-evil-village-optflow-adaptive-multi-blend-20260327-175425-52098.steam.log ]; then tail -80 /tmp/omfg-resident-evil-village-optflow-adaptive-multi-blend-20260327-175425-52098.steam.log; else echo missing-steam-log; fi
+cleanup_matches || true
+echo "=== title=Resident Evil Village appid=1196590 mode=optflow-adaptive-multi-blend post-clean process check ==="
+ps -ef | grep -E "AppId=1196590|re8.exe" | grep -v grep || true'
+deck@192.168.0.241's password: 
+=== title=Resident Evil Village appid=1196590 mode=optflow-adaptive-multi-blend run=20260327-175425-52098 paths ===
+remote_log=/home/deck/post-proc-fg-research/logs/resident-evil-village-optflow-adaptive-multi-blend-20260327-175425-52098.log
+remote_steam_log=/tmp/omfg-resident-evil-village-optflow-adaptive-multi-blend-20260327-175425-52098.steam.log
+=== title=Resident Evil Village appid=1196590 mode=optflow-adaptive-multi-blend process ===
+deck       22251    3902  0 17:54 ?        00:00:00 /home/deck/.local/share/Steam/ubuntu12_32/reaper SteamLaunch AppId=1196590 -- /home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/_v2-entry-point --verb=waitforexitandrun -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
+deck       22254   22251  1 17:54 ?        00:00:00 /home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/pressure-vessel/libexec/steam-runtime-tools-0/srt-bwrap --args 26 /usr/lib/pressure-vessel/from-host/libexec/steam-runtime-tools-0/pv-adverb --prefix=/usr/lib/pressure-vessel/from-host --generate-locales --fd 12 --regenerate-ld.so-cache /var/pressure-vessel/ldso --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu --set-ld-library-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu/aliases:/usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu/aliases --overrides-path /usr/lib/pressure-vessel/overrides --exit-with-parent --subreaper --assign-fd=1=3 --assign-fd=2=4 --ld-preload=/home/deck/.local/share/Steam/ubuntu12_32/gameoverlayrenderer.so --ld-preload=/home/deck/.local/share/Steam/ubuntu12_64/gameoverlayrenderer.so -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
+deck       22327   22254  0 17:54 ?        00:00:00 /usr/lib/pressure-vessel/from-host/libexec/steam-runtime-tools-0/pv-adverb --prefix=/usr/lib/pressure-vessel/from-host --generate-locales --fd 12 --regenerate-ld.so-cache /var/pressure-vessel/ldso --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu --set-ld-library-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu/aliases:/usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu/aliases --overrides-path /usr/lib/pressure-vessel/overrides --exit-with-parent --subreaper --assign-fd=1=3 --assign-fd=2=4 --ld-preload=/home/deck/.local/share/Steam/ubuntu12_32/gameoverlayrenderer.so --ld-preload=/home/deck/.local/share/Steam/ubuntu12_64/gameoverlayrenderer.so -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
+deck       22351   22327  0 17:54 ?        00:00:00 python3 /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
+deck       22353   22351  0 17:54 ?        00:00:00 c:\windows\system32\steam.exe /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
+deck       22431   22327 74 17:54 ?        00:00:57 Z:\home\deck\.local\share\Steam\steamapps\common\Resident Evil Village BIOHAZARD VILLAGE\re8.exe
+=== title=Resident Evil Village appid=1196590 mode=optflow-adaptive-multi-blend omfg log ===
+[omfg][info][1774648485941] vkNegotiateLoaderLayerInterfaceVersion ok; mode=optflow-adaptive-multi-blend-test
+[omfg][info][1774648485944] vkCreateInstance ok; mode=optflow-adaptive-multi-blend-test; apiVersion=1.1.0
+[omfg][info][1774648486083] vkNegotiateLoaderLayerInterfaceVersion ok; mode=optflow-adaptive-multi-blend-test
+[omfg][info][1774648486084] vkCreateInstance ok; mode=optflow-adaptive-multi-blend-test; apiVersion=1.1.0
+[omfg][info][1774648487374] vkNegotiateLoaderLayerInterfaceVersion ok; mode=optflow-adaptive-multi-blend-test
+[omfg][info][1774648487376] vkCreateInstance ok; mode=optflow-adaptive-multi-blend-test; apiVersion=1.1.0
+[omfg][info][1774648488385] vkNegotiateLoaderLayerInterfaceVersion ok; mode=optflow-adaptive-multi-blend-test
+[omfg][info][1774648488387] vkCreateInstance ok; mode=optflow-adaptive-multi-blend-test; app=re8.exe; engine=DXVK; apiVersion=1.3.0
+[omfg][info][1774648488529] vkNegotiateLoaderLayerInterfaceVersion ok; mode=optflow-adaptive-multi-blend-test
+[omfg][info][1774648488530] vkCreateInstance ok; mode=optflow-adaptive-multi-blend-test; app=re8.exe; engine=vkd3d; apiVersion=1.3.0
+[omfg][info][1774648488831] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH); presentId=1; presentWait=1; displayTiming=0
+[omfg][info][1774648488849] vkDestroyDevice
+[omfg][info][1774648488850] vkDestroyInstance
+[omfg][info][1774648488865] vkNegotiateLoaderLayerInterfaceVersion ok; mode=optflow-adaptive-multi-blend-test
+[omfg][info][1774648488866] vkCreateInstance ok; mode=optflow-adaptive-multi-blend-test; app=re8.exe; engine=vkd3d; apiVersion=1.3.0
+[omfg][info][1774648489148] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH); presentId=1; presentWait=1; displayTiming=0
+[omfg][info][1774648489162] vkNegotiateLoaderLayerInterfaceVersion ok; mode=optflow-adaptive-multi-blend-test
+[omfg][info][1774648489164] vkCreateInstance ok; mode=optflow-adaptive-multi-blend-test; apiVersion=1.1.0
+[omfg][info][1774648489302] vkDestroyInstance
+[omfg][info][1774648490489] created history image for swapchain
+[omfg][info][1774648490489] vkCreateSwapchainKHR ok; extent=1286x787; format=44; presentMode=FIFO; minImages=3->6; usage=TRANSFER_SRC|STORAGE|COLOR_ATTACHMENT (0x19) -> TRANSFER_SRC|SAMPLED|STORAGE|COLOR_ATTACHMENT (0x1d); images=6; mode=optflow-adaptive-multi-blend-test
+[omfg][info][1774648490493] vkQueuePresentKHR frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774648490493] initialized injection resources for queue family 0
+[omfg][info][1774648490493] initialized blend resources for swapchain
+[omfg][info][1774648490493] optflow-adaptive-multi target controller; present=1; targetFps=0.0; baseFps=0.0; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=0.000; smoothedIntervalMs=0.000
+[omfg][info][1774648490496] optflow-adaptive-multi-blend primed previous frame history
+[omfg][info][1774648490607] vkDestroySwapchainKHR
+[omfg][info][1774648490612] created history image for swapchain
+[omfg][info][1774648490612] vkCreateSwapchainKHR ok; extent=1280x787; format=44; presentMode=FIFO; minImages=3->6; usage=TRANSFER_SRC|STORAGE|COLOR_ATTACHMENT (0x19) -> TRANSFER_SRC|SAMPLED|STORAGE|COLOR_ATTACHMENT (0x1d); images=6; mode=optflow-adaptive-multi-blend-test
+[omfg][info][1774648490614] vkQueuePresentKHR frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774648490614] initialized injection resources for queue family 0
+[omfg][info][1774648490614] initialized blend resources for swapchain
+[omfg][info][1774648490614] optflow-adaptive-multi target controller; present=1; targetFps=0.0; baseFps=0.0; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=0.000; smoothedIntervalMs=0.000
+[omfg][info][1774648490614] optflow-adaptive-multi-blend primed previous frame history
+[omfg][info][1774648490618] vkQueuePresentKHR frame=2; queueFamily=0; imageIndex=1; waitSemaphores=1
+[omfg][info][1774648490618] optflow-adaptive-multi target controller; present=2; targetFps=0.0; baseFps=208.6; desiredGeneratedFrames=1.000; emittedGeneratedFrames=1; carry=0.000; intervalMs=4.793; smoothedIntervalMs=4.793
+[omfg][info][1774648490663] first optical-flow adaptive multi blended generated-frame present succeeded
+[omfg][info][1774648490663] optical-flow adaptive multi blended frame present=1; generatedImageIndices=[2]; currentImageIndex=1; originalFirst=0
+[omfg][info][1774648490666] vkQueuePresentKHR frame=3; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648490666] optflow-adaptive-multi target controller; present=3; targetFps=0.0; baseFps=21.1; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=47.357; smoothedIntervalMs=15.434
+[omfg][info][1774648490753] optical-flow adaptive multi blended frame present=3; generatedImageIndices=[4, 5]; currentImageIndex=3; originalFirst=0
+[omfg][info][1774648490754] vkQueuePresentKHR frame=4; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774648490754] optflow-adaptive-multi target controller; present=4; targetFps=0.0; baseFps=11.3; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=88.650; smoothedIntervalMs=33.738
+[omfg][info][1774648490841] optical-flow adaptive multi blended frame present=5; generatedImageIndices=[2, 1]; currentImageIndex=0; originalFirst=0
+[omfg][info][1774648490842] vkQueuePresentKHR frame=5; queueFamily=0; imageIndex=4; waitSemaphores=1
+[omfg][info][1774648490842] optflow-adaptive-multi target controller; present=5; targetFps=0.0; baseFps=11.4; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=87.710; smoothedIntervalMs=47.231
+[omfg][info][1774648495699] vkQueuePresentKHR frame=60; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774648495699] optflow-adaptive-multi target controller; present=60; targetFps=0.0; baseFps=15.1; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=66.182; smoothedIntervalMs=65.489
+[omfg][info][1774648499646] vkQueuePresentKHR frame=120; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774648499646] optflow-adaptive-multi target controller; present=120; targetFps=0.0; baseFps=14.9; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=67.290; smoothedIntervalMs=68.069
+[omfg][info][1774648501994] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH); presentId=1; presentWait=1; displayTiming=0
+[omfg][info][1774648503821] vkQueuePresentKHR frame=180; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774648503821] optflow-adaptive-multi target controller; present=180; targetFps=0.0; baseFps=15.0; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=66.716; smoothedIntervalMs=66.970
+[omfg][info][1774648507836] vkQueuePresentKHR frame=240; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774648507837] optflow-adaptive-multi target controller; present=240; targetFps=0.0; baseFps=14.9; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=66.989; smoothedIntervalMs=66.865
+[omfg][info][1774648511832] vkQueuePresentKHR frame=300; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774648511832] optflow-adaptive-multi target controller; present=300; targetFps=0.0; baseFps=15.0; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=66.608; smoothedIntervalMs=67.035
+[omfg][info][1774648515812] vkQueuePresentKHR frame=360; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774648515813] optflow-adaptive-multi target controller; present=360; targetFps=0.0; baseFps=15.2; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=65.915; smoothedIntervalMs=66.123
+[omfg][info][1774648519792] vkQueuePresentKHR frame=420; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774648519793] optflow-adaptive-multi target controller; present=420; targetFps=0.0; baseFps=15.0; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=66.595; smoothedIntervalMs=66.360
+[omfg][info][1774648523766] vkQueuePresentKHR frame=480; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774648523767] optflow-adaptive-multi target controller; present=480; targetFps=0.0; baseFps=14.8; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=67.700; smoothedIntervalMs=66.498
+[omfg][info][1774648527745] vkQueuePresentKHR frame=540; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774648527746] optflow-adaptive-multi target controller; present=540; targetFps=0.0; baseFps=14.6; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=68.611; smoothedIntervalMs=66.558
+[omfg][info][1774648531764] vkQueuePresentKHR frame=600; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774648531765] optflow-adaptive-multi target controller; present=600; targetFps=0.0; baseFps=14.6; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=68.677; smoothedIntervalMs=68.783
+[omfg][info][1774648535612] vkDestroyDevice
+[omfg][info][1774648535958] vkQueuePresentKHR frame=660; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774648535958] optflow-adaptive-multi target controller; present=660; targetFps=0.0; baseFps=15.2; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=66.000; smoothedIntervalMs=68.462
+[omfg][info][1774648539959] vkQueuePresentKHR frame=720; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774648539960] optflow-adaptive-multi target controller; present=720; targetFps=0.0; baseFps=15.0; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=66.874; smoothedIntervalMs=66.789
+[omfg][info][1774648543973] vkQueuePresentKHR frame=780; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774648543973] optflow-adaptive-multi target controller; present=780; targetFps=0.0; baseFps=15.1; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=66.316; smoothedIntervalMs=67.196
+[omfg][info][1774648548097] vkQueuePresentKHR frame=840; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774648548097] optflow-adaptive-multi target controller; present=840; targetFps=0.0; baseFps=15.0; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=66.517; smoothedIntervalMs=66.664
+[omfg][info][1774648552146] vkQueuePresentKHR frame=900; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774648552146] optflow-adaptive-multi target controller; present=900; targetFps=0.0; baseFps=14.8; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=67.548; smoothedIntervalMs=67.845
+[omfg][info][1774648556625] vkQueuePresentKHR frame=960; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774648556626] optflow-adaptive-multi target controller; present=960; targetFps=0.0; baseFps=12.7; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=78.519; smoothedIntervalMs=79.117
+[omfg][info][1774648561438] vkQueuePresentKHR frame=1020; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774648561438] optflow-adaptive-multi target controller; present=1020; targetFps=0.0; baseFps=12.5; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=79.811; smoothedIntervalMs=80.593
+=== title=Resident Evil Village appid=1196590 mode=optflow-adaptive-multi-blend steam log ===
+killed pid=22251 args=/home/deck/.local/share/Steam/ubuntu12_32/reaper SteamLaunch AppId=1196590 -- /home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/_v2-entry-point --verb=waitforexitandrun -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
+killed pid=22254 args=/home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/pressure-vessel/libexec/steam-runtime-tools-0/srt-bwrap --args 26 /usr/lib/pressure-vessel/from-host/libexec/steam-runtime-tools-0/pv-adverb --prefix=/usr/lib/pressure-vessel/from-host --generate-locales --fd 12 --regenerate-ld.so-cache /var/pressure-vessel/ldso --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu --set-ld-library-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu/aliases:/usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu/aliases --overrides-path /usr/lib/pressure-vessel/overrides --exit-with-parent --subreaper --assign-fd=1=3 --assign-fd=2=4 --ld-preload=/home/deck/.local/share/Steam/ubuntu12_32/gameoverlayrenderer.so --ld-preload=/home/deck/.local/share/Steam/ubuntu12_64/gameoverlayrenderer.so -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
+killed pid=22327 args=/usr/lib/pressure-vessel/from-host/libexec/steam-runtime-tools-0/pv-adverb --prefix=/usr/lib/pressure-vessel/from-host --generate-locales --fd 12 --regenerate-ld.so-cache /var/pressure-vessel/ldso --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu --set-ld-library-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu/aliases:/usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu/aliases --overrides-path /usr/lib/pressure-vessel/overrides --exit-with-parent --subreaper --assign-fd=1=3 --assign-fd=2=4 --ld-preload=/home/deck/.local/share/Steam/ubuntu12_32/gameoverlayrenderer.so --ld-preload=/home/deck/.local/share/Steam/ubuntu12_64/gameoverlayrenderer.so -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
+killed pid=22351 args=python3 /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
+killed pid=22353 args=c:\windows\system32\steam.exe /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
+killed pid=22431 args=Z:\home\deck\.local\share\Steam\steamapps\common\Resident Evil Village BIOHAZARD VILLAGE\re8.exe
+=== title=Resident Evil Village appid=1196590 mode=optflow-adaptive-multi-blend post-clean process check ===
+deck       22431    1316 74 17:54 ?        00:00:57 [re8.exe] <defunct>
+Connection to 192.168.0.241 closed.

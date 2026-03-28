@@ -22,6 +22,7 @@ use std::ffi::{c_char, c_void, CStr};
 use std::fs::OpenOptions;
 use std::io::{Cursor, Write};
 use std::mem;
+use std::path::{Path, PathBuf};
 use std::ptr;
 use std::sync::{Mutex, OnceLock};
 use std::thread;
@@ -35,6 +36,7 @@ const BENCHMARK_QUERY_CAPACITY: u32 = 4096;
 const MAX_MULTI_ACQUIRE_SEMAPHORES: usize = 4;
 const MAX_TRACKED_PRESENT_READY_SEMAPHORES: usize = 16;
 const DEFAULT_MULTI_SWAPCHAIN_GENERATED_FRAME_CAP: u32 = 32;
+const HOT_CONFIG_RELOAD_INTERVAL_MS: u64 = 250;
 
 fn layer_name() -> &'static CStr {
     unsafe { CStr::from_bytes_with_nul_unchecked(LAYER_NAME_BYTES) }
@@ -1041,8 +1043,214 @@ unsafe fn describe_pnext_chain(mut p_next: *const c_void) -> String {
     chain.join("->")
 }
 
-fn env_string(name: &str) -> Option<String> {
-    std::env::var(name).ok()
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct HotConfigFileSignature {
+    len: u64,
+    modified: Option<SystemTime>,
+}
+
+#[derive(Debug, Default)]
+struct HotConfigState {
+    path: Option<PathBuf>,
+    signature: Option<HotConfigFileSignature>,
+    values: HashMap<String, String>,
+    last_check: Option<Instant>,
+    last_error: Option<String>,
+}
+
+static HOT_CONFIG: OnceLock<Mutex<HotConfigState>> = OnceLock::new();
+
+fn hot_config() -> &'static Mutex<HotConfigState> {
+    HOT_CONFIG.get_or_init(|| Mutex::new(HotConfigState::default()))
+}
+
+fn parse_hot_config_string_literal(value: &str) -> Option<String> {
+    if !(value.starts_with('"') && value.ends_with('"')) {
+        return None;
+    }
+    let inner = &value[1..value.len() - 1];
+    let mut result = String::with_capacity(inner.len());
+    let mut chars = inner.chars();
+    while let Some(ch) = chars.next() {
+        if ch == '\\' {
+            match chars.next() {
+                Some('n') => result.push('\n'),
+                Some('r') => result.push('\r'),
+                Some('t') => result.push('\t'),
+                Some('"') => result.push('"'),
+                Some('\\') => result.push('\\'),
+                Some(other) => {
+                    result.push(other);
+                }
+                None => return None,
+            }
+        } else {
+            result.push(ch);
+        }
+    }
+    Some(result)
+}
+
+fn strip_hot_config_comment(line: &str) -> &str {
+    let mut in_string = false;
+    let mut escaped = false;
+    for (idx, ch) in line.char_indices() {
+        if in_string {
+            if escaped {
+                escaped = false;
+                continue;
+            }
+            if ch == '\\' {
+                escaped = true;
+                continue;
+            }
+            if ch == '"' {
+                in_string = false;
+            }
+            continue;
+        }
+        if ch == '"' {
+            in_string = true;
+            continue;
+        }
+        if ch == '#' {
+            return &line[..idx];
+        }
+    }
+    line
+}
+
+fn parse_hot_config_value(raw_value: &str) -> String {
+    let trimmed = raw_value.trim();
+    if let Some(parsed) = parse_hot_config_string_literal(trimmed) {
+        return parsed;
+    }
+    trimmed.to_string()
+}
+
+fn parse_hot_config_key(raw_key: &str) -> Option<String> {
+    let trimmed = raw_key.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+    if trimmed.starts_with('"') && trimmed.ends_with('"') && trimmed.len() >= 2 {
+        return parse_hot_config_string_literal(trimmed);
+    }
+    Some(trimmed.to_string())
+}
+
+fn parse_hot_config(contents: &str) -> Result<HashMap<String, String>, String> {
+    let mut values = HashMap::new();
+    let mut section = String::new();
+
+    for (line_no, raw_line) in contents.lines().enumerate() {
+        let line = strip_hot_config_comment(raw_line).trim();
+        if line.is_empty() {
+            continue;
+        }
+        if line.starts_with('[') && line.ends_with(']') {
+            section = line[1..line.len() - 1].trim().to_string();
+            continue;
+        }
+        let Some((raw_key, raw_value)) = line.split_once('=') else {
+            return Err(format!("invalid hot config line {}: {}", line_no + 1, raw_line));
+        };
+        let Some(key) = parse_hot_config_key(raw_key) else {
+            return Err(format!("invalid hot config key on line {}", line_no + 1));
+        };
+        if !(section.is_empty() || section == "env" || section == "omfg") {
+            continue;
+        }
+        if !key.starts_with("OMFG_") && key != "ENABLE_OMFG_RUST" && key != "DISABLE_OMFG_RUST" {
+            continue;
+        }
+        values.insert(key, parse_hot_config_value(raw_value));
+    }
+
+    Ok(values)
+}
+
+fn hot_config_path() -> Option<PathBuf> {
+    std::env::var("OMFG_HOT_CONFIG_PATH")
+        .ok()
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty())
+        .map(PathBuf::from)
+}
+
+fn hot_config_signature(path: &Path) -> Option<HotConfigFileSignature> {
+    let metadata = std::fs::metadata(path).ok()?;
+    Some(HotConfigFileSignature {
+        len: metadata.len(),
+        modified: metadata.modified().ok(),
+    })
+}
+
+fn reload_hot_config_if_needed(state: &mut HotConfigState, path: &Path) {
+    let now = Instant::now();
+    if let Some(last_check) = state.last_check {
+        if state.path.as_deref() == Some(path)
+            && now.duration_since(last_check) < Duration::from_millis(HOT_CONFIG_RELOAD_INTERVAL_MS)
+        {
+            return;
+        }
+    }
+    state.last_check = Some(now);
+
+    let signature = hot_config_signature(path);
+    if state.path.as_deref() == Some(path) && signature == state.signature {
+        return;
+    }
+
+    match std::fs::read_to_string(path) {
+        Ok(contents) => match parse_hot_config(&contents) {
+            Ok(values) => {
+                let value_count = values.len();
+                state.path = Some(path.to_path_buf());
+                state.signature = signature;
+                state.values = values;
+                state.last_error = None;
+                log_info(format!(
+                    "hot config reloaded: path={}; values={}",
+                    path.display(), value_count
+                ));
+            }
+            Err(err) => {
+                let err_with_path = format!("{} ({})", err, path.display());
+                if state.last_error.as_deref() != Some(err_with_path.as_str()) {
+                    log_warn(format!("hot config parse failed: {}", err_with_path));
+                }
+                state.last_error = Some(err_with_path);
+            }
+        },
+        Err(err) => {
+            state.path = Some(path.to_path_buf());
+            state.signature = None;
+            state.values.clear();
+            let err_with_path = format!("{} ({})", err, path.display());
+            if state.last_error.as_deref() != Some(err_with_path.as_str()) {
+                log_warn(format!("hot config read failed: {}", err_with_path));
+            }
+            state.last_error = Some(err_with_path);
+        }
+    }
+}
+
+fn hot_config_value(name: &str) -> Option<String> {
+    if name == "OMFG_HOT_CONFIG_PATH" {
+        return None;
+    }
+    let path = hot_config_path()?;
+    let mut state = hot_config().lock().expect("hot config mutex poisoned");
+    if state.path.as_deref() != Some(path.as_path()) {
+        state.last_check = None;
+    }
+    reload_hot_config_if_needed(&mut state, &path);
+    state.values.get(name).cloned()
+}
+
+pub(crate) fn env_string(name: &str) -> Option<String> {
+    hot_config_value(name).or_else(|| std::env::var(name).ok())
 }
 
 fn env_u32(name: &str, default_value: u32) -> u32 {
@@ -7121,6 +7329,25 @@ mod tests {
         LOCK.get_or_init(|| Mutex::new(()))
     }
 
+    fn reset_hot_config_state() {
+        let mut state = hot_config().lock().expect("hot config mutex poisoned");
+        state.path = None;
+        state.signature = None;
+        state.values.clear();
+        state.last_check = None;
+        state.last_error = None;
+    }
+
+    fn write_temp_hot_config(contents: &str) -> PathBuf {
+        let path = std::env::temp_dir().join(format!(
+            "omfg-hot-config-{}-{}.toml",
+            std::process::id(),
+            now_epoch_us_u64()
+        ));
+        std::fs::write(&path, contents).expect("write hot config");
+        path
+    }
+
     #[test]
     fn dispatch_key_reads_first_pointer_word() {
         let handle_mem = Box::new(0xfeed_beefusize);
@@ -7178,6 +7405,73 @@ mod tests {
         let gdpa_ptr = negotiate.pfn_get_device_proc_addr as usize;
         assert_ne!(gipa_ptr, 0);
         assert_ne!(gdpa_ptr, 0);
+    }
+
+    #[test]
+    fn hot_config_overrides_env_values() {
+        let _guard = env_test_lock().lock().expect("env test mutex poisoned");
+        reset_hot_config_state();
+        let path = write_temp_hot_config(
+            r#"
+OMFG_LAYER_MODE = "blend"
+[env]
+OMFG_REPROJECT_CONFIDENCE_SCALE = 7.25
+"#,
+        );
+
+        std::env::set_var("OMFG_HOT_CONFIG_PATH", &path);
+        std::env::set_var("OMFG_LAYER_MODE", "copy");
+        std::env::set_var("OMFG_REPROJECT_CONFIDENCE_SCALE", "1.5");
+
+        assert_eq!(Mode::from_env(), Mode::BlendTest);
+        assert_eq!(reproject_confidence_scale(), 7.25);
+
+        std::env::remove_var("OMFG_HOT_CONFIG_PATH");
+        std::env::remove_var("OMFG_LAYER_MODE");
+        std::env::remove_var("OMFG_REPROJECT_CONFIDENCE_SCALE");
+        let _ = std::fs::remove_file(path);
+        reset_hot_config_state();
+    }
+
+    #[test]
+    fn hot_config_reload_picks_up_file_changes() {
+        let _guard = env_test_lock().lock().expect("env test mutex poisoned");
+        reset_hot_config_state();
+        let path = write_temp_hot_config("OMFG_DEBUG_VIEW = \"motion\"\n");
+        std::env::set_var("OMFG_HOT_CONFIG_PATH", &path);
+
+        assert_eq!(debug_view(), DebugView::Motion);
+
+        std::thread::sleep(Duration::from_millis(HOT_CONFIG_RELOAD_INTERVAL_MS + 25));
+        std::fs::write(&path, "OMFG_DEBUG_VIEW = \"confidence\"\n")
+            .expect("rewrite hot config");
+        std::thread::sleep(Duration::from_millis(HOT_CONFIG_RELOAD_INTERVAL_MS + 25));
+
+        assert_eq!(debug_view(), DebugView::Confidence);
+
+        std::env::remove_var("OMFG_HOT_CONFIG_PATH");
+        let _ = std::fs::remove_file(path);
+        reset_hot_config_state();
+    }
+
+    #[test]
+    fn invalid_hot_config_keeps_last_good_values() {
+        let _guard = env_test_lock().lock().expect("env test mutex poisoned");
+        reset_hot_config_state();
+        let path = write_temp_hot_config("OMFG_DEBUG_VIEW = \"motion\"\n");
+        std::env::set_var("OMFG_HOT_CONFIG_PATH", &path);
+
+        assert_eq!(debug_view(), DebugView::Motion);
+
+        std::thread::sleep(Duration::from_millis(HOT_CONFIG_RELOAD_INTERVAL_MS + 25));
+        std::fs::write(&path, "not valid toml\n").expect("write invalid hot config");
+        std::thread::sleep(Duration::from_millis(HOT_CONFIG_RELOAD_INTERVAL_MS + 25));
+
+        assert_eq!(debug_view(), DebugView::Motion);
+
+        std::env::remove_var("OMFG_HOT_CONFIG_PATH");
+        let _ = std::fs::remove_file(path);
+        reset_hot_config_state();
     }
 
     #[test]

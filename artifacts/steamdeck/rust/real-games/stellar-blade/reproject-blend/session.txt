@@ -1,0 +1,218 @@
+spawn ssh -tt -o StrictHostKeyChecking=accept-new -o PreferredAuthentications=password -o PubkeyAuthentication=no deck@192.168.0.241 bash -lc 'set -euo pipefail
+chmod +x /home/deck/omfg.sh
+mkdir -p /home/deck/post-proc-fg-research/logs
+rm -f /home/deck/post-proc-fg-research/logs/stellar-blade-reproject-blend-20260327-194622-97915.log /home/deck/post-proc-fg-research/logs/stellar-blade-reproject-blend-20260327-194622-97915.wrapper.log /home/deck/post-proc-fg-research/logs/stellar-blade-reproject-blend-20260327-194622-97915.windows.txt /home/deck/post-proc-fg-research/logs/stellar-blade-reproject-blend-20260327-194622-97915.png /tmp/omfg-stellar-blade-reproject-blend-20260327-194622-97915.steam.log /home/deck/steam-3489700.log
+set -a
+source /run/user/1000/gamescope-environment
+set +a
+export DISPLAY=:0
+export XDG_RUNTIME_DIR=/run/user/1000
+xauth=$(ls -1 /run/user/1000/xauth_* 2>/dev/null | head -1 || true)
+if [ -n "$xauth" ]; then export XAUTHORITY="$xauth"; fi
+if [ -n "" ]; then export PROTON_LOG=""; fi
+POLL_INTERVAL="15"
+kill_all_steam_games() {
+  # Broad pre-kill: terminates any running Steam game processes regardless of AppID.
+  # This prevents cross-game contamination when multiple probes run back-to-back.
+  python3 - <<'"'"'PY'"'"'
+import os, re, subprocess, signal
+self_pid = os.getpid()
+ancestors = {self_pid}
+try:
+    pid = self_pid
+    while True:
+        with open(f'"'"'/proc/{pid}/status'"'"', '"'"'r'"'"', encoding='"'"'utf-8'"'"', errors='"'"'ignore'"'"') as f:
+            ppid = None
+            for line in f:
+                if line.startswith('"'"'PPid:'"'"'):
+                    ppid = int(line.split()[1])
+                    break
+        if not ppid or ppid in ancestors:
+            break
+        ancestors.add(ppid)
+        pid = ppid
+except Exception:
+    pass
+appid_re = re.compile(r'"'"'AppId=\d+'"'"')
+proton_markers = ('"'"'SteamLaunch'"'"', '"'"'waitforexitandrun'"'"', '"'"'reaper steam'"'"', '"'"'wineserver'"'"', '"'"'wine64'"'"', '"'"'wine '"'"')
+out = subprocess.check_output(['"'"'ps'"'"', '"'"'-eo'"'"', '"'"'pid=,args='"'"'], text=True, errors='"'"'ignore'"'"')
+for line in out.splitlines():
+    s = line.strip()
+    if not s:
+        continue
+    parts = s.split(None, 1)
+    if len(parts) != 2:
+        continue
+    pid = int(parts[0])
+    args = parts[1]
+    if pid in ancestors:
+        continue
+    if appid_re.search(args) or any(m in args for m in proton_markers):
+        try:
+            os.kill(pid, signal.SIGKILL)
+            print(f'"'"'killed pid={pid} args={args}'"'"')
+        except ProcessLookupError:
+            pass
+        except PermissionError:
+            pass
+PY
+}
+cleanup_matches() {
+  APPID='"'"'3489700'"'"' EXE_REGEX='"'"'SB.exe|SB-Win64-Shipping.exe'"'"' python3 - <<'"'"'PY'"'"'
+import os, re, subprocess, signal
+appid = os.environ['"'"'APPID'"'"']
+exe_regex = os.environ.get('"'"'EXE_REGEX'"'"', '"'"''"'"')
+exe_re = re.compile(exe_regex) if exe_regex else None
+appid_marker = f'"'"'AppId={appid}'"'"'
+self_pid = os.getpid()
+ancestors = {self_pid}
+try:
+    pid = self_pid
+    while True:
+        with open(f'"'"'/proc/{pid}/status'"'"', '"'"'r'"'"', encoding='"'"'utf-8'"'"', errors='"'"'ignore'"'"') as f:
+            ppid = None
+            for line in f:
+                if line.startswith('"'"'PPid:'"'"'):
+                    ppid = int(line.split()[1])
+                    break
+        if not ppid or ppid in ancestors:
+            break
+        ancestors.add(ppid)
+        pid = ppid
+except Exception:
+    pass
+out = subprocess.check_output(['"'"'ps'"'"', '"'"'-eo'"'"', '"'"'pid=,args='"'"'], text=True, errors='"'"'ignore'"'"')
+for line in out.splitlines():
+    s = line.strip()
+    if not s:
+        continue
+    parts = s.split(None, 1)
+    if len(parts) != 2:
+        continue
+    pid = int(parts[0])
+    args = parts[1]
+    if pid in ancestors:
+        continue
+    if appid_marker in args or (exe_re and exe_re.search(args)):
+        try:
+            os.kill(pid, signal.SIGKILL)
+            print(f'"'"'killed pid={pid} args={args}'"'"')
+        except ProcessLookupError:
+            pass
+        except PermissionError:
+            pass
+PY
+}
+wait_for_no_matches() {
+  local remaining
+  for _ in 1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30; do
+    remaining=  502 97911 59929   0  7:46PM ??         0:00.00 /bin/bash -lc cd /Users/dhimebauch/Developer/personal/post-proc-fg-research && OMFG_DISABLE_LAYER=1 OMFG_GAME_WAIT_SEC=120 OMFG_PROCESS_POLL_INTERVAL_SEC=15 OMFG_CLEANUP_WAIT_SEC=30 OMFG_CAPTURE_DISPLAY=1 bash scripts/test-steamdeck-steam-game.sh 3489700 stellar-blade '"'"'Stellar Blade™'"'"' '"'"'SB.exe|SB-Win64-Shipping.exe'"'"' 2>&1
+  502 97915 97911   0  7:46PM ??         0:00.01 bash scripts/test-steamdeck-steam-game.sh 3489700 stellar-blade Stellar Blade™ SB.exe|SB-Win64-Shipping.exe
+  502 98002 97915   0  7:46PM ??         0:00.00 bash scripts/test-steamdeck-steam-game.sh 3489700 stellar-blade Stellar Blade™ SB.exe|SB-Win64-Shipping.exe
+  502 98003 98002   0  7:46PM ??         0:00.00 bash scripts/test-steamdeck-steam-game.sh 3489700 stellar-blade Stellar Blade™ SB.exe|SB-Win64-Shipping.exe
+  502 98006 98003   0  7:46PM ??         0:00.00 bash scripts/test-steamdeck-steam-game.sh 3489700 stellar-blade Stellar Blade™ SB.exe|SB-Win64-Shipping.exe
+    if [ -z "$remaining" ]; then
+      echo "cleanup-settled"
+      return 0
+    fi
+    sleep 1
+  done
+  echo "cleanup-timeout"
+  ps -ef | grep -E "AppId=3489700|SB.exe|SB-Win64-Shipping.exe" | grep -v grep || true
+  return 0
+}
+kill_all_steam_games || true
+sleep 3
+cleanup_matches || true
+wait_for_no_matches || true
+sleep 2
+echo "=== title=Stellar Blade™ appid=3489700 mode=reproject-blend run=20260327-194622-97915 paths ==="
+echo "remote_log=/home/deck/post-proc-fg-research/logs/stellar-blade-reproject-blend-20260327-194622-97915.log"
+echo "remote_wrapper_log=/home/deck/post-proc-fg-research/logs/stellar-blade-reproject-blend-20260327-194622-97915.wrapper.log"
+echo "remote_steam_log=/tmp/omfg-stellar-blade-reproject-blend-20260327-194622-97915.steam.log"
+if [ -n "" ]; then echo "remote_proton_log=/home/deck/steam-3489700.log"; fi
+nohup steam steam://rungameid/3489700 >/tmp/omfg-stellar-blade-reproject-blend-20260327-194622-97915.steam.log 2>&1 &
+elapsed=0
+while [ "$elapsed" -lt 120 ]; do
+  sleep "$POLL_INTERVAL"
+  elapsed=$((elapsed + POLL_INTERVAL))
+  echo "=== title=Stellar Blade™ appid=3489700 mode=reproject-blend process-snapshot t=${elapsed}s ==="
+  ps -ef | grep -E "AppId=3489700|SB.exe|SB-Win64-Shipping.exe" | grep -v grep || true
+  if [ -f /home/deck/post-proc-fg-research/logs/stellar-blade-reproject-blend-20260327-194622-97915.wrapper.log ]; then
+    echo "=== title=Stellar Blade™ appid=3489700 mode=reproject-blend wrapper-log-tail t=${elapsed}s ==="
+    tail -40 /home/deck/post-proc-fg-research/logs/stellar-blade-reproject-blend-20260327-194622-97915.wrapper.log
+  fi
+  if [ -n "" ] && [ "0" -gt 0 ] && [ $((elapsed % 0)) -eq 0 ]; then
+    echo "=== title=Stellar Blade™ appid=3489700 mode=reproject-blend auto-input t=${elapsed}s keys= window=Stellar Blade™ ==="
+    win_id=$(xdotool search --name "Stellar Blade™" 2>/dev/null | head -1 || true)
+    if [ -n "$win_id" ]; then
+      xdotool windowactivate --sync "$win_id" || true
+      # shellcheck disable=SC2086
+      xdotool key --window "$win_id"  || true
+      echo "sent-input win_id=$win_id"
+    else
+      echo missing-window-for-input
+    fi
+  fi
+done
+echo "=== title=Stellar Blade™ appid=3489700 mode=reproject-blend process ==="
+ps -ef | grep -E "AppId=3489700|SB.exe|SB-Win64-Shipping.exe" | grep -v grep || true
+echo "=== title=Stellar Blade™ appid=3489700 mode=reproject-blend omfg log ==="
+if [ -f /home/deck/post-proc-fg-research/logs/stellar-blade-reproject-blend-20260327-194622-97915.log ]; then tail -200 /home/deck/post-proc-fg-research/logs/stellar-blade-reproject-blend-20260327-194622-97915.log; else echo missing-log; fi
+echo "=== title=Stellar Blade™ appid=3489700 mode=reproject-blend wrapper log ==="
+if [ -f /home/deck/post-proc-fg-research/logs/stellar-blade-reproject-blend-20260327-194622-97915.wrapper.log ]; then tail -120 /home/deck/post-proc-fg-research/logs/stellar-blade-reproject-blend-20260327-194622-97915.wrapper.log; else echo missing-wrapper-log; fi
+echo "=== title=Stellar Blade™ appid=3489700 mode=reproject-blend steam log ==="
+if [ -f /tmp/omfg-stellar-blade-reproject-blend-20260327-194622-97915.steam.log ]; then tail -80 /tmp/omfg-stellar-blade-reproject-blend-20260327-194622-97915.steam.log; else echo missing-steam-log; fi
+if [ -n "" ]; then
+  echo "=== title=Stellar Blade™ appid=3489700 mode=reproject-blend proton log ==="
+  if [ -f /home/deck/steam-3489700.log ]; then tail -120 /home/deck/steam-3489700.log; else echo missing-proton-log; fi
+fi
+if [ -n "1" ]; then
+  echo "=== title=Stellar Blade™ appid=3489700 mode=reproject-blend window tree ==="
+  if xwininfo -root -tree > /home/deck/post-proc-fg-research/logs/stellar-blade-reproject-blend-20260327-194622-97915.windows.txt 2>/dev/null; then
+    sed -n '"'"'1,200p'"'"' /home/deck/post-proc-fg-research/logs/stellar-blade-reproject-blend-20260327-194622-97915.windows.txt
+  else
+    echo missing-window-tree
+  fi
+  echo "=== title=Stellar Blade™ appid=3489700 mode=reproject-blend screenshot capture ==="
+  if ffmpeg -loglevel error -y -f x11grab -draw_mouse 0 -i :0 -frames:v 1 /home/deck/post-proc-fg-research/logs/stellar-blade-reproject-blend-20260327-194622-97915.png; then
+    ls -lh /home/deck/post-proc-fg-research/logs/stellar-blade-reproject-blend-20260327-194622-97915.png
+  else
+    echo missing-screenshot
+  fi
+fi
+cleanup_matches || true
+echo "=== title=Stellar Blade™ appid=3489700 mode=reproject-blend post-clean process check ==="
+ps -ef | grep -E "AppId=3489700|SB.exe|SB-Win64-Shipping.exe" | grep -v grep || true'
+deck@192.168.0.241's password: 
+bash: -c: line 109: syntax error near unexpected token `2'
+Connection to 192.168.0.241 closed.

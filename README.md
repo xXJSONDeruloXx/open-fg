@@ -66,6 +66,9 @@ See `docs/testing-strategy.md` for full details.
 - `docs/testing-strategy.md`
   - realistic testing plan
   - what can and cannot be validated from macOS Apple Silicon
+- `docs/omfg-wrapper-and-env-vars.md`
+  - canonical Deck wrapper script location
+  - OMFG env var reference and accepted values
 - `docs/open-questions.md`
   - unresolved technical questions and Linux experiments to run next
 - `docs/targets/steamdeck.md`

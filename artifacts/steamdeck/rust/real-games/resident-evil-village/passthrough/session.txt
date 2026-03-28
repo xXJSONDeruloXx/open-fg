@@ -1,7 +1,7 @@
 spawn ssh -tt -o StrictHostKeyChecking=accept-new -o PreferredAuthentications=password -o PubkeyAuthentication=no deck@192.168.0.241 bash -lc 'set -euo pipefail
 chmod +x /home/deck/omfg.sh
 mkdir -p /home/deck/post-proc-fg-research/logs
-rm -f /home/deck/post-proc-fg-research/logs/resident-evil-village-passthrough.log /tmp/omfg-resident-evil-village-passthrough.steam.log
+rm -f /home/deck/post-proc-fg-research/logs/resident-evil-village-passthrough-20260327-172244-18885.log /tmp/omfg-resident-evil-village-passthrough-20260327-172244-18885.steam.log
 set -a
 source /run/user/1000/gamescope-environment
 set +a
@@ -9,6 +9,52 @@ export DISPLAY=:0
 export XDG_RUNTIME_DIR=/run/user/1000
 xauth=$(ls -1 /run/user/1000/xauth_* 2>/dev/null | head -1 || true)
 if [ -n "$xauth" ]; then export XAUTHORITY="$xauth"; fi
+kill_all_steam_games() {
+  # Broad pre-kill: terminates any running Steam game processes regardless of AppID.
+  # This prevents cross-game contamination when multiple probes run back-to-back.
+  python3 - <<'"'"'PY'"'"'
+import os, re, subprocess, signal
+self_pid = os.getpid()
+ancestors = {self_pid}
+try:
+    pid = self_pid
+    while True:
+        with open(f'"'"'/proc/{pid}/status'"'"', '"'"'r'"'"', encoding='"'"'utf-8'"'"', errors='"'"'ignore'"'"') as f:
+            ppid = None
+            for line in f:
+                if line.startswith('"'"'PPid:'"'"'):
+                    ppid = int(line.split()[1])
+                    break
+        if not ppid or ppid in ancestors:
+            break
+        ancestors.add(ppid)
+        pid = ppid
+except Exception:
+    pass
+appid_re = re.compile(r'"'"'AppId=\d+'"'"')
+proton_markers = ('"'"'SteamLaunch'"'"', '"'"'waitforexitandrun'"'"', '"'"'reaper steam'"'"', '"'"'wineserver'"'"', '"'"'wine64'"'"', '"'"'wine '"'"')
+out = subprocess.check_output(['"'"'ps'"'"', '"'"'-eo'"'"', '"'"'pid=,args='"'"'], text=True, errors='"'"'ignore'"'"')
+for line in out.splitlines():
+    s = line.strip()
+    if not s:
+        continue
+    parts = s.split(None, 1)
+    if len(parts) != 2:
+        continue
+    pid = int(parts[0])
+    args = parts[1]
+    if pid in ancestors:
+        continue
+    if appid_re.search(args) or any(m in args for m in proton_markers):
+        try:
+            os.kill(pid, signal.SIGKILL)
+            print(f'"'"'killed pid={pid} args={args}'"'"')
+        except ProcessLookupError:
+            pass
+        except PermissionError:
+            pass
+PY
+}
 cleanup_matches() {
   APPID='"'"'1196590'"'"' EXE_REGEX='"'"'re8.exe'"'"' python3 - <<'"'"'PY'"'"'
 import os, subprocess, signal
@@ -56,62 +102,115 @@ for line in out.splitlines():
             pass
 PY
 }
+kill_all_steam_games || true
+sleep 3
 cleanup_matches || true
 sleep 2
-nohup steam steam://rungameid/1196590 >/tmp/omfg-resident-evil-village-passthrough.steam.log 2>&1 &
-sleep 20
+echo "=== title=Resident Evil Village appid=1196590 mode=passthrough run=20260327-172244-18885 paths ==="
+echo "remote_log=/home/deck/post-proc-fg-research/logs/resident-evil-village-passthrough-20260327-172244-18885.log"
+echo "remote_steam_log=/tmp/omfg-resident-evil-village-passthrough-20260327-172244-18885.steam.log"
+nohup steam steam://rungameid/1196590 >/tmp/omfg-resident-evil-village-passthrough-20260327-172244-18885.steam.log 2>&1 &
+sleep 60
 echo "=== title=Resident Evil Village appid=1196590 mode=passthrough process ==="
 ps -ef | grep -E "AppId=1196590|re8.exe" | grep -v grep || true
 echo "=== title=Resident Evil Village appid=1196590 mode=passthrough omfg log ==="
-if [ -f /home/deck/post-proc-fg-research/logs/resident-evil-village-passthrough.log ]; then tail -200 /home/deck/post-proc-fg-research/logs/resident-evil-village-passthrough.log; else echo missing-log; fi
+if [ -f /home/deck/post-proc-fg-research/logs/resident-evil-village-passthrough-20260327-172244-18885.log ]; then tail -200 /home/deck/post-proc-fg-research/logs/resident-evil-village-passthrough-20260327-172244-18885.log; else echo missing-log; fi
 echo "=== title=Resident Evil Village appid=1196590 mode=passthrough steam log ==="
-if [ -f /tmp/omfg-resident-evil-village-passthrough.steam.log ]; then tail -80 /tmp/omfg-resident-evil-village-passthrough.steam.log; else echo missing-steam-log; fi
-cleanup_matches || true'
+if [ -f /tmp/omfg-resident-evil-village-passthrough-20260327-172244-18885.steam.log ]; then tail -80 /tmp/omfg-resident-evil-village-passthrough-20260327-172244-18885.steam.log; else echo missing-steam-log; fi
+cleanup_matches || true
+echo "=== title=Resident Evil Village appid=1196590 mode=passthrough post-clean process check ==="
+ps -ef | grep -E "AppId=1196590|re8.exe" | grep -v grep || true'
 deck@192.168.0.241's password: 
+=== title=Resident Evil Village appid=1196590 mode=passthrough run=20260327-172244-18885 paths ===
+remote_log=/home/deck/post-proc-fg-research/logs/resident-evil-village-passthrough-20260327-172244-18885.log
+remote_steam_log=/tmp/omfg-resident-evil-village-passthrough-20260327-172244-18885.steam.log
 === title=Resident Evil Village appid=1196590 mode=passthrough process ===
-deck       37043   35396  0 15:29 ?        00:00:00 /home/deck/.local/share/Steam/ubuntu12_32/reaper SteamLaunch AppId=1196590 -- /home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/_v2-entry-point --verb=waitforexitandrun -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
-deck       37046   37043  6 15:29 ?        00:00:00 /home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/pressure-vessel/libexec/steam-runtime-tools-0/srt-bwrap --args 26 /usr/lib/pressure-vessel/from-host/libexec/steam-runtime-tools-0/pv-adverb --prefix=/usr/lib/pressure-vessel/from-host --generate-locales --fd 12 --regenerate-ld.so-cache /var/pressure-vessel/ldso --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu --set-ld-library-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu/aliases:/usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu/aliases --overrides-path /usr/lib/pressure-vessel/overrides --exit-with-parent --subreaper --assign-fd=1=3 --assign-fd=2=4 --ld-preload=/home/deck/.local/share/Steam/ubuntu12_32/gameoverlayrenderer.so --ld-preload=/home/deck/.local/share/Steam/ubuntu12_64/gameoverlayrenderer.so -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
-deck       37128   37046  0 15:29 ?        00:00:00 /usr/lib/pressure-vessel/from-host/libexec/steam-runtime-tools-0/pv-adverb --prefix=/usr/lib/pressure-vessel/from-host --generate-locales --fd 12 --regenerate-ld.so-cache /var/pressure-vessel/ldso --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu --set-ld-library-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu/aliases:/usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu/aliases --overrides-path /usr/lib/pressure-vessel/overrides --exit-with-parent --subreaper --assign-fd=1=3 --assign-fd=2=4 --ld-preload=/home/deck/.local/share/Steam/ubuntu12_32/gameoverlayrenderer.so --ld-preload=/home/deck/.local/share/Steam/ubuntu12_64/gameoverlayrenderer.so -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
-deck       37152   37128  1 15:29 ?        00:00:00 python3 /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
-deck       37154   37152  3 15:29 ?        00:00:00 c:\windows\system32\steam.exe /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
-deck       37237   37128 99 15:29 ?        00:00:11 Z:\home\deck\.local\share\Steam\steamapps\common\Resident Evil Village BIOHAZARD VILLAGE\re8.exe
+deck        8771    3902  0 17:23 ?        00:00:00 /home/deck/.local/share/Steam/ubuntu12_32/reaper SteamLaunch AppId=1196590 -- /home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/_v2-entry-point --verb=waitforexitandrun -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
+deck        8774    8771  1 17:23 ?        00:00:00 /home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/pressure-vessel/libexec/steam-runtime-tools-0/srt-bwrap --args 26 /usr/lib/pressure-vessel/from-host/libexec/steam-runtime-tools-0/pv-adverb --prefix=/usr/lib/pressure-vessel/from-host --generate-locales --fd 10 --regenerate-ld.so-cache /var/pressure-vessel/ldso --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu --set-ld-library-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu/aliases:/usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu/aliases --overrides-path /usr/lib/pressure-vessel/overrides --exit-with-parent --subreaper --assign-fd=1=3 --assign-fd=2=4 --ld-preload=/home/deck/.local/share/Steam/ubuntu12_32/gameoverlayrenderer.so --ld-preload=/home/deck/.local/share/Steam/ubuntu12_64/gameoverlayrenderer.so -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
+deck        8847    8774  0 17:23 ?        00:00:00 /usr/lib/pressure-vessel/from-host/libexec/steam-runtime-tools-0/pv-adverb --prefix=/usr/lib/pressure-vessel/from-host --generate-locales --fd 10 --regenerate-ld.so-cache /var/pressure-vessel/ldso --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu --set-ld-library-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu/aliases:/usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu/aliases --overrides-path /usr/lib/pressure-vessel/overrides --exit-with-parent --subreaper --assign-fd=1=3 --assign-fd=2=4 --ld-preload=/home/deck/.local/share/Steam/ubuntu12_32/gameoverlayrenderer.so --ld-preload=/home/deck/.local/share/Steam/ubuntu12_64/gameoverlayrenderer.so -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
+deck        8871    8847  0 17:23 ?        00:00:00 python3 /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
+deck        8873    8871  0 17:23 ?        00:00:00 c:\windows\system32\steam.exe /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
+deck        8956    8847 99 17:23 ?        00:00:53 Z:\home\deck\.local\share\Steam\steamapps\common\Resident Evil Village BIOHAZARD VILLAGE\re8.exe
 === title=Resident Evil Village appid=1196590 mode=passthrough omfg log ===
-[omfg][info][1774639799861] vkNegotiateLoaderLayerInterfaceVersion ok; mode=passthrough
-[omfg][info][1774639799864] vkCreateInstance ok; mode=passthrough; apiVersion=1.1.0
-[omfg][info][1774639801034] vkNegotiateLoaderLayerInterfaceVersion ok; mode=passthrough
-[omfg][info][1774639801036] vkCreateInstance ok; mode=passthrough; apiVersion=1.1.0
-[omfg][info][1774639801871] vkNegotiateLoaderLayerInterfaceVersion ok; mode=passthrough
-[omfg][info][1774639801872] vkCreateInstance ok; mode=passthrough; app=re8.exe; engine=DXVK; apiVersion=1.3.0
-[omfg][info][1774639801988] vkNegotiateLoaderLayerInterfaceVersion ok; mode=passthrough
-[omfg][info][1774639801989] vkCreateInstance ok; mode=passthrough; app=re8.exe; engine=vkd3d; apiVersion=1.3.0
-[omfg][info][1774639802216] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH); presentId=1; presentWait=1; displayTiming=0
-[omfg][info][1774639802236] vkDestroyDevice
-[omfg][info][1774639802307] vkDestroyInstance
-[omfg][info][1774639802318] vkNegotiateLoaderLayerInterfaceVersion ok; mode=passthrough
-[omfg][info][1774639802320] vkCreateInstance ok; mode=passthrough; app=re8.exe; engine=vkd3d; apiVersion=1.3.0
-[omfg][info][1774639802535] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH); presentId=1; presentWait=1; displayTiming=0
-[omfg][info][1774639802548] vkNegotiateLoaderLayerInterfaceVersion ok; mode=passthrough
-[omfg][info][1774639802550] vkCreateInstance ok; mode=passthrough; apiVersion=1.1.0
-[omfg][info][1774639802653] vkDestroyInstance
-[omfg][info][1774639803967] vkCreateSwapchainKHR ok; extent=720x400; format=64; presentMode=MAILBOX; minImages=3->3; usage=TRANSFER_SRC|STORAGE|COLOR_ATTACHMENT (0x19) -> TRANSFER_SRC|STORAGE|COLOR_ATTACHMENT (0x19); images=3; mode=passthrough
-[omfg][info][1774639803975] vkQueuePresentKHR passthrough frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
-[omfg][info][1774639804124] vkDestroySwapchainKHR
-[omfg][info][1774639804129] vkCreateSwapchainKHR ok; extent=720x400; format=64; presentMode=MAILBOX; minImages=3->3; usage=TRANSFER_SRC|STORAGE|COLOR_ATTACHMENT (0x19) -> TRANSFER_SRC|STORAGE|COLOR_ATTACHMENT (0x19); images=3; mode=passthrough
-[omfg][info][1774639804130] vkQueuePresentKHR passthrough frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
-[omfg][info][1774639804134] vkQueuePresentKHR passthrough frame=2; queueFamily=0; imageIndex=1; waitSemaphores=1
-[omfg][info][1774639804136] vkQueuePresentKHR passthrough frame=3; queueFamily=0; imageIndex=2; waitSemaphores=1
-[omfg][info][1774639804251] vkQueuePresentKHR passthrough frame=4; queueFamily=0; imageIndex=0; waitSemaphores=1
-[omfg][info][1774639804262] vkQueuePresentKHR passthrough frame=5; queueFamily=0; imageIndex=1; waitSemaphores=1
-[omfg][info][1774639805639] vkQueuePresentKHR passthrough frame=60; queueFamily=0; imageIndex=2; waitSemaphores=1
-[omfg][info][1774639806317] vkQueuePresentKHR passthrough frame=120; queueFamily=0; imageIndex=2; waitSemaphores=1
-[omfg][info][1774639806627] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH); presentId=1; presentWait=1; displayTiming=0
-[omfg][info][1774639807094] vkQueuePresentKHR passthrough frame=180; queueFamily=0; imageIndex=2; waitSemaphores=1
-[omfg][info][1774639807761] vkQueuePresentKHR passthrough frame=240; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646587024] vkNegotiateLoaderLayerInterfaceVersion ok; mode=passthrough
+[omfg][info][1774646587026] vkCreateInstance ok; mode=passthrough; apiVersion=1.1.0
+[omfg][info][1774646587184] vkNegotiateLoaderLayerInterfaceVersion ok; mode=passthrough
+[omfg][info][1774646587186] vkCreateInstance ok; mode=passthrough; apiVersion=1.1.0
+[omfg][info][1774646588640] vkNegotiateLoaderLayerInterfaceVersion ok; mode=passthrough
+[omfg][info][1774646588643] vkCreateInstance ok; mode=passthrough; apiVersion=1.1.0
+[omfg][info][1774646589683] vkNegotiateLoaderLayerInterfaceVersion ok; mode=passthrough
+[omfg][info][1774646589685] vkCreateInstance ok; mode=passthrough; app=re8.exe; engine=DXVK; apiVersion=1.3.0
+[omfg][info][1774646589840] vkNegotiateLoaderLayerInterfaceVersion ok; mode=passthrough
+[omfg][info][1774646589841] vkCreateInstance ok; mode=passthrough; app=re8.exe; engine=vkd3d; apiVersion=1.3.0
+[omfg][info][1774646590143] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH); presentId=1; presentWait=1; displayTiming=0
+[omfg][info][1774646590175] vkDestroyDevice
+[omfg][info][1774646590176] vkDestroyInstance
+[omfg][info][1774646590191] vkNegotiateLoaderLayerInterfaceVersion ok; mode=passthrough
+[omfg][info][1774646590193] vkCreateInstance ok; mode=passthrough; app=re8.exe; engine=vkd3d; apiVersion=1.3.0
+[omfg][info][1774646590476] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH); presentId=1; presentWait=1; displayTiming=0
+[omfg][info][1774646590491] vkNegotiateLoaderLayerInterfaceVersion ok; mode=passthrough
+[omfg][info][1774646590493] vkCreateInstance ok; mode=passthrough; apiVersion=1.1.0
+[omfg][info][1774646590626] vkDestroyInstance
+[omfg][info][1774646592004] vkCreateSwapchainKHR ok; extent=1274x775; format=44; presentMode=FIFO; minImages=3->3; usage=TRANSFER_SRC|STORAGE|COLOR_ATTACHMENT (0x19) -> TRANSFER_SRC|STORAGE|COLOR_ATTACHMENT (0x19); images=3; mode=passthrough
+[omfg][info][1774646592010] vkQueuePresentKHR passthrough frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774646592130] vkDestroySwapchainKHR
+[omfg][info][1774646592134] vkCreateSwapchainKHR ok; extent=1280x787; format=44; presentMode=FIFO; minImages=3->3; usage=TRANSFER_SRC|STORAGE|COLOR_ATTACHMENT (0x19) -> TRANSFER_SRC|STORAGE|COLOR_ATTACHMENT (0x19); images=3; mode=passthrough
+[omfg][info][1774646592137] vkQueuePresentKHR passthrough frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774646592143] vkQueuePresentKHR passthrough frame=2; queueFamily=0; imageIndex=1; waitSemaphores=1
+[omfg][info][1774646592145] vkQueuePresentKHR passthrough frame=3; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646592148] vkQueuePresentKHR passthrough frame=4; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774646592175] vkQueuePresentKHR passthrough frame=5; queueFamily=0; imageIndex=1; waitSemaphores=1
+[omfg][info][1774646594136] vkQueuePresentKHR passthrough frame=60; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646594927] vkQueuePresentKHR passthrough frame=120; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646595454] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH); presentId=1; presentWait=1; displayTiming=0
+[omfg][info][1774646595632] vkQueuePresentKHR passthrough frame=180; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646596299] vkQueuePresentKHR passthrough frame=240; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646596966] vkQueuePresentKHR passthrough frame=300; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646597632] vkQueuePresentKHR passthrough frame=360; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646598299] vkQueuePresentKHR passthrough frame=420; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646598965] vkQueuePresentKHR passthrough frame=480; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646599633] vkQueuePresentKHR passthrough frame=540; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646600298] vkQueuePresentKHR passthrough frame=600; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646600965] vkQueuePresentKHR passthrough frame=660; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646601631] vkQueuePresentKHR passthrough frame=720; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646602298] vkQueuePresentKHR passthrough frame=780; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646602964] vkQueuePresentKHR passthrough frame=840; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646603631] vkQueuePresentKHR passthrough frame=900; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646604298] vkQueuePresentKHR passthrough frame=960; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646604964] vkQueuePresentKHR passthrough frame=1020; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646605631] vkQueuePresentKHR passthrough frame=1080; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646606298] vkQueuePresentKHR passthrough frame=1140; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646606964] vkQueuePresentKHR passthrough frame=1200; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646607631] vkQueuePresentKHR passthrough frame=1260; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646608297] vkQueuePresentKHR passthrough frame=1320; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646608964] vkQueuePresentKHR passthrough frame=1380; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646609630] vkQueuePresentKHR passthrough frame=1440; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646610297] vkQueuePresentKHR passthrough frame=1500; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646610963] vkQueuePresentKHR passthrough frame=1560; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646611630] vkQueuePresentKHR passthrough frame=1620; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646612297] vkQueuePresentKHR passthrough frame=1680; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646612461] vkDestroyDevice
+[omfg][info][1774646612972] vkQueuePresentKHR passthrough frame=1740; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646613630] vkQueuePresentKHR passthrough frame=1800; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646614296] vkQueuePresentKHR passthrough frame=1860; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646614963] vkQueuePresentKHR passthrough frame=1920; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646615629] vkQueuePresentKHR passthrough frame=1980; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646616296] vkQueuePresentKHR passthrough frame=2040; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646618066] vkQueuePresentKHR passthrough frame=2100; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646620068] vkQueuePresentKHR passthrough frame=2160; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646622069] vkQueuePresentKHR passthrough frame=2220; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646624069] vkQueuePresentKHR passthrough frame=2280; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646626069] vkQueuePresentKHR passthrough frame=2340; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646628068] vkQueuePresentKHR passthrough frame=2400; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646630070] vkQueuePresentKHR passthrough frame=2460; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774646632069] vkQueuePresentKHR passthrough frame=2520; queueFamily=0; imageIndex=2; waitSemaphores=1
 === title=Resident Evil Village appid=1196590 mode=passthrough steam log ===
-killed pid=37043 args=/home/deck/.local/share/Steam/ubuntu12_32/reaper SteamLaunch AppId=1196590 -- /home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/_v2-entry-point --verb=waitforexitandrun -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
-killed pid=37046 args=/home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/pressure-vessel/libexec/steam-runtime-tools-0/srt-bwrap --args 26 /usr/lib/pressure-vessel/from-host/libexec/steam-runtime-tools-0/pv-adverb --prefix=/usr/lib/pressure-vessel/from-host --generate-locales --fd 12 --regenerate-ld.so-cache /var/pressure-vessel/ldso --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu --set-ld-library-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu/aliases:/usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu/aliases --overrides-path /usr/lib/pressure-vessel/overrides --exit-with-parent --subreaper --assign-fd=1=3 --assign-fd=2=4 --ld-preload=/home/deck/.local/share/Steam/ubuntu12_32/gameoverlayrenderer.so --ld-preload=/home/deck/.local/share/Steam/ubuntu12_64/gameoverlayrenderer.so -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
-killed pid=37128 args=/usr/lib/pressure-vessel/from-host/libexec/steam-runtime-tools-0/pv-adverb --prefix=/usr/lib/pressure-vessel/from-host --generate-locales --fd 12 --regenerate-ld.so-cache /var/pressure-vessel/ldso --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu --set-ld-library-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu/aliases:/usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu/aliases --overrides-path /usr/lib/pressure-vessel/overrides --exit-with-parent --subreaper --assign-fd=1=3 --assign-fd=2=4 --ld-preload=/home/deck/.local/share/Steam/ubuntu12_32/gameoverlayrenderer.so --ld-preload=/home/deck/.local/share/Steam/ubuntu12_64/gameoverlayrenderer.so -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
-killed pid=37152 args=python3 /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
-killed pid=37154 args=c:\windows\system32\steam.exe /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
-killed pid=37237 args=Z:\home\deck\.local\share\Steam\steamapps\common\Resident Evil Village BIOHAZARD VILLAGE\re8.exe
+killed pid=8771 args=/home/deck/.local/share/Steam/ubuntu12_32/reaper SteamLaunch AppId=1196590 -- /home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/_v2-entry-point --verb=waitforexitandrun -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
+killed pid=8774 args=/home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/pressure-vessel/libexec/steam-runtime-tools-0/srt-bwrap --args 26 /usr/lib/pressure-vessel/from-host/libexec/steam-runtime-tools-0/pv-adverb --prefix=/usr/lib/pressure-vessel/from-host --generate-locales --fd 10 --regenerate-ld.so-cache /var/pressure-vessel/ldso --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu --set-ld-library-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu/aliases:/usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu/aliases --overrides-path /usr/lib/pressure-vessel/overrides --exit-with-parent --subreaper --assign-fd=1=3 --assign-fd=2=4 --ld-preload=/home/deck/.local/share/Steam/ubuntu12_32/gameoverlayrenderer.so --ld-preload=/home/deck/.local/share/Steam/ubuntu12_64/gameoverlayrenderer.so -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
+killed pid=8847 args=/usr/lib/pressure-vessel/from-host/libexec/steam-runtime-tools-0/pv-adverb --prefix=/usr/lib/pressure-vessel/from-host --generate-locales --fd 10 --regenerate-ld.so-cache /var/pressure-vessel/ldso --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu --set-ld-library-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu/aliases:/usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu/aliases --overrides-path /usr/lib/pressure-vessel/overrides --exit-with-parent --subreaper --assign-fd=1=3 --assign-fd=2=4 --ld-preload=/home/deck/.local/share/Steam/ubuntu12_32/gameoverlayrenderer.so --ld-preload=/home/deck/.local/share/Steam/ubuntu12_64/gameoverlayrenderer.so -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
+killed pid=8871 args=python3 /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
+killed pid=8873 args=c:\windows\system32\steam.exe /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
+killed pid=8956 args=Z:\home\deck\.local\share\Steam\steamapps\common\Resident Evil Village BIOHAZARD VILLAGE\re8.exe
+=== title=Resident Evil Village appid=1196590 mode=passthrough post-clean process check ===
+deck        8956    1316 99 17:23 ?        00:00:54 [re8.exe] <defunct>
 Connection to 192.168.0.241 closed.

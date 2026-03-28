@@ -1,0 +1,10 @@
+run_id	appid	slug	title	mode	status	device_ok	swapchain_ok	first_generated	sustained_progress	log_path
+20260327-175826	3489700	stellar-blade	Stellar Blade™	passthrough	sustained	1	1	0	1	/Users/dhimebauch/Developer/personal/post-proc-fg-research/artifacts/steamdeck/rust/real-games/stellar-blade/passthrough/omfg.log
+20260327-175826	3489700	stellar-blade	Stellar Blade™	clear	missing-log	0	0	0	0	/Users/dhimebauch/Developer/personal/post-proc-fg-research/artifacts/steamdeck/rust/real-games/stellar-blade/clear/omfg.log
+20260327-175826	3489700	stellar-blade	Stellar Blade™	bfi	missing-log	0	0	0	0	/Users/dhimebauch/Developer/personal/post-proc-fg-research/artifacts/steamdeck/rust/real-games/stellar-blade/bfi/omfg.log
+20260327-175826	3489700	stellar-blade	Stellar Blade™	copy	missing-log	0	0	0	0	/Users/dhimebauch/Developer/personal/post-proc-fg-research/artifacts/steamdeck/rust/real-games/stellar-blade/copy/omfg.log
+20260327-175826	3489700	stellar-blade	Stellar Blade™	history-copy	missing-log	0	0	0	0	/Users/dhimebauch/Developer/personal/post-proc-fg-research/artifacts/steamdeck/rust/real-games/stellar-blade/history-copy/omfg.log
+20260327-175826	3489700	stellar-blade	Stellar Blade™	blend	missing-log	0	0	0	0	/Users/dhimebauch/Developer/personal/post-proc-fg-research/artifacts/steamdeck/rust/real-games/stellar-blade/blend/omfg.log
+20260327-175826	3489700	stellar-blade	Stellar Blade™	adaptive-blend	missing-log	0	0	0	0	/Users/dhimebauch/Developer/personal/post-proc-fg-research/artifacts/steamdeck/rust/real-games/stellar-blade/adaptive-blend/omfg.log
+20260327-175826	3489700	stellar-blade	Stellar Blade™	search-blend	missing-log	0	0	0	0	/Users/dhimebauch/Developer/personal/post-proc-fg-research/artifacts/steamdeck/rust/real-games/stellar-blade/search-blend/omfg.log
+20260327-175826	3489700	stellar-blade	Stellar Blade™	search-adaptive-blend	missing-log	0	0	0	0	/Users/dhimebauch/Developer/personal/post-proc-fg-research/artifacts/steamdeck/rust/real-games/stellar-blade/search-adaptive-blend/omfg.log

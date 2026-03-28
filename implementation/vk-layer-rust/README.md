@@ -75,6 +75,11 @@ export STEAMDECK_PASS='...'
 OMFG_LAYER_IMPL=rust ./scripts/deploy-steamdeck-layer.sh
 ```
 
+Canonical wrapper + env var reference:
+
+- `../../scripts/steamdeck-omfg-wrapper.sh`
+- `../../docs/omfg-wrapper-and-env-vars.md`
+
 ### Smoke test with vkcube
 ```bash
 export STEAMDECK_PASS='...'

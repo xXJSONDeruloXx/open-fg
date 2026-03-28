@@ -1,67 +1,21 @@
-[omfg][info][1774635827055] vkNegotiateLoaderLayerInterfaceVersion ok; mode=reproject-blend-test
-[omfg][info][1774635827058] vkCreateInstance ok; mode=reproject-blend-test; apiVersion=1.1.0
-[omfg][info][1774635828726] vkNegotiateLoaderLayerInterfaceVersion ok; mode=reproject-blend-test
-[omfg][info][1774635828728] vkCreateInstance ok; mode=reproject-blend-test; app=BeyondTwoSouls_Steam.exe; engine=DXVK; apiVersion=1.3.0
-[omfg][info][1774635829058] vkNegotiateLoaderLayerInterfaceVersion ok; mode=reproject-blend-test
-[omfg][info][1774635829060] vkCreateInstance ok; mode=reproject-blend-test; apiVersion=1.1.0
-[omfg][info][1774635829340] vkDestroyInstance
-[omfg][info][1774635829375] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH); presentId=1; presentWait=1; displayTiming=0
-[omfg][info][1774635831782] created history image for swapchain
-[omfg][info][1774635831782] vkCreateSwapchainKHR ok; extent=1280x800; format=37; presentMode=MAILBOX; minImages=4->6; usage=TRANSFER_SRC|TRANSFER_DST|STORAGE|COLOR_ATTACHMENT (0x1b) -> TRANSFER_SRC|TRANSFER_DST|SAMPLED|STORAGE|COLOR_ATTACHMENT (0x1f); images=6; mode=reproject-blend-test
-[omfg][info][1774635831786] vkQueuePresentKHR frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
-[omfg][info][1774635831786] initialized injection resources for queue family 0
-[omfg][info][1774635831786] initialized blend resources for swapchain
-[omfg][info][1774635831787] reproject-blend primed previous frame history
-[omfg][info][1774635831813] vkQueuePresentKHR frame=2; queueFamily=0; imageIndex=1; waitSemaphores=1
-[omfg][info][1774635831835] first reproject blended generated-frame present succeeded
-[omfg][info][1774635831835] blend original-first mode enabled
-[omfg][info][1774635831835] reproject blended frame present=1; generatedImageIndex=2; currentImageIndex=1; originalFirst=1
-[omfg][info][1774635831836] vkQueuePresentKHR frame=3; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635831859] reproject blended frame present=2; generatedImageIndex=4; currentImageIndex=3; originalFirst=1
-[omfg][info][1774635831860] vkQueuePresentKHR frame=4; queueFamily=0; imageIndex=5; waitSemaphores=1
-[omfg][info][1774635831882] reproject blended frame present=3; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635831882] vkQueuePresentKHR frame=5; queueFamily=0; imageIndex=1; waitSemaphores=1
-[omfg][info][1774635831904] reproject blended frame present=4; generatedImageIndex=2; currentImageIndex=1; originalFirst=1
-[omfg][info][1774635831926] reproject blended frame present=5; generatedImageIndex=4; currentImageIndex=3; originalFirst=1
-[omfg][info][1774635833510] vkQueuePresentKHR frame=60; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635833547] reproject blended frame present=60; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635834668] vkQueuePresentKHR frame=120; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635834706] reproject blended frame present=120; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635835798] vkQueuePresentKHR frame=180; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635835831] reproject blended frame present=180; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635836929] vkQueuePresentKHR frame=240; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635836968] reproject blended frame present=240; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635838086] vkQueuePresentKHR frame=300; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635838125] reproject blended frame present=300; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635839250] vkQueuePresentKHR frame=360; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635839288] reproject blended frame present=360; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635840405] vkQueuePresentKHR frame=420; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635840443] reproject blended frame present=420; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635841567] vkQueuePresentKHR frame=480; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635841606] reproject blended frame present=480; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635842732] vkQueuePresentKHR frame=540; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635842770] reproject blended frame present=540; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635843897] vkQueuePresentKHR frame=600; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635843934] reproject blended frame present=600; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635845069] vkQueuePresentKHR frame=660; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635845107] reproject blended frame present=660; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635846227] vkQueuePresentKHR frame=720; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635846264] reproject blended frame present=720; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635847571] vkQueuePresentKHR frame=780; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635847621] reproject blended frame present=780; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635849130] vkQueuePresentKHR frame=840; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635849182] reproject blended frame present=840; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635850697] vkQueuePresentKHR frame=900; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635850750] reproject blended frame present=900; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635852273] vkQueuePresentKHR frame=960; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635852325] reproject blended frame present=960; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635853839] vkQueuePresentKHR frame=1020; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635853889] reproject blended frame present=1020; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635855418] vkQueuePresentKHR frame=1080; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635855471] reproject blended frame present=1080; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635856935] vkQueuePresentKHR frame=1140; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635856987] reproject blended frame present=1140; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635858465] vkQueuePresentKHR frame=1200; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635858519] reproject blended frame present=1200; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
-[omfg][info][1774635860036] vkQueuePresentKHR frame=1260; queueFamily=0; imageIndex=3; waitSemaphores=1
-[omfg][info][1774635860088] reproject blended frame present=1260; generatedImageIndex=0; currentImageIndex=5; originalFirst=1
+[omfg][info][1774660379875] hot config reloaded: path=/home/deck/post-proc-fg-research/logs/beyond-hot.toml; values=1
+[omfg][info][1774660379875] vkNegotiateLoaderLayerInterfaceVersion ok; mode=blend-test
+[omfg][info][1774660379877] vkCreateInstance ok; mode=blend-test; apiVersion=1.1.0
+[omfg][info][1774660382073] hot config reloaded: path=/home/deck/post-proc-fg-research/logs/beyond-hot.toml; values=1
+[omfg][info][1774660382073] vkNegotiateLoaderLayerInterfaceVersion ok; mode=blend-test
+[omfg][info][1774660382076] vkCreateInstance ok; mode=blend-test; app=BeyondTwoSouls_Steam.exe; engine=DXVK; apiVersion=1.3.0
+[omfg][info][1774660382519] vkNegotiateLoaderLayerInterfaceVersion ok; mode=blend-test
+[omfg][info][1774660382520] vkCreateInstance ok; mode=blend-test; apiVersion=1.1.0
+[omfg][info][1774660382878] vkDestroyInstance
+[omfg][info][1774660382923] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH); presentId=1; presentWait=1; displayTiming=0
+[omfg][info][1774660385595] created history image for swapchain
+[omfg][info][1774660385595] vkCreateSwapchainKHR ok; extent=1280x800; format=37; presentMode=MAILBOX; minImages=4->6; usage=TRANSFER_SRC|TRANSFER_DST|STORAGE|COLOR_ATTACHMENT (0x1b) -> TRANSFER_SRC|TRANSFER_DST|SAMPLED|STORAGE|COLOR_ATTACHMENT (0x1f); images=6; mode=blend-test
+[omfg][info][1774660385602] vkQueuePresentKHR frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774660385602] initialized injection resources for queue family 0
+[omfg][info][1774660385663] initialized blend resources for swapchain
+[omfg][info][1774660385665] blend primed previous frame history
+[omfg][info][1774660385682] vkQueuePresentKHR frame=2; queueFamily=0; imageIndex=1; waitSemaphores=1
+[omfg][info][1774660385691] first blended generated-frame present succeeded
+[omfg][info][1774660385691] blended frame present=1; generatedImageIndex=2; currentImageIndex=1; originalFirst=0
+[omfg][info][1774660385692] vkQueuePresentKHR frame=3; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774660385698] blended frame present=2; generatedImageIndex=4; currentImageIndex=3; originalFirst=0

@@ -1,0 +1,124 @@
+
+xwininfo: Window id: 0x3b8 (the root window) (has no name)
+
+  Root window id: 0x3b8 (the root window) (has no name)
+  Parent window id: 0x0 (none)
+     75 children:
+     0x3c00049 "VRStream": ("steam" "steam")  32x32+624+359  +624+359
+     0x300000e (has no name): ("Steam" "Steam")  64x24+0+0  +0+0
+     0x300000c "Untitled": ("Steam" "Steam")  64x24+0+0  +0+0
+     0x4800009 (has no name): ()  1x1+0+0  +0+0
+     0x520002d (has no name): ()  1x1+-10+-10  +-10+-10
+     0x4a00003 "steamwebhelper": ("steamwebhelper" "Steamwebhelper")  200x200+0+0  +0+0
+        1 child:
+        0x4a00004 (has no name): ()  1x1+-1+-1  +-1+-1
+     0x4a00001 "steamwebhelper": ("steamwebhelper" "Steamwebhelper")  10x10+10+10  +10+10
+     0x4800001 "Chromium clipboard": ()  10x10+-100+-100  +-100+-100
+     0x3000005 (has no name): ("Steam" "Steam")  64x24+0+0  +0+0
+     0x4000001 "steam": ("steam" "Steam")  10x10+10+10  +10+10
+        1 child:
+        0x4000002 (has no name): ()  1x1+-1+-1  +9+9
+     0x3c0002d (has no name): ()  1x1+-10+-10  +-10+-10
+     0x360000c (has no name): ()  1x1+0+0  +0+0
+     0xb80002d (has no name): ()  1x1+-10+-10  +-10+-10
+     0xa800003 (has no name): ("steam_app_3489700" "steam_app_3489700")  1x1+0+0  +0+0
+     0xa800002 "Default IME": ("steam_app_3489700" "steam_app_3489700")  1x1+0+0  +0+0
+     0x8a00008 (has no name): ("steam_app_3489700" "steam_app_3489700")  1x1+0+0  +0+0
+     0xa000003 (has no name): ("steam_app_3489700" "steam_app_3489700")  5x5+0+0  +0+0
+     0xa000001 (has no name): ("steam_app_3489700" "steam_app_3489700")  5x5+0+0  +0+0
+     0xa000002 "Default IME": ("steam_app_3489700" "steam_app_3489700")  1x1+0+0  +0+0
+     0x9600002 "Default IME": ("steam_app_3489700" "steam_app_3489700")  1x1+0+0  +0+0
+     0x9600001 "Input": ("steam_app_3489700" "steam_app_3489700")  104x1+8+27  +8+27
+     0x8c00001 (has no name): ()  1x1+0+0  +0+0
+     0x8a00007 (has no name): ("steam_app_3489700" "steam_app_3489700")  1x1+0+0  +0+0
+     0x8a00006 (has no name): ("steam_app_3489700" "steam_app_3489700")  1x1+0+0  +0+0
+     0x8a00005 (has no name): ("steam_app_3489700" "steam_app_3489700")  1x1+0+0  +0+0
+     0x8a00004 (has no name): ("steam_app_3489700" "steam_app_3489700")  1x1+0+0  +0+0
+     0x8a00003 "Default IME": ("steam_app_3489700" "steam_app_3489700")  1x1+0+0  +0+0
+     0x8a00002 (has no name): ("steam_app_3489700" "steam_app_3489700")  160x20+3+22  +3+22
+     0x8a00001 (has no name): ()  1280x800+0+0  +0+0
+     0x60008e "plasmashell": ("plasmashell" "plasmashell")  440x440+746+302  +746+302
+     0x6000c5 "Qt Clipboard Requestor Window": ()  3x3+0+0  +0+0
+     0x3a0005b "Firefox": ()  10x10+-100+-100  +-100+-100
+     0x6000ac "plasmashell": ("plasmashell" "plasmashell")  707x549+8+193  +8+193
+     0x3a00001 "Firefox": ("org.mozilla.firefox" "Firefox")  10x10+10+10  +10+10
+     0x600092 "plasmashell": ("plasmashell" "plasmashell")  568x458+712+292  +712+292
+     0x3600005 "Qt Selection Owner for DiscoverNotifier": ()  3x3+0+0  +0+0
+     0x3800001 "ibus-extension-gtk3": ("ibus-extension-gtk3" "Ibus-extension-gtk3")  10x10+10+10  +10+10
+     0x3400005 "Qt Selection Owner for kimpanel-ibus-panel": ()  3x3+0+0  +0+0
+     0x200005 "Qt Selection Owner for kdeconnectd": ()  3x3+0+0  +0+0
+     0x600090 "Clipboard Popup": ("plasmashell" "plasmashell")  108x108+0+0  +0+0
+     0x600052 "plasmashell": ("plasmashell" "plasmashell")  384x90+896+660  +896+660
+     0x1400085 (has no name): ()  1280x800+0+0  +0+0
+     0x60002e (has no name): ()  1x1+0+0  +0+0
+     0x60002c "plasmashell": ("plasmashell" "plasmashell")  160x160+0+0  +0+0
+     0x2000016 (has no name): ()  1x1+0+0  +0+0
+     0x60002a "plasmashell": ()  1x1+0+0  +0+0
+     0x2c00006 (has no name): ()  1x1+0+0  +0+0
+     0x2200010 (has no name): ()  1x1+0+0  +0+0
+     0x2c00005 "Qt Selection Owner for kscreen_backend_launcher": ()  3x3+0+0  +0+0
+     0x1c00010 (has no name): ()  1x1+0+0  +0+0
+     0x2a00001 "xsettingsd": ()  1x1+-1+-1  +-1+-1
+     0x2800005 "Qt Selection Owner for xdg-desktop-portal-kde": ()  3x3+0+0  +0+0
+     0x2600005 "Qt Selection Owner for org_kde_powerdevil": ()  3x3+0+0  +0+0
+     0x2400005 "Qt Selection Owner for polkit-kde-authentication-agent-1": ()  3x3+0+0  +0+0
+     0x2200005 "Qt Selection Owner for xembedsniproxy": ()  3x3+0+0  +0+0
+     0x2000005 "Qt Selection Owner for kaccess": ()  3x3+0+0  +0+0
+     0x1e00005 "Qt Selection Owner for gmenudbusmenuproxy": ()  3x3+0+0  +0+0
+     0x1c00005 "Qt Selection Owner for kactivitymanagerd": ()  3x3+0+0  +0+0
+     0x1400034 (has no name): ()  1x1+0+0  +0+0
+     0x1800002 (has no name): ()  1x1+0+0  +0+0
+     0x140001d (has no name): ()  1x1+-1+-1  +-1+-1
+     0x600005 "Qt Selection Owner for plasmashell": ()  3x3+0+0  +0+0
+     0x140001c (has no name): ()  1x1+0+0  +0+0
+     0x1200016 (has no name): ()  1x1+0+0  +0+0
+     0x1400005 "Qt Selection Owner for kwin_x11": ()  3x3+0+0  +0+0
+     0xa00001 "xdg-desktop-portal-gtk": ("xdg-desktop-portal-gtk" "Xdg-desktop-portal-gtk")  10x10+10+10  +10+10
+     0x1200005 "Qt Selection Owner for ksmserver": ()  3x3+0+0  +0+0
+     0xc00005 "Qt Selection Owner for kded6": ()  3x3+0+0  +0+0
+     0x800005 "Qt Selection Owner for kglobalacceld": ()  3x3+0+0  +0+0
+     0x140001e "KWin": ()  1x1+0+0  +0+0
+     0x1411c99 (has no name): ()  1280x800+0+0  +0+0
+        1 child:
+        0x1411c9a (has no name): ()  1280x800+0+0  +0+0
+           1 child:
+           0x5200035 "Steam Big Picture Mode": ("steamwebhelper" "steam")  1280x800+0+0  +0+0
+              4 children:
+              0x4800021 (has no name): ()  1x1+0+0  +0+0
+                 1 child:
+                 0x4800023 (has no name): ()  1x1+0+0  +0+0
+              0x480001d (has no name): ()  1x1+0+0  +0+0
+                 1 child:
+                 0x480001f (has no name): ()  1x1+0+0  +0+0
+              0x4800019 (has no name): ()  1x1+0+0  +0+0
+                 1 child:
+                 0x480001b (has no name): ()  1x1+0+0  +0+0
+              0x4800006 (has no name): ()  1280x800+0+0  +0+0
+                 1 child:
+                 0x4800008 (has no name): ()  1280x800+0+0  +0+0
+     0x14000cd (has no name): ()  1280x66+0+734  +0+734
+        1 child:
+        0x14000ce (has no name): ()  1280x66+0+0  +0+734
+           1 child:
+           0x60005e "plasmashell": ("plasmashell" "plasmashell")  1280x66+0+0  +0+734
+     0x1411bf6 (has no name): ()  1280x800+0+0  +0+0
+        1 child:
+        0x1411bf7 (has no name): ()  1280x800+0+0  +0+0
+           1 child:
+           0xa800001 "StellarBlade  ": ("steam_app_3489700" "steam_app_3489700")  1280x800+0+0  +0+0
+              1 child:
+              0xa60008f (has no name): ()  1280x800+0+0  +0+0
+     0x1400114 (has no name): ()  1332x802+-26+-23  +-26+-23
+        1 child:
+        0x1400115 (has no name): ()  1332x802+0+0  +-26+-23
+           1 child:
+           0x3a00050 "Mozilla Firefox": ("Navigator" "firefox")  1332x802+0+0  +-26+-23
+              2 children:
+              0x3a0005e (has no name): ()  1x1+0+0  +-26+-23
+              0x3a00051 (has no name): ()  1x1+-1+-1  +-27+-24
+     0x1400081 (has no name): ()  1280x800+0+0  +0+0
+        1 child:
+        0x1400082 (has no name): ()  1280x800+0+0  +0+0
+           1 child:
+           0x600028 "Desktop @ QRect(0,0 1280x800) ": ("plasmashell" "plasmashell")  1280x800+0+0  +0+0
+

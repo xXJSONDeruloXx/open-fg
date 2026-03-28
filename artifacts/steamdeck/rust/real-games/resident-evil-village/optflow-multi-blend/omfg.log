@@ -1,0 +1,93 @@
+[omfg][info][1774648386003] vkNegotiateLoaderLayerInterfaceVersion ok; mode=optflow-multi-blend-test
+[omfg][info][1774648386005] vkCreateInstance ok; mode=optflow-multi-blend-test; apiVersion=1.1.0
+[omfg][info][1774648386144] vkNegotiateLoaderLayerInterfaceVersion ok; mode=optflow-multi-blend-test
+[omfg][info][1774648386146] vkCreateInstance ok; mode=optflow-multi-blend-test; apiVersion=1.1.0
+[omfg][info][1774648387455] vkNegotiateLoaderLayerInterfaceVersion ok; mode=optflow-multi-blend-test
+[omfg][info][1774648387458] vkCreateInstance ok; mode=optflow-multi-blend-test; apiVersion=1.1.0
+[omfg][info][1774648388465] vkNegotiateLoaderLayerInterfaceVersion ok; mode=optflow-multi-blend-test
+[omfg][info][1774648388467] vkCreateInstance ok; mode=optflow-multi-blend-test; app=re8.exe; engine=DXVK; apiVersion=1.3.0
+[omfg][info][1774648388612] vkNegotiateLoaderLayerInterfaceVersion ok; mode=optflow-multi-blend-test
+[omfg][info][1774648388613] vkCreateInstance ok; mode=optflow-multi-blend-test; app=re8.exe; engine=vkd3d; apiVersion=1.3.0
+[omfg][info][1774648388912] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH); presentId=1; presentWait=1; displayTiming=0
+[omfg][info][1774648388930] vkDestroyDevice
+[omfg][info][1774648388932] vkDestroyInstance
+[omfg][info][1774648388947] vkNegotiateLoaderLayerInterfaceVersion ok; mode=optflow-multi-blend-test
+[omfg][info][1774648388948] vkCreateInstance ok; mode=optflow-multi-blend-test; app=re8.exe; engine=vkd3d; apiVersion=1.3.0
+[omfg][info][1774648389232] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH); presentId=1; presentWait=1; displayTiming=0
+[omfg][info][1774648389246] vkNegotiateLoaderLayerInterfaceVersion ok; mode=optflow-multi-blend-test
+[omfg][info][1774648389248] vkCreateInstance ok; mode=optflow-multi-blend-test; apiVersion=1.1.0
+[omfg][info][1774648389386] vkDestroyInstance
+[omfg][info][1774648390555] created history image for swapchain
+[omfg][info][1774648390556] vkCreateSwapchainKHR ok; extent=1286x787; format=44; presentMode=FIFO; minImages=3->6; usage=TRANSFER_SRC|STORAGE|COLOR_ATTACHMENT (0x19) -> TRANSFER_SRC|SAMPLED|STORAGE|COLOR_ATTACHMENT (0x1d); images=6; mode=optflow-multi-blend-test
+[omfg][info][1774648390560] vkQueuePresentKHR frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774648390560] initialized injection resources for queue family 0
+[omfg][info][1774648390560] initialized blend resources for swapchain
+[omfg][info][1774648390563] optflow-multi-blend primed previous frame history
+[omfg][info][1774648390656] vkDestroySwapchainKHR
+[omfg][info][1774648390661] created history image for swapchain
+[omfg][info][1774648390661] vkCreateSwapchainKHR ok; extent=1280x787; format=44; presentMode=FIFO; minImages=3->6; usage=TRANSFER_SRC|STORAGE|COLOR_ATTACHMENT (0x19) -> TRANSFER_SRC|SAMPLED|STORAGE|COLOR_ATTACHMENT (0x1d); images=6; mode=optflow-multi-blend-test
+[omfg][info][1774648390662] vkQueuePresentKHR frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774648390662] initialized injection resources for queue family 0
+[omfg][info][1774648390663] initialized blend resources for swapchain
+[omfg][info][1774648390663] optflow-multi-blend primed previous frame history
+[omfg][info][1774648390666] vkQueuePresentKHR frame=2; queueFamily=0; imageIndex=1; waitSemaphores=1
+[omfg][info][1774648390754] first optical-flow multi blended generated-frame present succeeded
+[omfg][info][1774648390754] optical-flow multi blended frame present=2; generatedImageIndices=[2, 3]; currentImageIndex=1; originalFirst=0
+[omfg][info][1774648390756] vkQueuePresentKHR frame=3; queueFamily=0; imageIndex=4; waitSemaphores=1
+[omfg][info][1774648390843] optical-flow multi blended frame present=4; generatedImageIndices=[5, 0]; currentImageIndex=4; originalFirst=0
+[omfg][info][1774648390845] vkQueuePresentKHR frame=4; queueFamily=0; imageIndex=2; waitSemaphores=1
+[omfg][info][1774648390951] optical-flow multi blended frame present=6; generatedImageIndices=[3, 1]; currentImageIndex=2; originalFirst=0
+[omfg][info][1774648390952] vkQueuePresentKHR frame=5; queueFamily=0; imageIndex=5; waitSemaphores=1
+[omfg][info][1774648394076] optical-flow multi blended frame present=60; generatedImageIndices=[4, 5]; currentImageIndex=0; originalFirst=0
+[omfg][info][1774648395889] vkQueuePresentKHR frame=60; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648396015] optical-flow multi blended frame present=120; generatedImageIndices=[4, 5]; currentImageIndex=0; originalFirst=0
+[omfg][info][1774648397955] optical-flow multi blended frame present=180; generatedImageIndices=[4, 5]; currentImageIndex=0; originalFirst=0
+[omfg][info][1774648399828] vkQueuePresentKHR frame=120; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648399961] optical-flow multi blended frame present=240; generatedImageIndices=[4, 5]; currentImageIndex=0; originalFirst=0
+[omfg][info][1774648401970] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH); presentId=1; presentWait=1; displayTiming=0
+[omfg][info][1774648402105] optical-flow multi blended frame present=300; generatedImageIndices=[4, 5]; currentImageIndex=0; originalFirst=0
+[omfg][info][1774648403996] vkQueuePresentKHR frame=180; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648404126] optical-flow multi blended frame present=360; generatedImageIndices=[4, 5]; currentImageIndex=0; originalFirst=0
+[omfg][info][1774648406136] optical-flow multi blended frame present=420; generatedImageIndices=[4, 5]; currentImageIndex=0; originalFirst=0
+[omfg][info][1774648408016] vkQueuePresentKHR frame=240; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648408146] optical-flow multi blended frame present=480; generatedImageIndices=[4, 5]; currentImageIndex=0; originalFirst=0
+[omfg][info][1774648410145] optical-flow multi blended frame present=540; generatedImageIndices=[4, 5]; currentImageIndex=0; originalFirst=0
+[omfg][info][1774648412002] vkQueuePresentKHR frame=300; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648412132] optical-flow multi blended frame present=600; generatedImageIndices=[4, 5]; currentImageIndex=0; originalFirst=0
+[omfg][info][1774648414120] optical-flow multi blended frame present=660; generatedImageIndices=[4, 5]; currentImageIndex=0; originalFirst=0
+[omfg][info][1774648415984] vkQueuePresentKHR frame=360; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648416115] optical-flow multi blended frame present=720; generatedImageIndices=[4, 5]; currentImageIndex=0; originalFirst=0
+[omfg][info][1774648418105] optical-flow multi blended frame present=780; generatedImageIndices=[4, 5]; currentImageIndex=0; originalFirst=0
+[omfg][info][1774648419969] vkQueuePresentKHR frame=420; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648420098] optical-flow multi blended frame present=840; generatedImageIndices=[4, 5]; currentImageIndex=0; originalFirst=0
+[omfg][info][1774648422093] optical-flow multi blended frame present=900; generatedImageIndices=[4, 5]; currentImageIndex=0; originalFirst=0
+[omfg][info][1774648423955] vkQueuePresentKHR frame=480; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648424083] optical-flow multi blended frame present=960; generatedImageIndices=[4, 5]; currentImageIndex=0; originalFirst=0
+[omfg][info][1774648426071] optical-flow multi blended frame present=1020; generatedImageIndices=[4, 5]; currentImageIndex=0; originalFirst=0
+[omfg][info][1774648427929] vkQueuePresentKHR frame=540; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648428060] optical-flow multi blended frame present=1080; generatedImageIndices=[4, 5]; currentImageIndex=0; originalFirst=0
+[omfg][info][1774648430052] optical-flow multi blended frame present=1140; generatedImageIndices=[4, 5]; currentImageIndex=0; originalFirst=0
+[omfg][info][1774648431964] vkQueuePresentKHR frame=600; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648432098] optical-flow multi blended frame present=1200; generatedImageIndices=[4, 5]; currentImageIndex=0; originalFirst=0
+[omfg][info][1774648434205] optical-flow multi blended frame present=1260; generatedImageIndices=[4, 5]; currentImageIndex=0; originalFirst=0
+[omfg][info][1774648435602] vkDestroyDevice
+[omfg][info][1774648436144] vkQueuePresentKHR frame=660; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648436277] optical-flow multi blended frame present=1320; generatedImageIndices=[4, 5]; currentImageIndex=0; originalFirst=0
+[omfg][info][1774648438277] optical-flow multi blended frame present=1380; generatedImageIndices=[4, 5]; currentImageIndex=0; originalFirst=0
+[omfg][info][1774648440148] vkQueuePresentKHR frame=720; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648440277] optical-flow multi blended frame present=1440; generatedImageIndices=[4, 5]; currentImageIndex=0; originalFirst=0
+[omfg][info][1774648442280] optical-flow multi blended frame present=1500; generatedImageIndices=[4, 5]; currentImageIndex=0; originalFirst=0
+[omfg][info][1774648444165] vkQueuePresentKHR frame=780; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648444295] optical-flow multi blended frame present=1560; generatedImageIndices=[4, 5]; currentImageIndex=0; originalFirst=0
+[omfg][info][1774648446428] optical-flow multi blended frame present=1620; generatedImageIndices=[4, 5]; currentImageIndex=0; originalFirst=0
+[omfg][info][1774648448288] vkQueuePresentKHR frame=840; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648448420] optical-flow multi blended frame present=1680; generatedImageIndices=[4, 5]; currentImageIndex=0; originalFirst=0
+[omfg][info][1774648450446] optical-flow multi blended frame present=1740; generatedImageIndices=[4, 5]; currentImageIndex=0; originalFirst=0
+[omfg][info][1774648452366] vkQueuePresentKHR frame=900; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648452502] optical-flow multi blended frame present=1800; generatedImageIndices=[4, 5]; currentImageIndex=0; originalFirst=0
+[omfg][info][1774648454732] optical-flow multi blended frame present=1860; generatedImageIndices=[4, 5]; currentImageIndex=0; originalFirst=0
+[omfg][info][1774648456953] vkQueuePresentKHR frame=960; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648457111] optical-flow multi blended frame present=1920; generatedImageIndices=[4, 5]; currentImageIndex=0; originalFirst=0
+[omfg][info][1774648459515] optical-flow multi blended frame present=1980; generatedImageIndices=[4, 5]; currentImageIndex=0; originalFirst=0
+[omfg][info][1774648461777] vkQueuePresentKHR frame=1020; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648461935] optical-flow multi blended frame present=2040; generatedImageIndices=[4, 5]; currentImageIndex=0; originalFirst=0

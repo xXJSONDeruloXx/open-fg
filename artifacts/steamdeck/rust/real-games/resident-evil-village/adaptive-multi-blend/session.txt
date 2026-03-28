@@ -1,0 +1,341 @@
+spawn ssh -tt -o StrictHostKeyChecking=accept-new -o PreferredAuthentications=password -o PubkeyAuthentication=no deck@192.168.0.241 bash -lc 'set -euo pipefail
+chmod +x /home/deck/omfg.sh
+mkdir -p /home/deck/post-proc-fg-research/logs
+rm -f /home/deck/post-proc-fg-research/logs/resident-evil-village-adaptive-multi-blend-20260327-174747-46846.log /tmp/omfg-resident-evil-village-adaptive-multi-blend-20260327-174747-46846.steam.log
+set -a
+source /run/user/1000/gamescope-environment
+set +a
+export DISPLAY=:0
+export XDG_RUNTIME_DIR=/run/user/1000
+xauth=$(ls -1 /run/user/1000/xauth_* 2>/dev/null | head -1 || true)
+if [ -n "$xauth" ]; then export XAUTHORITY="$xauth"; fi
+kill_all_steam_games() {
+  # Broad pre-kill: terminates any running Steam game processes regardless of AppID.
+  # This prevents cross-game contamination when multiple probes run back-to-back.
+  python3 - <<'"'"'PY'"'"'
+import os, re, subprocess, signal
+self_pid = os.getpid()
+ancestors = {self_pid}
+try:
+    pid = self_pid
+    while True:
+        with open(f'"'"'/proc/{pid}/status'"'"', '"'"'r'"'"', encoding='"'"'utf-8'"'"', errors='"'"'ignore'"'"') as f:
+            ppid = None
+            for line in f:
+                if line.startswith('"'"'PPid:'"'"'):
+                    ppid = int(line.split()[1])
+                    break
+        if not ppid or ppid in ancestors:
+            break
+        ancestors.add(ppid)
+        pid = ppid
+except Exception:
+    pass
+appid_re = re.compile(r'"'"'AppId=\d+'"'"')
+proton_markers = ('"'"'SteamLaunch'"'"', '"'"'waitforexitandrun'"'"', '"'"'reaper steam'"'"', '"'"'wineserver'"'"', '"'"'wine64'"'"', '"'"'wine '"'"')
+out = subprocess.check_output(['"'"'ps'"'"', '"'"'-eo'"'"', '"'"'pid=,args='"'"'], text=True, errors='"'"'ignore'"'"')
+for line in out.splitlines():
+    s = line.strip()
+    if not s:
+        continue
+    parts = s.split(None, 1)
+    if len(parts) != 2:
+        continue
+    pid = int(parts[0])
+    args = parts[1]
+    if pid in ancestors:
+        continue
+    if appid_re.search(args) or any(m in args for m in proton_markers):
+        try:
+            os.kill(pid, signal.SIGKILL)
+            print(f'"'"'killed pid={pid} args={args}'"'"')
+        except ProcessLookupError:
+            pass
+        except PermissionError:
+            pass
+PY
+}
+cleanup_matches() {
+  APPID='"'"'1196590'"'"' EXE_REGEX='"'"'re8.exe'"'"' python3 - <<'"'"'PY'"'"'
+import os, subprocess, signal
+appid = os.environ['"'"'APPID'"'"']
+exe_regex = os.environ.get('"'"'EXE_REGEX'"'"', '"'"''"'"')
+patterns = [f'"'"'AppId={appid}'"'"']
+if exe_regex:
+    patterns.append(exe_regex)
+self_pid = os.getpid()
+ancestors = {self_pid}
+try:
+    pid = self_pid
+    while True:
+        with open(f'"'"'/proc/{pid}/status'"'"', '"'"'r'"'"', encoding='"'"'utf-8'"'"', errors='"'"'ignore'"'"') as f:
+            ppid = None
+            for line in f:
+                if line.startswith('"'"'PPid:'"'"'):
+                    ppid = int(line.split()[1])
+                    break
+        if not ppid or ppid in ancestors:
+            break
+        ancestors.add(ppid)
+        pid = ppid
+except Exception:
+    pass
+out = subprocess.check_output(['"'"'ps'"'"', '"'"'-eo'"'"', '"'"'pid=,args='"'"'], text=True, errors='"'"'ignore'"'"')
+for line in out.splitlines():
+    s = line.strip()
+    if not s:
+        continue
+    parts = s.split(None, 1)
+    if len(parts) != 2:
+        continue
+    pid = int(parts[0])
+    args = parts[1]
+    if pid in ancestors:
+        continue
+    if any(p and p in args for p in patterns):
+        try:
+            os.kill(pid, signal.SIGKILL)
+            print(f'"'"'killed pid={pid} args={args}'"'"')
+        except ProcessLookupError:
+            pass
+        except PermissionError:
+            pass
+PY
+}
+kill_all_steam_games || true
+sleep 3
+cleanup_matches || true
+sleep 2
+echo "=== title=Resident Evil Village appid=1196590 mode=adaptive-multi-blend run=20260327-174747-46846 paths ==="
+echo "remote_log=/home/deck/post-proc-fg-research/logs/resident-evil-village-adaptive-multi-blend-20260327-174747-46846.log"
+echo "remote_steam_log=/tmp/omfg-resident-evil-village-adaptive-multi-blend-20260327-174747-46846.steam.log"
+nohup steam steam://rungameid/1196590 >/tmp/omfg-resident-evil-village-adaptive-multi-blend-20260327-174747-46846.steam.log 2>&1 &
+sleep 90
+echo "=== title=Resident Evil Village appid=1196590 mode=adaptive-multi-blend process ==="
+ps -ef | grep -E "AppId=1196590|re8.exe" | grep -v grep || true
+echo "=== title=Resident Evil Village appid=1196590 mode=adaptive-multi-blend omfg log ==="
+if [ -f /home/deck/post-proc-fg-research/logs/resident-evil-village-adaptive-multi-blend-20260327-174747-46846.log ]; then tail -200 /home/deck/post-proc-fg-research/logs/resident-evil-village-adaptive-multi-blend-20260327-174747-46846.log; else echo missing-log; fi
+echo "=== title=Resident Evil Village appid=1196590 mode=adaptive-multi-blend steam log ==="
+if [ -f /tmp/omfg-resident-evil-village-adaptive-multi-blend-20260327-174747-46846.steam.log ]; then tail -80 /tmp/omfg-resident-evil-village-adaptive-multi-blend-20260327-174747-46846.steam.log; else echo missing-steam-log; fi
+cleanup_matches || true
+echo "=== title=Resident Evil Village appid=1196590 mode=adaptive-multi-blend post-clean process check ==="
+ps -ef | grep -E "AppId=1196590|re8.exe" | grep -v grep || true'
+deck@192.168.0.241's password: 
+=== title=Resident Evil Village appid=1196590 mode=adaptive-multi-blend run=20260327-174747-46846 paths ===
+remote_log=/home/deck/post-proc-fg-research/logs/resident-evil-village-adaptive-multi-blend-20260327-174747-46846.log
+remote_steam_log=/tmp/omfg-resident-evil-village-adaptive-multi-blend-20260327-174747-46846.steam.log
+=== title=Resident Evil Village appid=1196590 mode=adaptive-multi-blend process ===
+deck       19407    3902  0 17:48 ?        00:00:00 /home/deck/.local/share/Steam/ubuntu12_32/reaper SteamLaunch AppId=1196590 -- /home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/_v2-entry-point --verb=waitforexitandrun -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
+deck       19410   19407  1 17:48 ?        00:00:00 /home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/pressure-vessel/libexec/steam-runtime-tools-0/srt-bwrap --args 26 /usr/lib/pressure-vessel/from-host/libexec/steam-runtime-tools-0/pv-adverb --prefix=/usr/lib/pressure-vessel/from-host --generate-locales --fd 12 --regenerate-ld.so-cache /var/pressure-vessel/ldso --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu --set-ld-library-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu/aliases:/usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu/aliases --overrides-path /usr/lib/pressure-vessel/overrides --exit-with-parent --subreaper --assign-fd=1=3 --assign-fd=2=4 --ld-preload=/home/deck/.local/share/Steam/ubuntu12_32/gameoverlayrenderer.so --ld-preload=/home/deck/.local/share/Steam/ubuntu12_64/gameoverlayrenderer.so -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
+deck       19483   19410  0 17:48 ?        00:00:00 /usr/lib/pressure-vessel/from-host/libexec/steam-runtime-tools-0/pv-adverb --prefix=/usr/lib/pressure-vessel/from-host --generate-locales --fd 12 --regenerate-ld.so-cache /var/pressure-vessel/ldso --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu --set-ld-library-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu/aliases:/usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu/aliases --overrides-path /usr/lib/pressure-vessel/overrides --exit-with-parent --subreaper --assign-fd=1=3 --assign-fd=2=4 --ld-preload=/home/deck/.local/share/Steam/ubuntu12_32/gameoverlayrenderer.so --ld-preload=/home/deck/.local/share/Steam/ubuntu12_64/gameoverlayrenderer.so -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
+deck       19507   19483  0 17:48 ?        00:00:00 python3 /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
+deck       19509   19507  0 17:48 ?        00:00:00 c:\windows\system32\steam.exe /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
+deck       19588   19483 88 17:48 ?        00:01:07 Z:\home\deck\.local\share\Steam\steamapps\common\Resident Evil Village BIOHAZARD VILLAGE\re8.exe
+=== title=Resident Evil Village appid=1196590 mode=adaptive-multi-blend omfg log ===
+[omfg][info][1774648086573] vkNegotiateLoaderLayerInterfaceVersion ok; mode=adaptive-multi-blend-test
+[omfg][info][1774648086576] vkCreateInstance ok; mode=adaptive-multi-blend-test; apiVersion=1.1.0
+[omfg][info][1774648086714] vkNegotiateLoaderLayerInterfaceVersion ok; mode=adaptive-multi-blend-test
+[omfg][info][1774648086716] vkCreateInstance ok; mode=adaptive-multi-blend-test; apiVersion=1.1.0
+[omfg][info][1774648088039] vkNegotiateLoaderLayerInterfaceVersion ok; mode=adaptive-multi-blend-test
+[omfg][info][1774648088042] vkCreateInstance ok; mode=adaptive-multi-blend-test; apiVersion=1.1.0
+[omfg][info][1774648089068] vkNegotiateLoaderLayerInterfaceVersion ok; mode=adaptive-multi-blend-test
+[omfg][info][1774648089070] vkCreateInstance ok; mode=adaptive-multi-blend-test; app=re8.exe; engine=DXVK; apiVersion=1.3.0
+[omfg][info][1774648089215] vkNegotiateLoaderLayerInterfaceVersion ok; mode=adaptive-multi-blend-test
+[omfg][info][1774648089216] vkCreateInstance ok; mode=adaptive-multi-blend-test; app=re8.exe; engine=vkd3d; apiVersion=1.3.0
+[omfg][info][1774648089515] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH); presentId=1; presentWait=1; displayTiming=0
+[omfg][info][1774648089533] vkDestroyDevice
+[omfg][info][1774648089534] vkDestroyInstance
+[omfg][info][1774648089549] vkNegotiateLoaderLayerInterfaceVersion ok; mode=adaptive-multi-blend-test
+[omfg][info][1774648089550] vkCreateInstance ok; mode=adaptive-multi-blend-test; app=re8.exe; engine=vkd3d; apiVersion=1.3.0
+[omfg][info][1774648089837] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH); presentId=1; presentWait=1; displayTiming=0
+[omfg][info][1774648089852] vkNegotiateLoaderLayerInterfaceVersion ok; mode=adaptive-multi-blend-test
+[omfg][info][1774648089854] vkCreateInstance ok; mode=adaptive-multi-blend-test; apiVersion=1.1.0
+[omfg][info][1774648089989] vkDestroyInstance
+[omfg][info][1774648091187] created history image for swapchain
+[omfg][info][1774648091187] vkCreateSwapchainKHR ok; extent=1274x775; format=44; presentMode=FIFO; minImages=3->6; usage=TRANSFER_SRC|STORAGE|COLOR_ATTACHMENT (0x19) -> TRANSFER_SRC|SAMPLED|STORAGE|COLOR_ATTACHMENT (0x1d); images=6; mode=adaptive-multi-blend-test
+[omfg][info][1774648091192] vkQueuePresentKHR frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774648091192] initialized injection resources for queue family 0
+[omfg][info][1774648091192] initialized blend resources for swapchain
+[omfg][info][1774648091192] adaptive-multi target controller; present=1; targetFps=0.0; baseFps=0.0; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=0.000; smoothedIntervalMs=0.000
+[omfg][info][1774648091195] adaptive-multi-blend primed previous frame history
+[omfg][info][1774648091311] vkDestroySwapchainKHR
+[omfg][info][1774648091317] created history image for swapchain
+[omfg][info][1774648091317] vkCreateSwapchainKHR ok; extent=1280x787; format=44; presentMode=FIFO; minImages=3->6; usage=TRANSFER_SRC|STORAGE|COLOR_ATTACHMENT (0x19) -> TRANSFER_SRC|SAMPLED|STORAGE|COLOR_ATTACHMENT (0x1d); images=6; mode=adaptive-multi-blend-test
+[omfg][info][1774648091319] vkQueuePresentKHR frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774648091319] initialized injection resources for queue family 0
+[omfg][info][1774648091319] initialized blend resources for swapchain
+[omfg][info][1774648091319] adaptive-multi target controller; present=1; targetFps=0.0; baseFps=0.0; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=0.000; smoothedIntervalMs=0.000
+[omfg][info][1774648091319] adaptive-multi-blend primed previous frame history
+[omfg][info][1774648091324] vkQueuePresentKHR frame=2; queueFamily=0; imageIndex=1; waitSemaphores=1
+[omfg][info][1774648091324] adaptive-multi target controller; present=2; targetFps=0.0; baseFps=201.3; desiredGeneratedFrames=1.000; emittedGeneratedFrames=1; carry=0.000; intervalMs=4.967; smoothedIntervalMs=4.967
+[omfg][info][1774648091324] first adaptive multi blended generated-frame present succeeded
+[omfg][info][1774648091324] adaptive multi blended frame present=1; generatedImageIndices=[2]; currentImageIndex=1; originalFirst=0
+[omfg][info][1774648091352] vkQueuePresentKHR frame=3; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648091352] adaptive-multi target controller; present=3; targetFps=0.0; baseFps=35.3; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=28.333; smoothedIntervalMs=10.809
+[omfg][info][1774648091354] adaptive multi blended frame present=3; generatedImageIndices=[4, 5]; currentImageIndex=3; originalFirst=0
+[omfg][info][1774648091379] vkQueuePresentKHR frame=4; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774648091379] adaptive-multi target controller; present=4; targetFps=0.0; baseFps=36.9; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=27.077; smoothedIntervalMs=14.876
+[omfg][info][1774648091380] adaptive multi blended frame present=5; generatedImageIndices=[2, 1]; currentImageIndex=0; originalFirst=0
+[omfg][info][1774648091404] vkQueuePresentKHR frame=5; queueFamily=0; imageIndex=4; waitSemaphores=1
+[omfg][info][1774648091404] adaptive-multi target controller; present=5; targetFps=0.0; baseFps=39.3; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=25.471; smoothedIntervalMs=17.524
+[omfg][info][1774648091406] adaptive-multi target controller; present=6; targetFps=0.0; baseFps=540.8; desiredGeneratedFrames=1.000; emittedGeneratedFrames=1; carry=0.000; intervalMs=1.849; smoothedIntervalMs=13.606
+[omfg][info][1774648091436] adaptive-multi target controller; present=7; targetFps=0.0; baseFps=33.1; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=30.203; smoothedIntervalMs=17.755
+[omfg][info][1774648092900] adaptive-multi target controller; present=21; targetFps=0.0; baseFps=296.6; desiredGeneratedFrames=1.000; emittedGeneratedFrames=1; carry=0.000; intervalMs=3.371; smoothedIntervalMs=220.820
+[omfg][info][1774648092999] adaptive-multi target controller; present=23; targetFps=0.0; baseFps=10.6; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=94.548; smoothedIntervalMs=148.657
+[omfg][info][1774648093312] adaptive multi blended frame present=60; generatedImageIndices=[2, 4]; currentImageIndex=3; originalFirst=0
+[omfg][info][1774648094188] vkQueuePresentKHR frame=60; queueFamily=0; imageIndex=5; waitSemaphores=1
+[omfg][info][1774648094188] adaptive-multi target controller; present=60; targetFps=0.0; baseFps=30.8; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=32.479; smoothedIntervalMs=33.206
+[omfg][info][1774648094312] adaptive multi blended frame present=120; generatedImageIndices=[2, 4]; currentImageIndex=3; originalFirst=0
+[omfg][info][1774648095316] adaptive multi blended frame present=180; generatedImageIndices=[2, 4]; currentImageIndex=3; originalFirst=0
+[omfg][info][1774648095546] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH); presentId=1; presentWait=1; displayTiming=0
+[omfg][info][1774648096188] vkQueuePresentKHR frame=120; queueFamily=0; imageIndex=5; waitSemaphores=1
+[omfg][info][1774648096188] adaptive-multi target controller; present=120; targetFps=0.0; baseFps=30.0; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=33.279; smoothedIntervalMs=33.304
+[omfg][info][1774648096312] adaptive multi blended frame present=240; generatedImageIndices=[2, 4]; currentImageIndex=3; originalFirst=0
+[omfg][info][1774648097312] adaptive multi blended frame present=300; generatedImageIndices=[2, 4]; currentImageIndex=3; originalFirst=0
+[omfg][info][1774648098188] vkQueuePresentKHR frame=180; queueFamily=0; imageIndex=5; waitSemaphores=1
+[omfg][info][1774648098188] adaptive-multi target controller; present=180; targetFps=0.0; baseFps=30.0; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=33.320; smoothedIntervalMs=33.318
+[omfg][info][1774648098312] adaptive multi blended frame present=360; generatedImageIndices=[2, 4]; currentImageIndex=3; originalFirst=0
+[omfg][info][1774648099312] adaptive multi blended frame present=420; generatedImageIndices=[2, 4]; currentImageIndex=3; originalFirst=0
+[omfg][info][1774648100188] vkQueuePresentKHR frame=240; queueFamily=0; imageIndex=5; waitSemaphores=1
+[omfg][info][1774648100188] adaptive-multi target controller; present=240; targetFps=0.0; baseFps=30.1; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=33.262; smoothedIntervalMs=33.303
+[omfg][info][1774648100312] adaptive multi blended frame present=480; generatedImageIndices=[2, 4]; currentImageIndex=3; originalFirst=0
+[omfg][info][1774648101312] adaptive multi blended frame present=540; generatedImageIndices=[2, 4]; currentImageIndex=3; originalFirst=0
+[omfg][info][1774648102188] vkQueuePresentKHR frame=300; queueFamily=0; imageIndex=5; waitSemaphores=1
+[omfg][info][1774648102188] adaptive-multi target controller; present=300; targetFps=0.0; baseFps=29.9; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=33.455; smoothedIntervalMs=33.354
+[omfg][info][1774648102312] adaptive multi blended frame present=600; generatedImageIndices=[2, 4]; currentImageIndex=3; originalFirst=0
+[omfg][info][1774648103316] adaptive multi blended frame present=660; generatedImageIndices=[2, 4]; currentImageIndex=3; originalFirst=0
+[omfg][info][1774648104188] vkQueuePresentKHR frame=360; queueFamily=0; imageIndex=5; waitSemaphores=1
+[omfg][info][1774648104188] adaptive-multi target controller; present=360; targetFps=0.0; baseFps=30.1; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=33.189; smoothedIntervalMs=33.285
+[omfg][info][1774648104312] adaptive multi blended frame present=720; generatedImageIndices=[2, 4]; currentImageIndex=3; originalFirst=0
+[omfg][info][1774648105312] adaptive multi blended frame present=780; generatedImageIndices=[2, 4]; currentImageIndex=3; originalFirst=0
+[omfg][info][1774648106188] vkQueuePresentKHR frame=420; queueFamily=0; imageIndex=5; waitSemaphores=1
+[omfg][info][1774648106188] adaptive-multi target controller; present=420; targetFps=0.0; baseFps=30.0; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=33.326; smoothedIntervalMs=33.331
+[omfg][info][1774648106312] adaptive multi blended frame present=840; generatedImageIndices=[2, 4]; currentImageIndex=3; originalFirst=0
+[omfg][info][1774648107312] adaptive multi blended frame present=900; generatedImageIndices=[2, 4]; currentImageIndex=3; originalFirst=0
+[omfg][info][1774648108188] vkQueuePresentKHR frame=480; queueFamily=0; imageIndex=5; waitSemaphores=1
+[omfg][info][1774648108188] adaptive-multi target controller; present=480; targetFps=0.0; baseFps=29.9; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=33.420; smoothedIntervalMs=33.348
+[omfg][info][1774648108312] adaptive multi blended frame present=960; generatedImageIndices=[2, 4]; currentImageIndex=3; originalFirst=0
+[omfg][info][1774648109312] adaptive multi blended frame present=1020; generatedImageIndices=[2, 4]; currentImageIndex=3; originalFirst=0
+[omfg][info][1774648110188] vkQueuePresentKHR frame=540; queueFamily=0; imageIndex=5; waitSemaphores=1
+[omfg][info][1774648110188] adaptive-multi target controller; present=540; targetFps=0.0; baseFps=29.8; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=33.556; smoothedIntervalMs=33.357
+[omfg][info][1774648110312] adaptive multi blended frame present=1080; generatedImageIndices=[2, 4]; currentImageIndex=3; originalFirst=0
+[omfg][info][1774648111312] adaptive multi blended frame present=1140; generatedImageIndices=[2, 4]; currentImageIndex=3; originalFirst=0
+[omfg][info][1774648112188] vkQueuePresentKHR frame=600; queueFamily=0; imageIndex=5; waitSemaphores=1
+[omfg][info][1774648112188] adaptive-multi target controller; present=600; targetFps=0.0; baseFps=30.0; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=33.337; smoothedIntervalMs=33.333
+[omfg][info][1774648112311] adaptive multi blended frame present=1200; generatedImageIndices=[2, 4]; currentImageIndex=3; originalFirst=0
+[omfg][info][1774648112619] vkDestroyDevice
+[omfg][info][1774648113311] adaptive multi blended frame present=1260; generatedImageIndices=[2, 4]; currentImageIndex=3; originalFirst=0
+[omfg][info][1774648114188] vkQueuePresentKHR frame=660; queueFamily=0; imageIndex=5; waitSemaphores=1
+[omfg][info][1774648114188] adaptive-multi target controller; present=660; targetFps=0.0; baseFps=30.0; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=33.310; smoothedIntervalMs=33.340
+[omfg][info][1774648114312] adaptive multi blended frame present=1320; generatedImageIndices=[2, 4]; currentImageIndex=3; originalFirst=0
+[omfg][info][1774648115312] adaptive multi blended frame present=1380; generatedImageIndices=[2, 4]; currentImageIndex=3; originalFirst=0
+[omfg][info][1774648116188] vkQueuePresentKHR frame=720; queueFamily=0; imageIndex=5; waitSemaphores=1
+[omfg][info][1774648116188] adaptive-multi target controller; present=720; targetFps=0.0; baseFps=29.9; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=33.402; smoothedIntervalMs=33.350
+[omfg][info][1774648116311] adaptive multi blended frame present=1440; generatedImageIndices=[2, 4]; currentImageIndex=3; originalFirst=0
+[omfg][info][1774648116970] adaptive-multi target controller; present=743; targetFps=0.0; baseFps=112.3; desiredGeneratedFrames=1.000; emittedGeneratedFrames=1; carry=0.000; intervalMs=8.908; smoothedIntervalMs=33.606
+[omfg][info][1774648116999] adaptive-multi target controller; present=745; targetFps=0.0; baseFps=45.3; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=22.077; smoothedIntervalMs=25.701
+[omfg][info][1774648117323] adaptive multi blended frame present=1500; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648118166] vkQueuePresentKHR frame=780; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648118166] adaptive-multi target controller; present=780; targetFps=0.0; baseFps=30.0; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=33.325; smoothedIntervalMs=33.341
+[omfg][info][1774648118323] adaptive multi blended frame present=1560; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648119323] adaptive multi blended frame present=1620; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648120165] vkQueuePresentKHR frame=840; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648120166] adaptive-multi target controller; present=840; targetFps=0.0; baseFps=30.2; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=33.153; smoothedIntervalMs=33.310
+[omfg][info][1774648120327] adaptive multi blended frame present=1680; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648121323] adaptive multi blended frame present=1740; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648122166] vkQueuePresentKHR frame=900; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648122166] adaptive-multi target controller; present=900; targetFps=0.0; baseFps=30.1; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=33.223; smoothedIntervalMs=33.319
+[omfg][info][1774648122323] adaptive multi blended frame present=1800; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648123323] adaptive multi blended frame present=1860; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648124165] vkQueuePresentKHR frame=960; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648124165] adaptive-multi target controller; present=960; targetFps=0.0; baseFps=30.0; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=33.297; smoothedIntervalMs=33.303
+[omfg][info][1774648124323] adaptive multi blended frame present=1920; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648125323] adaptive multi blended frame present=1980; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648126166] vkQueuePresentKHR frame=1020; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648126166] adaptive-multi target controller; present=1020; targetFps=0.0; baseFps=29.9; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=33.389; smoothedIntervalMs=33.345
+[omfg][info][1774648126323] adaptive multi blended frame present=2040; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648127323] adaptive multi blended frame present=2100; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648128166] vkQueuePresentKHR frame=1080; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648128166] adaptive-multi target controller; present=1080; targetFps=0.0; baseFps=30.0; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=33.360; smoothedIntervalMs=33.352
+[omfg][info][1774648128323] adaptive multi blended frame present=2160; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648129323] adaptive multi blended frame present=2220; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648130166] vkQueuePresentKHR frame=1140; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648130166] adaptive-multi target controller; present=1140; targetFps=0.0; baseFps=30.0; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=33.367; smoothedIntervalMs=33.363
+[omfg][info][1774648130323] adaptive multi blended frame present=2280; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648131323] adaptive multi blended frame present=2340; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648132166] vkQueuePresentKHR frame=1200; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648132166] adaptive-multi target controller; present=1200; targetFps=0.0; baseFps=30.0; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=33.359; smoothedIntervalMs=33.330
+[omfg][info][1774648132323] adaptive multi blended frame present=2400; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648133323] adaptive multi blended frame present=2460; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648134165] vkQueuePresentKHR frame=1260; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648134166] adaptive-multi target controller; present=1260; targetFps=0.0; baseFps=29.9; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=33.416; smoothedIntervalMs=33.345
+[omfg][info][1774648134323] adaptive multi blended frame present=2520; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648135323] adaptive multi blended frame present=2580; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648136165] vkQueuePresentKHR frame=1320; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648136166] adaptive-multi target controller; present=1320; targetFps=0.0; baseFps=30.1; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=33.241; smoothedIntervalMs=33.315
+[omfg][info][1774648136323] adaptive multi blended frame present=2640; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648137323] adaptive multi blended frame present=2700; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648138165] vkQueuePresentKHR frame=1380; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648138165] adaptive-multi target controller; present=1380; targetFps=0.0; baseFps=30.2; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=33.074; smoothedIntervalMs=33.278
+[omfg][info][1774648138322] adaptive multi blended frame present=2760; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648139323] adaptive multi blended frame present=2820; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648140165] vkQueuePresentKHR frame=1440; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648140166] adaptive-multi target controller; present=1440; targetFps=0.0; baseFps=30.0; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=33.293; smoothedIntervalMs=33.334
+[omfg][info][1774648140323] adaptive multi blended frame present=2880; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648141323] adaptive multi blended frame present=2940; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648142165] vkQueuePresentKHR frame=1500; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648142166] adaptive-multi target controller; present=1500; targetFps=0.0; baseFps=30.0; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=33.293; smoothedIntervalMs=33.326
+[omfg][info][1774648142323] adaptive multi blended frame present=3000; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648143323] adaptive multi blended frame present=3060; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648144165] vkQueuePresentKHR frame=1560; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648144165] adaptive-multi target controller; present=1560; targetFps=0.0; baseFps=30.0; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=33.280; smoothedIntervalMs=33.325
+[omfg][info][1774648144323] adaptive multi blended frame present=3120; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648145323] adaptive multi blended frame present=3180; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648146165] vkQueuePresentKHR frame=1620; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648146166] adaptive-multi target controller; present=1620; targetFps=0.0; baseFps=29.9; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=33.423; smoothedIntervalMs=33.360
+[omfg][info][1774648146323] adaptive multi blended frame present=3240; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648147323] adaptive multi blended frame present=3300; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648148165] vkQueuePresentKHR frame=1680; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648148165] adaptive-multi target controller; present=1680; targetFps=0.0; baseFps=29.9; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=33.462; smoothedIntervalMs=33.348
+[omfg][info][1774648148323] adaptive multi blended frame present=3360; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648149323] adaptive multi blended frame present=3420; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648150165] vkQueuePresentKHR frame=1740; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648150165] adaptive-multi target controller; present=1740; targetFps=0.0; baseFps=29.9; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=33.393; smoothedIntervalMs=33.342
+[omfg][info][1774648150323] adaptive multi blended frame present=3480; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648151323] adaptive multi blended frame present=3540; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648152165] vkQueuePresentKHR frame=1800; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648152165] adaptive-multi target controller; present=1800; targetFps=0.0; baseFps=29.9; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=33.421; smoothedIntervalMs=33.327
+[omfg][info][1774648152323] adaptive multi blended frame present=3600; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648153323] adaptive multi blended frame present=3660; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648154165] vkQueuePresentKHR frame=1860; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648154165] adaptive-multi target controller; present=1860; targetFps=0.0; baseFps=30.1; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=33.232; smoothedIntervalMs=33.322
+[omfg][info][1774648154322] adaptive multi blended frame present=3720; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648155322] adaptive multi blended frame present=3780; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648156165] vkQueuePresentKHR frame=1920; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648156165] adaptive-multi target controller; present=1920; targetFps=0.0; baseFps=30.0; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=33.308; smoothedIntervalMs=33.336
+[omfg][info][1774648156322] adaptive multi blended frame present=3840; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648157322] adaptive multi blended frame present=3900; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648158165] vkQueuePresentKHR frame=1980; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648158165] adaptive-multi target controller; present=1980; targetFps=0.0; baseFps=30.0; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=33.289; smoothedIntervalMs=33.324
+[omfg][info][1774648158322] adaptive multi blended frame present=3960; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648159322] adaptive multi blended frame present=4020; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648160165] vkQueuePresentKHR frame=2040; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648160165] adaptive-multi target controller; present=2040; targetFps=0.0; baseFps=30.1; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=33.265; smoothedIntervalMs=33.323
+[omfg][info][1774648160322] adaptive multi blended frame present=4080; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648161322] adaptive multi blended frame present=4140; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648162165] vkQueuePresentKHR frame=2100; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648162165] adaptive-multi target controller; present=2100; targetFps=0.0; baseFps=29.9; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=33.495; smoothedIntervalMs=33.345
+[omfg][info][1774648162323] adaptive multi blended frame present=4200; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648163322] adaptive multi blended frame present=4260; generatedImageIndices=[3, 2]; currentImageIndex=5; originalFirst=0
+[omfg][info][1774648164165] vkQueuePresentKHR frame=2160; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774648164165] adaptive-multi target controller; present=2160; targetFps=0.0; baseFps=30.0; desiredGeneratedFrames=2.000; emittedGeneratedFrames=2; carry=0.000; intervalMs=33.372; smoothedIntervalMs=33.336
+=== title=Resident Evil Village appid=1196590 mode=adaptive-multi-blend steam log ===
+killed pid=19407 args=/home/deck/.local/share/Steam/ubuntu12_32/reaper SteamLaunch AppId=1196590 -- /home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/_v2-entry-point --verb=waitforexitandrun -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
+killed pid=19410 args=/home/deck/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/pressure-vessel/libexec/steam-runtime-tools-0/srt-bwrap --args 26 /usr/lib/pressure-vessel/from-host/libexec/steam-runtime-tools-0/pv-adverb --prefix=/usr/lib/pressure-vessel/from-host --generate-locales --fd 12 --regenerate-ld.so-cache /var/pressure-vessel/ldso --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu --set-ld-library-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu/aliases:/usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu/aliases --overrides-path /usr/lib/pressure-vessel/overrides --exit-with-parent --subreaper --assign-fd=1=3 --assign-fd=2=4 --ld-preload=/home/deck/.local/share/Steam/ubuntu12_32/gameoverlayrenderer.so --ld-preload=/home/deck/.local/share/Steam/ubuntu12_64/gameoverlayrenderer.so -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
+killed pid=19483 args=/usr/lib/pressure-vessel/from-host/libexec/steam-runtime-tools-0/pv-adverb --prefix=/usr/lib/pressure-vessel/from-host --generate-locales --fd 12 --regenerate-ld.so-cache /var/pressure-vessel/ldso --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu --add-ld.so-path /usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu --set-ld-library-path /usr/lib/pressure-vessel/overrides/lib/x86_64-linux-gnu/aliases:/usr/lib/pressure-vessel/overrides/lib/i386-linux-gnu/aliases --overrides-path /usr/lib/pressure-vessel/overrides --exit-with-parent --subreaper --assign-fd=1=3 --assign-fd=2=4 --ld-preload=/home/deck/.local/share/Steam/ubuntu12_32/gameoverlayrenderer.so --ld-preload=/home/deck/.local/share/Steam/ubuntu12_64/gameoverlayrenderer.so -- /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
+killed pid=19507 args=python3 /home/deck/.local/share/Steam/steamapps/common/Proton 10.0/proton waitforexitandrun /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
+killed pid=19509 args=c:\windows\system32\steam.exe /home/deck/.local/share/Steam/steamapps/common/Resident Evil Village BIOHAZARD VILLAGE/re8.exe
+killed pid=19588 args=Z:\home\deck\.local\share\Steam\steamapps\common\Resident Evil Village BIOHAZARD VILLAGE\re8.exe
+=== title=Resident Evil Village appid=1196590 mode=adaptive-multi-blend post-clean process check ===
+deck       19588    1316 88 17:48 ?        00:01:07 [re8.exe] <defunct>
+Connection to 192.168.0.241 closed.

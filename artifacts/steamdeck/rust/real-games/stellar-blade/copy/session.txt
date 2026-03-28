@@ -1,0 +1,138 @@
+spawn ssh -tt -o StrictHostKeyChecking=accept-new -o PreferredAuthentications=password -o PubkeyAuthentication=no deck@192.168.0.241 bash -lc 'set -euo pipefail
+chmod +x /home/deck/omfg.sh
+mkdir -p /home/deck/post-proc-fg-research/logs
+rm -f /home/deck/post-proc-fg-research/logs/stellar-blade-copy-20260327-180326-61437.log /tmp/omfg-stellar-blade-copy-20260327-180326-61437.steam.log
+set -a
+source /run/user/1000/gamescope-environment
+set +a
+export DISPLAY=:0
+export XDG_RUNTIME_DIR=/run/user/1000
+xauth=$(ls -1 /run/user/1000/xauth_* 2>/dev/null | head -1 || true)
+if [ -n "$xauth" ]; then export XAUTHORITY="$xauth"; fi
+kill_all_steam_games() {
+  # Broad pre-kill: terminates any running Steam game processes regardless of AppID.
+  # This prevents cross-game contamination when multiple probes run back-to-back.
+  python3 - <<'"'"'PY'"'"'
+import os, re, subprocess, signal
+self_pid = os.getpid()
+ancestors = {self_pid}
+try:
+    pid = self_pid
+    while True:
+        with open(f'"'"'/proc/{pid}/status'"'"', '"'"'r'"'"', encoding='"'"'utf-8'"'"', errors='"'"'ignore'"'"') as f:
+            ppid = None
+            for line in f:
+                if line.startswith('"'"'PPid:'"'"'):
+                    ppid = int(line.split()[1])
+                    break
+        if not ppid or ppid in ancestors:
+            break
+        ancestors.add(ppid)
+        pid = ppid
+except Exception:
+    pass
+appid_re = re.compile(r'"'"'AppId=\d+'"'"')
+proton_markers = ('"'"'SteamLaunch'"'"', '"'"'waitforexitandrun'"'"', '"'"'reaper steam'"'"', '"'"'wineserver'"'"', '"'"'wine64'"'"', '"'"'wine '"'"')
+out = subprocess.check_output(['"'"'ps'"'"', '"'"'-eo'"'"', '"'"'pid=,args='"'"'], text=True, errors='"'"'ignore'"'"')
+for line in out.splitlines():
+    s = line.strip()
+    if not s:
+        continue
+    parts = s.split(None, 1)
+    if len(parts) != 2:
+        continue
+    pid = int(parts[0])
+    args = parts[1]
+    if pid in ancestors:
+        continue
+    if appid_re.search(args) or any(m in args for m in proton_markers):
+        try:
+            os.kill(pid, signal.SIGKILL)
+            print(f'"'"'killed pid={pid} args={args}'"'"')
+        except ProcessLookupError:
+            pass
+        except PermissionError:
+            pass
+PY
+}
+cleanup_matches() {
+  APPID='"'"'3489700'"'"' EXE_REGEX='"'"'SB.exe|SB-Win64-Shipping.exe'"'"' python3 - <<'"'"'PY'"'"'
+import os, subprocess, signal
+appid = os.environ['"'"'APPID'"'"']
+exe_regex = os.environ.get('"'"'EXE_REGEX'"'"', '"'"''"'"')
+patterns = [f'"'"'AppId={appid}'"'"']
+if exe_regex:
+    patterns.append(exe_regex)
+self_pid = os.getpid()
+ancestors = {self_pid}
+try:
+    pid = self_pid
+    while True:
+        with open(f'"'"'/proc/{pid}/status'"'"', '"'"'r'"'"', encoding='"'"'utf-8'"'"', errors='"'"'ignore'"'"') as f:
+            ppid = None
+            for line in f:
+                if line.startswith('"'"'PPid:'"'"'):
+                    ppid = int(line.split()[1])
+                    break
+        if not ppid or ppid in ancestors:
+            break
+        ancestors.add(ppid)
+        pid = ppid
+except Exception:
+    pass
+out = subprocess.check_output(['"'"'ps'"'"', '"'"'-eo'"'"', '"'"'pid=,args='"'"'], text=True, errors='"'"'ignore'"'"')
+for line in out.splitlines():
+    s = line.strip()
+    if not s:
+        continue
+    parts = s.split(None, 1)
+    if len(parts) != 2:
+        continue
+    pid = int(parts[0])
+    args = parts[1]
+    if pid in ancestors:
+        continue
+    if any(p and p in args for p in patterns):
+        try:
+            os.kill(pid, signal.SIGKILL)
+            print(f'"'"'killed pid={pid} args={args}'"'"')
+        except ProcessLookupError:
+            pass
+        except PermissionError:
+            pass
+PY
+}
+kill_all_steam_games || true
+sleep 3
+cleanup_matches || true
+sleep 2
+echo "=== title=Stellar Blade™ appid=3489700 mode=copy run=20260327-180326-61437 paths ==="
+echo "remote_log=/home/deck/post-proc-fg-research/logs/stellar-blade-copy-20260327-180326-61437.log"
+echo "remote_steam_log=/tmp/omfg-stellar-blade-copy-20260327-180326-61437.steam.log"
+nohup steam steam://rungameid/3489700 >/tmp/omfg-stellar-blade-copy-20260327-180326-61437.steam.log 2>&1 &
+sleep 90
+echo "=== title=Stellar Blade™ appid=3489700 mode=copy process ==="
+ps -ef | grep -E "AppId=3489700|SB.exe|SB-Win64-Shipping.exe" | grep -v grep || true
+echo "=== title=Stellar Blade™ appid=3489700 mode=copy omfg log ==="
+if [ -f /home/deck/post-proc-fg-research/logs/stellar-blade-copy-20260327-180326-61437.log ]; then tail -200 /home/deck/post-proc-fg-research/logs/stellar-blade-copy-20260327-180326-61437.log; else echo missing-log; fi
+echo "=== title=Stellar Blade™ appid=3489700 mode=copy steam log ==="
+if [ -f /tmp/omfg-stellar-blade-copy-20260327-180326-61437.steam.log ]; then tail -80 /tmp/omfg-stellar-blade-copy-20260327-180326-61437.steam.log; else echo missing-steam-log; fi
+cleanup_matches || true
+echo "=== title=Stellar Blade™ appid=3489700 mode=copy post-clean process check ==="
+ps -ef | grep -E "AppId=3489700|SB.exe|SB-Win64-Shipping.exe" | grep -v grep || true'
+deck@192.168.0.241's password: 
+=== title=Stellar Blade™ appid=3489700 mode=copy run=20260327-180326-61437 paths ===
+remote_log=/home/deck/post-proc-fg-research/logs/stellar-blade-copy-20260327-180326-61437.log
+remote_steam_log=/tmp/omfg-stellar-blade-copy-20260327-180326-61437.steam.log
+=== title=Stellar Blade™ appid=3489700 mode=copy process ===
+deck       23082    1316  0 17:58 ?        00:00:00 c:\windows\system32\steam.exe /home/deck/.local/share/Steam/steamapps/common/StellarBlade/SB.exe -DistributionPlatform=Steam
+deck       23158    1316  0 17:58 ?        00:00:00 Z:\home\deck\.local\share\Steam\steamapps\common\StellarBlade\SB.exe -DistributionPlatform=Steam
+deck       23177    1316  0 17:58 ?        00:00:00 .\crs-handler.exe --no-identify-client-via-url --no-upload-annotations --binary-path=Z:\home\deck\.local\share\Steam\steamapps\common\StellarBlade\SB\Binaries\Win64\SB-Win64-Shipping.exe --capture-image --report-id=2afe0a78-ed52-4ee3-83cb-c022228c4213 --database=./.crashdata --metrics-dir=./.crashdata --url=https://upload.studiocrs.playstation.com/crashrecorder/rest/recv/upload/v1/67125a5f-9eb4-46e1-8fe2-4595dc69745a/16816387-9de6-42b1-97b0-2c545177772e --initial-client-data=0xfc,0x100,0x104,0x108,0xf8,0x10c,0x6ffffa5a3480,0x6ffffa5a3490,0x6ffffa5a34a0
+=== title=Stellar Blade™ appid=3489700 mode=copy omfg log ===
+missing-log
+=== title=Stellar Blade™ appid=3489700 mode=copy steam log ===
+=== title=Stellar Blade™ appid=3489700 mode=copy post-clean process check ===
+deck       23082    1316  0 17:58 ?        00:00:00 c:\windows\system32\steam.exe /home/deck/.local/share/Steam/steamapps/common/StellarBlade/SB.exe -DistributionPlatform=Steam
+deck       23158    1316  0 17:58 ?        00:00:00 Z:\home\deck\.local\share\Steam\steamapps\common\StellarBlade\SB.exe -DistributionPlatform=Steam
+deck       23177    1316  0 17:58 ?        00:00:00 .\crs-handler.exe --no-identify-client-via-url --no-upload-annotations --binary-path=Z:\home\deck\.local\share\Steam\steamapps\common\StellarBlade\SB\Binaries\Win64\SB-Win64-Shipping.exe --capture-image --report-id=2afe0a78-ed52-4ee3-83cb-c022228c4213 --database=./.crashdata --metrics-dir=./.crashdata --url=https://upload.studiocrs.playstation.com/crashrecorder/rest/recv/upload/v1/67125a5f-9eb4-46e1-8fe2-4595dc69745a/16816387-9de6-42b1-97b0-2c545177772e --initial-client-data=0xfc,0x100,0x104,0x108,0xf8,0x10c,0x6ffffa5a3480,0x6ffffa5a3490,0x6ffffa5a34a0
+Connection to 192.168.0.241 closed.
