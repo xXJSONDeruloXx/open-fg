@@ -1,0 +1,659 @@
+[omfg][info][1774667026522] hot config reloaded: path=/home/deck/post-proc-fg-research/config/omfg-live.toml; values=8
+[omfg][info][1774667026522] vkNegotiateLoaderLayerInterfaceVersion ok; mode=reproject-multi-blend-test
+[omfg][info][1774667026526] vkCreateInstance ok; mode=reproject-multi-blend-test; apiVersion=1.1.0
+[omfg][info][1774667027716] hot config reloaded: path=/home/deck/post-proc-fg-research/config/omfg-live.toml; values=8
+[omfg][info][1774667027716] vkNegotiateLoaderLayerInterfaceVersion ok; mode=reproject-multi-blend-test
+[omfg][info][1774667027718] vkCreateInstance ok; mode=reproject-multi-blend-test; apiVersion=1.1.0
+[omfg][info][1774667028481] vkNegotiateLoaderLayerInterfaceVersion ok; mode=reproject-multi-blend-test
+[omfg][info][1774667028483] vkCreateInstance ok; mode=reproject-multi-blend-test; app=re8.exe; engine=DXVK; apiVersion=1.3.0
+[omfg][info][1774667028612] vkNegotiateLoaderLayerInterfaceVersion ok; mode=reproject-multi-blend-test
+[omfg][info][1774667028613] vkCreateInstance ok; mode=reproject-multi-blend-test; app=re8.exe; engine=vkd3d; apiVersion=1.3.0
+[omfg][info][1774667028842] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH); presentId=1; presentWait=1; displayTiming=0
+[omfg][info][1774667028858] vkDestroyDevice
+[omfg][info][1774667028934] vkDestroyInstance
+[omfg][info][1774667028951] vkNegotiateLoaderLayerInterfaceVersion ok; mode=reproject-multi-blend-test
+[omfg][info][1774667028953] vkCreateInstance ok; mode=reproject-multi-blend-test; app=re8.exe; engine=vkd3d; apiVersion=1.3.0
+[omfg][info][1774667029266] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH); presentId=1; presentWait=1; displayTiming=0
+[omfg][info][1774667029281] vkNegotiateLoaderLayerInterfaceVersion ok; mode=reproject-multi-blend-test
+[omfg][info][1774667029282] vkCreateInstance ok; mode=reproject-multi-blend-test; apiVersion=1.1.0
+[omfg][info][1774667029409] vkDestroyInstance
+[omfg][info][1774667030104] created history image for swapchain
+[omfg][info][1774667030104] vkCreateSwapchainKHR ok; extent=1920x1080; format=64; presentMode=MAILBOX; minImages=3->6; usage=TRANSFER_SRC|STORAGE|COLOR_ATTACHMENT (0x19) -> TRANSFER_SRC|SAMPLED|STORAGE|COLOR_ATTACHMENT (0x1d); images=6; mode=reproject-multi-blend-test
+[omfg][info][1774667030109] vkQueuePresentKHR frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774667030109] initialized benchmark timestamp query pool; capacity=4096; timestampPeriodNs=10.000; timestampValidBits=64
+[omfg][info][1774667030109] initialized injection resources for queue family 0
+[omfg][info][1774667030110] initialized blend resources for swapchain
+[omfg][info][1774667030110] reproject-multi-blend primed previous frame history
+[omfg][info][1774667030111] vkDestroySwapchainKHR
+[omfg][info][1774667030116] created history image for swapchain
+[omfg][info][1774667030117] vkCreateSwapchainKHR ok; extent=1280x800; format=64; presentMode=MAILBOX; minImages=3->6; usage=TRANSFER_SRC|STORAGE|COLOR_ATTACHMENT (0x19) -> TRANSFER_SRC|SAMPLED|STORAGE|COLOR_ATTACHMENT (0x1d); images=6; mode=reproject-multi-blend-test
+[omfg][info][1774667030118] vkQueuePresentKHR frame=1; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774667030118] initialized benchmark timestamp query pool; capacity=4096; timestampPeriodNs=10.000; timestampValidBits=64
+[omfg][info][1774667030119] initialized injection resources for queue family 0
+[omfg][info][1774667030119] initialized blend resources for swapchain
+[omfg][info][1774667030120] reproject-multi-blend primed previous frame history
+[omfg][info][1774667030228] vkQueuePresentKHR frame=2; queueFamily=0; imageIndex=1; waitSemaphores=1
+[omfg][info][1774667030245] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=1; present=2; generatedFrames=1; cpuAcquireMs=0.015; cpuSetupMs=0.002; cpuRecordMs=0.066; cpuSubmitMs=0.058; cpuSubmitWaitMs=15.284; cpuGeneratedPresentMs=0.072; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=15.496; gpuCmdMs=15.207; gpuAvailable=1
+[omfg][info][1774667030245] first reproject multi blended generated-frame present succeeded
+[omfg][info][1774667030245] multi-blend original-first mode auto-enabled for MAILBOX present mode
+[omfg][info][1774667030245] reproject multi blended frame present=1; generatedImageIndices=[2]; currentImageIndex=1; originalFirst=1
+[omfg][info][1774667030248] vkQueuePresentKHR frame=3; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774667030263] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=2; present=3; generatedFrames=1; cpuAcquireMs=0.012; cpuSetupMs=0.002; cpuRecordMs=0.076; cpuSubmitMs=0.055; cpuSubmitWaitMs=15.182; cpuGeneratedPresentMs=0.085; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=15.413; gpuCmdMs=15.084; gpuAvailable=1
+[omfg][info][1774667030263] reproject multi blended frame present=2; generatedImageIndices=[4]; currentImageIndex=3; originalFirst=1
+[omfg][info][1774667030268] vkQueuePresentKHR frame=4; queueFamily=0; imageIndex=5; waitSemaphores=1
+[omfg][info][1774667030285] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=3; present=4; generatedFrames=1; cpuAcquireMs=0.075; cpuSetupMs=0.002; cpuRecordMs=0.066; cpuSubmitMs=0.060; cpuSubmitWaitMs=15.077; cpuGeneratedPresentMs=0.145; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=15.426; gpuCmdMs=15.001; gpuAvailable=1
+[omfg][info][1774667030285] reproject multi blended frame present=3; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][info][1774667030286] vkQueuePresentKHR frame=5; queueFamily=0; imageIndex=0; waitSemaphores=1
+[omfg][info][1774667030302] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=4; present=5; generatedFrames=1; cpuAcquireMs=0.090; cpuSetupMs=0.002; cpuRecordMs=0.059; cpuSubmitMs=0.046; cpuSubmitWaitMs=15.062; cpuGeneratedPresentMs=0.105; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=15.363; gpuCmdMs=14.974; gpuAvailable=1
+[omfg][info][1774667030318] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=5; present=6; generatedFrames=1; cpuAcquireMs=0.043; cpuSetupMs=0.002; cpuRecordMs=0.049; cpuSubmitMs=0.041; cpuSubmitWaitMs=14.983; cpuGeneratedPresentMs=0.107; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=15.224; gpuCmdMs=14.914; gpuAvailable=1
+[omfg][info][1774667032482] vkQueuePresentKHR frame=60; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774667032527] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=60; present=61; generatedFrames=1; cpuAcquireMs=0.114; cpuSetupMs=0.003; cpuRecordMs=0.107; cpuSubmitMs=0.115; cpuSubmitWaitMs=15.462; cpuGeneratedPresentMs=0.122; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=15.922; gpuCmdMs=15.322; gpuAvailable=1
+[omfg][info][1774667032527] reproject multi blended frame present=60; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][info][1774667033767] vkQueuePresentKHR frame=120; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774667033806] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=120; present=121; generatedFrames=1; cpuAcquireMs=0.105; cpuSetupMs=0.002; cpuRecordMs=0.092; cpuSubmitMs=0.107; cpuSubmitWaitMs=15.109; cpuGeneratedPresentMs=0.122; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=15.538; gpuCmdMs=15.012; gpuAvailable=1
+[omfg][info][1774667033806] reproject multi blended frame present=120; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][info][1774667035024] vkQueuePresentKHR frame=180; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774667035064] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=180; present=181; generatedFrames=1; cpuAcquireMs=0.087; cpuSetupMs=0.018; cpuRecordMs=0.087; cpuSubmitMs=0.097; cpuSubmitWaitMs=15.147; cpuGeneratedPresentMs=0.137; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=15.574; gpuCmdMs=15.032; gpuAvailable=1
+[omfg][info][1774667035064] reproject multi blended frame present=180; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][info][1774667035374] vkCreateDevice ok; gpu=AMD Custom GPU 0932 (RADV VANGOGH); presentId=1; presentWait=1; displayTiming=0
+[omfg][info][1774667036318] vkQueuePresentKHR frame=240; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774667036351] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=240; present=241; generatedFrames=1; cpuAcquireMs=0.091; cpuSetupMs=0.002; cpuRecordMs=0.093; cpuSubmitMs=0.103; cpuSubmitWaitMs=12.307; cpuGeneratedPresentMs=0.126; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=12.721; gpuCmdMs=12.128; gpuAvailable=1
+[omfg][info][1774667036351] reproject multi blended frame present=240; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][info][1774667037257] vkQueuePresentKHR frame=300; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774667037285] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=300; present=301; generatedFrames=1; cpuAcquireMs=0.090; cpuSetupMs=0.003; cpuRecordMs=0.086; cpuSubmitMs=0.078; cpuSubmitWaitMs=10.232; cpuGeneratedPresentMs=0.247; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=10.735; gpuCmdMs=10.134; gpuAvailable=1
+[omfg][info][1774667037285] reproject multi blended frame present=300; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][info][1774667038156] vkQueuePresentKHR frame=360; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774667038183] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=360; present=361; generatedFrames=1; cpuAcquireMs=0.088; cpuSetupMs=0.002; cpuRecordMs=0.083; cpuSubmitMs=0.108; cpuSubmitWaitMs=10.441; cpuGeneratedPresentMs=0.159; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=10.881; gpuCmdMs=10.280; gpuAvailable=1
+[omfg][info][1774667038183] reproject multi blended frame present=360; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][info][1774667039049] vkQueuePresentKHR frame=420; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774667039077] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=420; present=421; generatedFrames=1; cpuAcquireMs=0.100; cpuSetupMs=0.002; cpuRecordMs=0.081; cpuSubmitMs=0.105; cpuSubmitWaitMs=10.435; cpuGeneratedPresentMs=0.152; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=10.875; gpuCmdMs=10.294; gpuAvailable=1
+[omfg][info][1774667039077] reproject multi blended frame present=420; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][info][1774667039939] vkQueuePresentKHR frame=480; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774667039967] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=480; present=481; generatedFrames=1; cpuAcquireMs=0.103; cpuSetupMs=0.002; cpuRecordMs=0.088; cpuSubmitMs=0.102; cpuSubmitWaitMs=10.168; cpuGeneratedPresentMs=0.157; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=10.620; gpuCmdMs=10.033; gpuAvailable=1
+[omfg][info][1774667039967] reproject multi blended frame present=480; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][info][1774667040828] vkQueuePresentKHR frame=540; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774667040856] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=540; present=541; generatedFrames=1; cpuAcquireMs=0.084; cpuSetupMs=0.003; cpuRecordMs=0.087; cpuSubmitMs=0.094; cpuSubmitWaitMs=10.174; cpuGeneratedPresentMs=0.159; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=10.601; gpuCmdMs=10.035; gpuAvailable=1
+[omfg][info][1774667040856] reproject multi blended frame present=540; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][info][1774667041821] vkQueuePresentKHR frame=600; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774667041855] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=600; present=601; generatedFrames=1; cpuAcquireMs=0.177; cpuSetupMs=0.002; cpuRecordMs=0.096; cpuSubmitMs=0.113; cpuSubmitWaitMs=13.937; cpuGeneratedPresentMs=0.168; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=14.494; gpuCmdMs=13.739; gpuAvailable=1
+[omfg][info][1774667041855] reproject multi blended frame present=600; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][info][1774667042797] vkQueuePresentKHR frame=660; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774667042824] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=660; present=661; generatedFrames=1; cpuAcquireMs=0.098; cpuSetupMs=0.002; cpuRecordMs=0.072; cpuSubmitMs=0.081; cpuSubmitWaitMs=10.182; cpuGeneratedPresentMs=0.163; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=10.599; gpuCmdMs=10.026; gpuAvailable=1
+[omfg][info][1774667042824] reproject multi blended frame present=660; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][info][1774667043688] vkQueuePresentKHR frame=720; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774667043716] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=720; present=721; generatedFrames=1; cpuAcquireMs=0.102; cpuSetupMs=0.002; cpuRecordMs=0.093; cpuSubmitMs=0.095; cpuSubmitWaitMs=10.173; cpuGeneratedPresentMs=0.157; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=10.622; gpuCmdMs=10.068; gpuAvailable=1
+[omfg][info][1774667043716] reproject multi blended frame present=720; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][info][1774667044587] vkQueuePresentKHR frame=780; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774667044615] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=780; present=781; generatedFrames=1; cpuAcquireMs=0.101; cpuSetupMs=0.003; cpuRecordMs=0.095; cpuSubmitMs=0.096; cpuSubmitWaitMs=10.460; cpuGeneratedPresentMs=0.140; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=10.894; gpuCmdMs=10.349; gpuAvailable=1
+[omfg][info][1774667044615] reproject multi blended frame present=780; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][info][1774667045486] vkQueuePresentKHR frame=840; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774667045513] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=840; present=841; generatedFrames=1; cpuAcquireMs=0.092; cpuSetupMs=0.002; cpuRecordMs=0.081; cpuSubmitMs=0.102; cpuSubmitWaitMs=10.212; cpuGeneratedPresentMs=0.163; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=10.652; gpuCmdMs=10.068; gpuAvailable=1
+[omfg][info][1774667045513] reproject multi blended frame present=840; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][info][1774667046379] vkQueuePresentKHR frame=900; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774667046408] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=900; present=901; generatedFrames=1; cpuAcquireMs=0.104; cpuSetupMs=0.003; cpuRecordMs=0.095; cpuSubmitMs=0.100; cpuSubmitWaitMs=10.368; cpuGeneratedPresentMs=0.151; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=10.820; gpuCmdMs=10.260; gpuAvailable=1
+[omfg][info][1774667046408] reproject multi blended frame present=900; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][info][1774667047277] vkQueuePresentKHR frame=960; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774667047305] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=960; present=961; generatedFrames=1; cpuAcquireMs=0.093; cpuSetupMs=0.002; cpuRecordMs=0.098; cpuSubmitMs=0.100; cpuSubmitWaitMs=10.406; cpuGeneratedPresentMs=0.170; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=10.869; gpuCmdMs=10.232; gpuAvailable=1
+[omfg][info][1774667047305] reproject multi blended frame present=960; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][info][1774667048188] vkQueuePresentKHR frame=1020; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774667048218] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=1020; present=1021; generatedFrames=1; cpuAcquireMs=0.152; cpuSetupMs=0.003; cpuRecordMs=0.104; cpuSubmitMs=0.112; cpuSubmitWaitMs=10.653; cpuGeneratedPresentMs=0.145; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=11.168; gpuCmdMs=10.514; gpuAvailable=1
+[omfg][info][1774667048218] reproject multi blended frame present=1020; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][info][1774667049102] vkQueuePresentKHR frame=1080; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774667049131] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=1080; present=1081; generatedFrames=1; cpuAcquireMs=0.135; cpuSetupMs=0.002; cpuRecordMs=0.117; cpuSubmitMs=0.123; cpuSubmitWaitMs=10.494; cpuGeneratedPresentMs=0.143; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=11.014; gpuCmdMs=10.331; gpuAvailable=1
+[omfg][info][1774667049131] reproject multi blended frame present=1080; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][info][1774667050003] vkQueuePresentKHR frame=1140; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774667050032] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=1140; present=1141; generatedFrames=1; cpuAcquireMs=0.113; cpuSetupMs=0.003; cpuRecordMs=0.120; cpuSubmitMs=0.110; cpuSubmitWaitMs=10.507; cpuGeneratedPresentMs=0.137; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=10.990; gpuCmdMs=10.404; gpuAvailable=1
+[omfg][info][1774667050032] reproject multi blended frame present=1140; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][info][1774667050905] vkQueuePresentKHR frame=1200; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774667050933] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=1200; present=1201; generatedFrames=1; cpuAcquireMs=0.122; cpuSetupMs=0.003; cpuRecordMs=0.151; cpuSubmitMs=0.109; cpuSubmitWaitMs=10.594; cpuGeneratedPresentMs=0.137; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=11.116; gpuCmdMs=10.434; gpuAvailable=1
+[omfg][info][1774667050933] reproject multi blended frame present=1200; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][info][1774667051823] vkQueuePresentKHR frame=1260; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774667051852] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=1260; present=1261; generatedFrames=1; cpuAcquireMs=0.081; cpuSetupMs=0.002; cpuRecordMs=0.099; cpuSubmitMs=0.099; cpuSubmitWaitMs=10.701; cpuGeneratedPresentMs=0.125; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=11.108; gpuCmdMs=10.603; gpuAvailable=1
+[omfg][info][1774667051852] reproject multi blended frame present=1260; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][info][1774667052412] vkDestroyDevice
+[omfg][info][1774667052743] vkQueuePresentKHR frame=1320; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774667052771] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=1320; present=1321; generatedFrames=1; cpuAcquireMs=0.090; cpuSetupMs=0.002; cpuRecordMs=0.088; cpuSubmitMs=0.083; cpuSubmitWaitMs=10.374; cpuGeneratedPresentMs=0.131; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=10.769; gpuCmdMs=10.265; gpuAvailable=1
+[omfg][info][1774667052771] reproject multi blended frame present=1320; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][info][1774667053632] vkQueuePresentKHR frame=1380; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774667053659] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=1380; present=1381; generatedFrames=1; cpuAcquireMs=0.091; cpuSetupMs=0.002; cpuRecordMs=0.092; cpuSubmitMs=0.088; cpuSubmitWaitMs=10.161; cpuGeneratedPresentMs=0.123; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=10.558; gpuCmdMs=10.025; gpuAvailable=1
+[omfg][info][1774667053659] reproject multi blended frame present=1380; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][info][1774667054521] vkQueuePresentKHR frame=1440; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774667054549] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=1440; present=1441; generatedFrames=1; cpuAcquireMs=0.102; cpuSetupMs=0.003; cpuRecordMs=0.102; cpuSubmitMs=0.149; cpuSubmitWaitMs=10.437; cpuGeneratedPresentMs=0.182; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=10.975; gpuCmdMs=10.249; gpuAvailable=1
+[omfg][info][1774667054549] reproject multi blended frame present=1440; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][info][1774667055414] vkQueuePresentKHR frame=1500; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774667055442] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=1500; present=1501; generatedFrames=1; cpuAcquireMs=0.092; cpuSetupMs=0.002; cpuRecordMs=0.083; cpuSubmitMs=0.088; cpuSubmitWaitMs=10.562; cpuGeneratedPresentMs=0.125; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=10.952; gpuCmdMs=10.459; gpuAvailable=1
+[omfg][info][1774667055442] reproject multi blended frame present=1500; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][info][1774667056298] vkQueuePresentKHR frame=1560; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774667056326] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=1560; present=1561; generatedFrames=1; cpuAcquireMs=0.129; cpuSetupMs=0.002; cpuRecordMs=0.120; cpuSubmitMs=0.128; cpuSubmitWaitMs=10.486; cpuGeneratedPresentMs=0.188; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=11.054; gpuCmdMs=10.384; gpuAvailable=1
+[omfg][info][1774667056326] reproject multi blended frame present=1560; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][info][1774667057513] vkQueuePresentKHR frame=1620; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774667057568] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=1620; present=1621; generatedFrames=1; cpuAcquireMs=0.108; cpuSetupMs=0.003; cpuRecordMs=0.098; cpuSubmitMs=0.117; cpuSubmitWaitMs=15.647; cpuGeneratedPresentMs=0.152; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=16.124; gpuCmdMs=15.505; gpuAvailable=1
+[omfg][info][1774667057568] reproject multi blended frame present=1620; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][info][1774667059513] vkQueuePresentKHR frame=1680; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774667059567] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=1680; present=1681; generatedFrames=1; cpuAcquireMs=0.128; cpuSetupMs=0.002; cpuRecordMs=0.083; cpuSubmitMs=0.120; cpuSubmitWaitMs=15.651; cpuGeneratedPresentMs=0.139; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=16.121; gpuCmdMs=15.495; gpuAvailable=1
+[omfg][info][1774667059567] reproject multi blended frame present=1680; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][info][1774667061517] vkQueuePresentKHR frame=1740; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774667061580] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=1740; present=1741; generatedFrames=1; cpuAcquireMs=0.157; cpuSetupMs=0.002; cpuRecordMs=0.084; cpuSubmitMs=0.079; cpuSubmitWaitMs=15.774; cpuGeneratedPresentMs=0.115; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=16.211; gpuCmdMs=15.696; gpuAvailable=1
+[omfg][info][1774667061581] reproject multi blended frame present=1740; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][info][1774667063516] vkQueuePresentKHR frame=1800; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774667063579] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=1800; present=1801; generatedFrames=1; cpuAcquireMs=0.107; cpuSetupMs=0.002; cpuRecordMs=0.087; cpuSubmitMs=0.095; cpuSubmitWaitMs=15.979; cpuGeneratedPresentMs=0.138; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=16.408; gpuCmdMs=15.681; gpuAvailable=1
+[omfg][info][1774667063579] reproject multi blended frame present=1800; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][info][1774667065516] vkQueuePresentKHR frame=1860; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774667065578] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=1860; present=1861; generatedFrames=1; cpuAcquireMs=0.109; cpuSetupMs=0.002; cpuRecordMs=0.080; cpuSubmitMs=0.095; cpuSubmitWaitMs=15.796; cpuGeneratedPresentMs=0.130; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=16.212; gpuCmdMs=15.684; gpuAvailable=1
+[omfg][info][1774667065578] reproject multi blended frame present=1860; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][info][1774667067516] vkQueuePresentKHR frame=1920; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774667067579] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=1920; present=1921; generatedFrames=1; cpuAcquireMs=0.093; cpuSetupMs=0.002; cpuRecordMs=0.089; cpuSubmitMs=0.098; cpuSubmitWaitMs=15.750; cpuGeneratedPresentMs=0.150; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=16.182; gpuCmdMs=15.661; gpuAvailable=1
+[omfg][info][1774667067579] reproject multi blended frame present=1920; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][info][1774667069516] vkQueuePresentKHR frame=1980; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774667069578] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=1980; present=1981; generatedFrames=1; cpuAcquireMs=0.092; cpuSetupMs=0.002; cpuRecordMs=0.079; cpuSubmitMs=0.096; cpuSubmitWaitMs=15.790; cpuGeneratedPresentMs=0.154; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=16.214; gpuCmdMs=15.670; gpuAvailable=1
+[omfg][info][1774667069578] reproject multi blended frame present=1980; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][info][1774667071516] vkQueuePresentKHR frame=2040; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][info][1774667071579] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=2040; present=2041; generatedFrames=1; cpuAcquireMs=0.080; cpuSetupMs=0.002; cpuRecordMs=0.093; cpuSubmitMs=0.087; cpuSubmitWaitMs=15.794; cpuGeneratedPresentMs=0.138; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=16.194; gpuCmdMs=15.688; gpuAvailable=1
+[omfg][info][1774667071579] reproject multi blended frame present=2040; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][warn][1774667071816] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667071849] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667071883] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667071916] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667071950] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667071983] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667072016] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667072050] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667072083] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667072118] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667072149] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667072183] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667072216] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667072250] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667072283] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667072316] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667072349] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667072383] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667072416] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667072450] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667072483] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667072516] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667072550] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667072583] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667072616] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667072650] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667072684] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667072717] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667072750] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667072783] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667072816] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667072850] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667072883] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667072916] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667072950] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667072983] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667073016] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667073050] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667073083] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667073117] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667073150] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667073183] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667073216] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667073250] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667073283] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667073316] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667073350] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667073383] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667073416] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667073449] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667073483] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][info][1774667073516] vkQueuePresentKHR frame=2100; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][warn][1774667073516] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667073550] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][info][1774667073578] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=2100; present=2101; generatedFrames=1; cpuAcquireMs=0.117; cpuSetupMs=0.002; cpuRecordMs=0.108; cpuSubmitMs=0.122; cpuSubmitWaitMs=15.778; cpuGeneratedPresentMs=0.137; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=16.265; gpuCmdMs=0.000; gpuAvailable=0
+[omfg][info][1774667073578] reproject multi blended frame present=2100; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][warn][1774667073583] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667073616] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667073649] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667073683] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667073716] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667073750] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667073783] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667073816] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667073850] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667073883] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667073917] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667073950] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667073983] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667074016] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667074050] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667074083] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667074116] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667074150] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667074183] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667074216] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667074250] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667074283] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667074316] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667074350] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667074383] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667074416] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667074449] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667074483] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667074516] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667074550] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667074583] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667074616] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667074650] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667074683] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667074717] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667074749] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667074783] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667074817] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667074850] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667074884] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667074916] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667074950] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667074983] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667075017] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667075050] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667075083] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667075116] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667075151] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667075183] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667075216] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667075250] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667075283] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667075316] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667075350] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667075383] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667075417] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667075450] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667075483] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][info][1774667075517] vkQueuePresentKHR frame=2160; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][warn][1774667075517] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667075550] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][info][1774667075578] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=2160; present=2161; generatedFrames=1; cpuAcquireMs=0.122; cpuSetupMs=0.003; cpuRecordMs=0.095; cpuSubmitMs=0.102; cpuSubmitWaitMs=15.744; cpuGeneratedPresentMs=0.131; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=16.197; gpuCmdMs=0.000; gpuAvailable=0
+[omfg][info][1774667075578] reproject multi blended frame present=2160; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][warn][1774667075583] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667075617] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667075650] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667075683] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667075717] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667075750] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667075783] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667075816] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667075850] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667075883] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667075917] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667075950] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667075983] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667076017] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667076050] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667076083] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667076116] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667076150] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667076183] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667076216] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667076250] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667076283] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667076316] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667076349] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667076383] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667076417] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667076451] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667076483] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667076517] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667076550] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667076584] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667076617] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667076650] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667076683] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667076717] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667076749] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667076783] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667076817] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667076850] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667076883] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667076916] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667076950] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667076983] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667077016] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667077050] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667077083] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667077117] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667077150] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667077183] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667077216] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667077249] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667077283] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667077317] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667077350] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667077383] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667077417] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667077449] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667077483] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][info][1774667077516] vkQueuePresentKHR frame=2220; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][warn][1774667077517] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667077550] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][info][1774667077578] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=2220; present=2221; generatedFrames=1; cpuAcquireMs=0.118; cpuSetupMs=0.003; cpuRecordMs=0.098; cpuSubmitMs=0.101; cpuSubmitWaitMs=15.773; cpuGeneratedPresentMs=0.145; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=16.239; gpuCmdMs=0.000; gpuAvailable=0
+[omfg][info][1774667077578] reproject multi blended frame present=2220; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][warn][1774667077583] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667077617] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667077650] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667077683] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667077716] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667077749] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667077783] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667077816] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667077850] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667077883] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667077916] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667077950] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667077984] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667078016] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667078050] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667078083] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667078117] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667078150] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667078184] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667078217] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667078250] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667078283] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667078317] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667078350] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667078383] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667078417] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667078449] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667078483] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667078517] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667078550] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667078583] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667078617] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667078649] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667078683] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667078716] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667078750] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667078783] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667078816] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667078850] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667078884] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667078916] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667078949] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667078983] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667079017] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667079050] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667079083] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667079117] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667079150] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667079184] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667079218] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667079250] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667079283] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667079316] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667079350] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667079383] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667079416] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667079450] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667079483] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][info][1774667079517] vkQueuePresentKHR frame=2280; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][warn][1774667079517] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667079550] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][info][1774667079578] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=2280; present=2281; generatedFrames=1; cpuAcquireMs=0.134; cpuSetupMs=0.002; cpuRecordMs=0.101; cpuSubmitMs=0.103; cpuSubmitWaitMs=15.773; cpuGeneratedPresentMs=0.129; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=16.241; gpuCmdMs=0.000; gpuAvailable=0
+[omfg][info][1774667079578] reproject multi blended frame present=2280; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][warn][1774667079583] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667079617] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667079650] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667079683] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667079717] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667079750] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667079783] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667079816] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667079850] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667079884] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667079917] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667079950] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667079983] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667080017] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667080050] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667080083] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667080116] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667080150] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667080183] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667080217] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667080252] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667080283] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667080317] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667080350] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667080383] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667080417] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667080450] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667080483] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667080516] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667080550] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667080583] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667080617] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667080650] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667080683] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667080717] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667080750] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667080783] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667080817] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667080850] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667080883] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667080917] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667080950] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667080983] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667081017] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667081050] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667081083] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667081117] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667081150] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667081183] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667081216] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667081250] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667081283] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667081317] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667081350] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667081383] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667081416] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667081450] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667081483] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][info][1774667081517] vkQueuePresentKHR frame=2340; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][warn][1774667081517] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667081550] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][info][1774667081580] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=2340; present=2341; generatedFrames=1; cpuAcquireMs=0.076; cpuSetupMs=0.002; cpuRecordMs=0.085; cpuSubmitMs=0.075; cpuSubmitWaitMs=15.782; cpuGeneratedPresentMs=0.365; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=16.385; gpuCmdMs=0.000; gpuAvailable=0
+[omfg][info][1774667081580] reproject multi blended frame present=2340; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][warn][1774667081583] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667081616] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667081650] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667081684] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667081716] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667081750] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667081783] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667081817] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667081850] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667081883] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667081917] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667081950] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667081983] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667082016] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667082050] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667082084] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667082117] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667082150] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667082183] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667082217] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667082250] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667082285] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667082317] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667082350] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667082383] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667082417] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667082450] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667082484] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667082517] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667082550] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667082583] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667082617] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667082650] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667082683] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667082717] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667082750] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667082783] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667082817] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667082850] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667082883] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667082916] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667082950] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667082983] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667083017] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667083050] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667083083] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667083116] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667083150] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667083184] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667083217] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667083250] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667083283] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667083317] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667083350] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667083384] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667083417] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667083450] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667083483] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][info][1774667083517] vkQueuePresentKHR frame=2400; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][warn][1774667083517] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667083550] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][info][1774667083577] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=2400; present=2401; generatedFrames=1; cpuAcquireMs=0.080; cpuSetupMs=0.002; cpuRecordMs=0.080; cpuSubmitMs=0.106; cpuSubmitWaitMs=15.752; cpuGeneratedPresentMs=0.138; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=16.158; gpuCmdMs=0.000; gpuAvailable=0
+[omfg][info][1774667083578] reproject multi blended frame present=2400; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][warn][1774667083584] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667083617] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667083650] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667083683] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667083717] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667083750] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667083783] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667083817] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667083850] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667083883] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667083916] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667083950] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667083983] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667084017] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667084050] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667084083] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667084116] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667084150] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667084185] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667084216] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667084250] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667084283] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667084317] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667084350] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667084383] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667084417] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667084450] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667084483] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667084517] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667084550] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667084584] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667084616] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667084650] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667084683] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667084717] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667084750] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667084783] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667084817] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667084850] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667084883] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667084917] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667084950] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667084983] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667085017] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667085050] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667085083] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667085117] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667085150] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667085183] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667085217] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667085250] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667085283] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667085318] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667085350] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667085383] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667085417] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667085450] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667085483] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][info][1774667085516] vkQueuePresentKHR frame=2460; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][warn][1774667085516] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667085550] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][info][1774667085580] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=2460; present=2461; generatedFrames=1; cpuAcquireMs=0.088; cpuSetupMs=0.002; cpuRecordMs=0.075; cpuSubmitMs=0.080; cpuSubmitWaitMs=15.761; cpuGeneratedPresentMs=0.257; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=16.263; gpuCmdMs=0.000; gpuAvailable=0
+[omfg][info][1774667085580] reproject multi blended frame present=2460; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][warn][1774667085583] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667085617] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667085650] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667085683] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667085717] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667085750] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667085783] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667085817] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667085850] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667085883] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667085917] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667085950] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667085983] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667086017] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667086050] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667086083] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667086117] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667086150] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667086183] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667086217] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667086250] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667086283] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667086317] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667086351] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667086383] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667086417] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667086450] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667086483] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667086517] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667086550] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667086584] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667086617] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667086650] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667086683] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667086717] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667086750] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667086783] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667086817] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667086850] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667086883] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667086917] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667086950] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667086983] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667087016] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667087050] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667087083] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667087117] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667087150] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667087183] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667087216] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667087250] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667087283] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667087317] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667087350] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667087384] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667087417] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667087450] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667087483] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][info][1774667087517] vkQueuePresentKHR frame=2520; queueFamily=0; imageIndex=3; waitSemaphores=1
+[omfg][warn][1774667087517] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667087550] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][info][1774667087579] benchmark sample; label=re8-hot-mailbox-auto; mode=reproject-multi-blend-test; debugView=off; sample=2520; present=2521; generatedFrames=1; cpuAcquireMs=0.085; cpuSetupMs=0.002; cpuRecordMs=0.079; cpuSubmitMs=0.078; cpuSubmitWaitMs=15.757; cpuGeneratedPresentMs=0.159; cpuOriginalPresentMs=0.000; cpuQueueIdleMs=0.000; cpuTotalMs=16.160; gpuCmdMs=0.000; gpuAvailable=0
+[omfg][info][1774667087579] reproject multi blended frame present=2520; generatedImageIndices=[1]; currentImageIndex=5; originalFirst=1
+[omfg][warn][1774667087584] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667087617] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667087650] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667087683] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667087717] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667087751] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667087784] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667087817] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667087850] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
+[omfg][warn][1774667087884] benchmark timestamp query pool exhausted; skipping GPU timing for remaining samples
