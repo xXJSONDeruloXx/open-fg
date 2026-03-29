@@ -90,6 +90,8 @@ ML and vendor-specific paths are now tracked as explicit side branches rather th
 
 See `docs/architecture/future-backends.md` for the full rationale and branch placement.
 
+For the concrete pre-implementation work needed before an experimental RIFE-style runtime mode, see `docs/planning/ml-single-fg-prep.md`.
+
 ## Next implementation ladder
 
 ### 1. Multi-FG in Rust

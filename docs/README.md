@@ -24,6 +24,7 @@ This directory is the canonical home for project-wide documentation.
 - [MVP plan](./planning/mvp-plan.md)
 - [Open questions and next Linux experiments](./planning/open-questions.md)
 - [Rust frame-generation roadmap](./planning/rust-feature-roadmap.md)
+- [ML single-FG prep plan](./planning/ml-single-fg-prep.md)
 
 ## Status
 

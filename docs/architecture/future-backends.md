@@ -199,6 +199,9 @@ If ML becomes worth pursuing at runtime, the first landing should likely be:
 - explicit experimental mode
 - comparison against our best classical backend
 
+The concrete prep work for that landing is documented in:
+- `docs/planning/ml-single-fg-prep.md`
+
 ### Why not multi-FG first
 ML multi-FG gets expensive quickly:
 - repeated inference or multiple timesteps
