@@ -25,11 +25,10 @@ docker run --rm \
   "${IMAGE_TAG}" \
   bash -lc '
     set -euo pipefail
-    cd implementation/vk-layer-rust
     cargo test --locked --offline
     cargo build --release --locked --offline
     mkdir -p /workspace/build/linux-amd64/vk-layer-rust/out
     cp target/release/libVkLayer_OMFG_rust.so /workspace/build/linux-amd64/vk-layer-rust/out/libVkLayer_OMFG_rust.so
-    cp layer/VkLayer_OMFG_rust.json /workspace/build/linux-amd64/vk-layer-rust/out/VkLayer_OMFG_rust.json
+    cp manifest/VkLayer_OMFG_rust.json /workspace/build/linux-amd64/vk-layer-rust/out/VkLayer_OMFG_rust.json
     ls -lah /workspace/build/linux-amd64/vk-layer-rust/out
   '

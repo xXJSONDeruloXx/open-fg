@@ -34,7 +34,7 @@ Current Rust capability set:
 ## Test strategy
 
 ### Fast local tests
-From this directory:
+From project root:
 
 ```bash
 cargo test
@@ -59,7 +59,7 @@ From project root:
 OMFG_LAYER_IMPL=rust ./scripts/build-linux-amd64.sh
 ```
 
-The Rust crate vendors its dependencies under `implementation/vk-layer-rust/vendor/`, so the Linux builder can run offline/reproducibly.
+The Rust crate vendors its dependencies under `third_party/cargo-vendor/`, so the Linux builder can run offline/reproducibly.
 The Docker builder also recompiles the GLSL shaders via `scripts/compile-rust-shaders.sh`, so the SPIR-V artifacts are now reproducible as part of the Linux build path.
 
 That runs Rust tests inside the Linux builder container and emits:
@@ -78,7 +78,7 @@ OMFG_LAYER_IMPL=rust ./scripts/deploy-steamdeck-layer.sh
 Canonical wrapper + env var reference:
 
 - `../../scripts/steamdeck-omfg-wrapper.sh`
-- `../../docs/operations/omfg-wrapper-and-env-vars.md`
+- `../operations/omfg-wrapper-and-env-vars.md`
 
 ### Smoke test with vkcube
 ```bash
@@ -295,14 +295,14 @@ OMFG_AUTOPERF_COMPARE_PRESET=reproject-quality \
 ./scripts/run-autoperf-loop.sh
 ```
 
-See `docs/experiments/program.md` for the current subset, weights, and accept/reject rules.
+See `../experiments/program.md` for the current subset, weights, and accept/reject rules.
 
 ### Future backend planning
 For the broader roadmap beyond the current Rust mainline, see:
-- `docs/architecture/future-backends.md`
-- `docs/planning/rust-feature-roadmap.md`
-- `docs/status/debug-observability-plan.md`
-- `docs/architecture/optical-flow-v0-plan.md`
+- `../architecture/future-backends.md`
+- `../planning/rust-feature-roadmap.md`
+- `../status/debug-observability-plan.md`
+- `../architecture/optical-flow-v0-plan.md`
 
 Those documents record how:
 - FSR3-style analytical FG concepts fit the current Linux post-process mainline

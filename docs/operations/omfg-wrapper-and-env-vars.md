@@ -181,7 +181,7 @@ Default:
 - canonical wrapper default: `reproject-blend`
 - current test scripts often override explicitly
 
-Accepted aliases in `implementation/vk-layer-rust/src/config.rs`:
+Accepted aliases in `src/config.rs`:
 
 | Canonical mode | Also accepted |
 |---|---|
@@ -445,7 +445,7 @@ These are exported by `scripts/_omfg_layer_impl.sh`.
 
 # 7) Variables mentioned in docs/plans but not currently consumed by the Rust runtime
 
-These exist in planning docs or older notes, but are not currently read by `implementation/vk-layer-rust/src/lib.rs`:
+These exist in planning docs or older notes, but are not currently read by `src/lib.rs`:
 
 - `OMFG_OPTICAL_FLOW_RADIUS`
 - `OMFG_OPTICAL_FLOW_SMOOTHNESS`
