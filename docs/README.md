@@ -47,7 +47,6 @@ This directory is the canonical home for project-wide documentation.
 
 - [Autoperf program](./experiments/program.md)
 
-## Code-local documentation
+## Development
 
-This stays beside the implementation it describes:
-- [Rust Vulkan-layer README](../implementation/vk-layer-rust/README.md)
+- [Rust layer development guide](./development/rust-layer.md)

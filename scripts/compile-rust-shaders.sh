@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 IMAGE_TAG="omfg-linux-amd64-builder:latest"
-SHADER_DIR="${ROOT_DIR}/implementation/vk-layer-rust/shaders"
+SHADER_DIR="${ROOT_DIR}/shaders"
 
 compile_with_local_tool() {
   glslangValidator -V "${SHADER_DIR}/blend.vert" -o "${SHADER_DIR}/blend.vert.spv"
@@ -24,8 +24,8 @@ compile_with_docker() {
     "${IMAGE_TAG}" \
     bash -lc '
       set -euo pipefail
-      glslangValidator -V implementation/vk-layer-rust/shaders/blend.vert -o implementation/vk-layer-rust/shaders/blend.vert.spv
-      glslangValidator -V implementation/vk-layer-rust/shaders/blend.frag -o implementation/vk-layer-rust/shaders/blend.frag.spv
+      glslangValidator -V shaders/blend.vert -o shaders/blend.vert.spv
+      glslangValidator -V shaders/blend.frag -o shaders/blend.frag.spv
     '
 }
 

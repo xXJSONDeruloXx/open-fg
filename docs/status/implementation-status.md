@@ -49,7 +49,7 @@ These capture per-game outcomes, repo snapshots, wrapper assumptions, and the sp
 ### Rust implementation status
 
 Rust implementation location:
-- `implementation/vk-layer-rust/`
+- repo root (`Cargo.toml`, `src/`, `shaders/`, `manifest/`)
 
 Rust implementation currently has the following verified utility / baseline modes:
 - `passthrough`
