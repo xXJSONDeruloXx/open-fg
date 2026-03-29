@@ -156,11 +156,11 @@ The regression suite is fully automated. To run it:
 
 2. **Run the suite:**
    ```bash
-   OMFG_LAYER_IMPL=rust bash scripts/run-layer-regression-suite.sh
+   bash scripts/run-layer-regression-suite.sh
    ```
 
 What it does end-to-end:
-- Runs `cargo test --locked` (115 unit tests, runs locally)
+- Runs `cargo test --locked` (125 unit tests, runs locally)
 - Builds `libVkLayer_OMFG_rust.so` via Docker (`linux/amd64`) — no native Linux host needed
 - Deploys the `.so` + manifest to the Deck over SSH/SCP
 - Runs `vkcube --c 120` for **all 19 modes** on the Deck's AMD RADV GPU

@@ -33,7 +33,6 @@ Optional pattern for persistent config:
 
 ```bash
 cat >/home/deck/omfg.env <<'EOF'
-export OMFG_LAYER_IMPL=rust
 export OMFG_LAYER_MODE=reproject-blend
 export OMFG_WRAPPER_LOG_FILE=/home/deck/post-proc-fg-research/logs/omfg-wrapper.log
 EOF
@@ -476,7 +475,6 @@ export OMFG_DISABLE_LAYER=1
 ## Basic reprojection run
 
 ```bash
-export OMFG_LAYER_IMPL=rust
 export OMFG_LAYER_MODE=reproject-blend
 export OMFG_LAYER_LOG_FILE=/home/deck/post-proc-fg-research/logs/reproject.log
 /home/deck/omfg.sh <steam/proton command>

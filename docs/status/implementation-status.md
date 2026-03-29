@@ -76,8 +76,8 @@ Rust also now has additional next-step backend modes:
 
 Validated via:
 - local `cargo test --locked`
-- Linux/x86_64 Docker build + test via `OMFG_LAYER_IMPL=rust ./scripts/build-linux-amd64.sh`
-- full Deck smoke suite via `OMFG_LAYER_IMPL=rust ./scripts/run-layer-regression-suite.sh`
+- Linux/x86_64 Docker build + test via `./scripts/build-linux-amd64.sh`
+- full Deck smoke suite via `./scripts/run-layer-regression-suite.sh`
 
 ### Verified runtime modes on Steam Deck
 
@@ -239,7 +239,7 @@ Observed:
   - `OMFG_REPROJECT_GRADIENT_CONFIDENCE_WEIGHT` (reduces confidence in flat regions where motion estimation is unreliable; default `8.0`)
   - `OMFG_REPROJECT_CHROMA_WEIGHT` (blends between luma-only and full RGB patch matching; default `0.3`)
   - `OMFG_REPROJECT_AMBIGUITY_SCALE` (suppresses confidence when multiple reprojection candidates are nearly tied; default `6.0`)
-- local validation for those new quality controls is green (`cargo test`, `./scripts/test-rust-layer.sh`, `OMFG_LAYER_IMPL=rust ./scripts/build-linux-amd64.sh`)
+- local validation for those new quality controls is green (`cargo test`, `./scripts/test-rust-layer.sh`, `./scripts/build-linux-amd64.sh`)
 - stable on Deck through smoke, long, and IMMEDIATE-mode runs
 
 #### 8b. `reproject-adaptive-blend` (Rust)
@@ -264,7 +264,7 @@ Validated with Rust layer on Steam Deck:
 - `vkcube --c 60`
 - local `cargo test --locked`
 - `./scripts/test-rust-layer.sh`
-- `OMFG_LAYER_IMPL=rust ./scripts/build-linux-amd64.sh`
+- `./scripts/build-linux-amd64.sh`
 - Deck benchmark compare run via `OMFG_BENCHMARK_PRESET=optflow-compare ./scripts/run-steamdeck-benchmark-suite.sh`
 
 Observed:
@@ -296,7 +296,7 @@ Working as the adaptive variant of the optical-flow single-FG path.
 Validated locally:
 - local `cargo test --locked` (71 tests pass)
 - `./scripts/test-rust-layer.sh`
-- `OMFG_LAYER_IMPL=rust ./scripts/build-linux-amd64.sh`
+- `./scripts/build-linux-amd64.sh`
 
 Observed:
 - extends `optflow-blend` with adaptive current-frame bias (same as `adaptive-blend` does for the pure blend path)
@@ -313,7 +313,7 @@ Working as the first optical-flow-backed multi-FG path.
 Validated locally:
 - local `cargo test --locked` (71 tests pass)
 - `./scripts/test-rust-layer.sh`
-- `OMFG_LAYER_IMPL=rust ./scripts/build-linux-amd64.sh`
+- `./scripts/build-linux-amd64.sh`
 
 Observed:
 - extends optical-flow generation to multi-FG (2+ generated frames per real frame)
@@ -332,7 +332,7 @@ Working as the richest optical-flow-backed frame generation mode.
 Validated locally:
 - local `cargo test --locked` (74 tests pass)
 - `./scripts/test-rust-layer.sh`
-- `OMFG_LAYER_IMPL=rust ./scripts/build-linux-amd64.sh`
+- `./scripts/build-linux-amd64.sh`
 
 Observed:
 - combines optical-flow coarse-to-fine block-matching with adaptive current-frame bias and LSFG-style target-FPS controller
@@ -404,7 +404,7 @@ Validated with Rust layer on Steam Deck:
 Observed:
 - propagates the stronger symmetric reprojection + confidence/disocclusion path into multi-FG generation
 - the current reprojection path now includes a small neighborhood hole-fill fallback for higher-disocclusion regions, driven by the same `OMFG_REPROJECT_DISOCCLUSION_SCALE`, `OMFG_REPROJECT_HOLE_FILL_STRENGTH`, and `OMFG_REPROJECT_HOLE_FILL_RADIUS` knobs
-- local validation for that richer reprojection path is green (`cargo test`, `./scripts/test-rust-layer.sh`, `OMFG_LAYER_IMPL=rust ./scripts/build-linux-amd64.sh`)
+- local validation for that richer reprojection path is green (`cargo test`, `./scripts/test-rust-layer.sh`, `./scripts/build-linux-amd64.sh`)
 - stable on Deck through smoke, long, and IMMEDIATE-mode runs
 - larger-count validation now proves the higher-quality reprojection path also benefits from dynamic swapchain headroom expansion
 - a targeted `count=6` Deck smoke run succeeded with:
@@ -592,11 +592,11 @@ A newer focused quality preset now also exists for reprojection disocclusion fal
 Post-dynamic-headroom validation rerun status:
 - `cargo test --locked`
 - `./scripts/test-rust-layer.sh`
-- `OMFG_LAYER_IMPL=rust ./scripts/build-linux-amd64.sh`
-- `OMFG_LAYER_IMPL=rust ./scripts/run-layer-regression-suite.sh`
-- `OMFG_LAYER_IMPL=rust ./scripts/run-advanced-steamdeck-validation.sh`
-- `OMFG_LAYER_IMPL=rust ./scripts/run-target-fps-steamdeck-validation.sh`
-- `OMFG_LAYER_IMPL=rust ./scripts/run-bfi-steamdeck-validation.sh`
+- `./scripts/build-linux-amd64.sh`
+- `./scripts/run-layer-regression-suite.sh`
+- `./scripts/run-advanced-steamdeck-validation.sh`
+- `./scripts/run-target-fps-steamdeck-validation.sh`
+- `./scripts/run-bfi-steamdeck-validation.sh`
 
 All of the above completed successfully after the dynamic multi-FG headroom work.
 

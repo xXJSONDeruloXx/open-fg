@@ -45,7 +45,7 @@ This intentionally favors wins on the multi-FG paths.
 1. Make a candidate change.
 2. Run the fast decision subset several times:
    ```bash
-   OMFG_LAYER_IMPL=rust ./scripts/run-autoperf-loop.sh
+   ./scripts/run-autoperf-loop.sh
    ```
 3. Inspect:
    - `artifacts/steamdeck/rust/autoperf/<run-id>/aggregate-summary.txt`
@@ -53,7 +53,6 @@ This intentionally favors wins on the multi-FG paths.
 4. If accepted, optionally promote to the full benchmark suite:
    ```bash
    OMFG_AUTOPERF_RUN_FULL_ON_ACCEPT=1 \
-   OMFG_LAYER_IMPL=rust \
    ./scripts/run-autoperf-loop.sh
    ```
 5. Commit only accepted improvements.
@@ -79,7 +78,6 @@ When tuning reprojection heuristics specifically, run the matching benchmark and
 ```bash
 OMFG_AUTOPERF_BENCHMARK_PRESET=reproject-quality \
 OMFG_AUTOPERF_COMPARE_PRESET=reproject-quality \
-OMFG_LAYER_IMPL=rust \
 ./scripts/run-autoperf-loop.sh
 ```
 
@@ -91,7 +89,6 @@ the new `optflow-adaptive-blend` and `optflow-multi-blend` modes:
 ```bash
 OMFG_AUTOPERF_BENCHMARK_PRESET=optflow-quality \
 OMFG_AUTOPERF_COMPARE_PRESET=optflow-quality \
-OMFG_LAYER_IMPL=rust \
 ./scripts/run-autoperf-loop.sh
 ```
 

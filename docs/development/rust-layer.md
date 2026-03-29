@@ -1,10 +1,12 @@
-# Vulkan layer Rust port
+# Rust Vulkan layer development
 
 Rust implementation of the explicit Vulkan post-process frame-generation layer.
 
 ## Current goal
 
 Keep extending the Rust layer as the mainline implementation while building a safer foundation for future work.
+
+Unless a section says otherwise, commands in this document are intended to be run from the **project root**.
 
 Current Rust capability set:
 - explicit Vulkan layer ABI exports
@@ -23,6 +25,9 @@ Current Rust capability set:
   - `reproject-blend`
   - `reproject-adaptive-blend`
   - `optflow-blend`
+  - `optflow-adaptive-blend`
+  - `optflow-multi-blend`
+  - `optflow-adaptive-multi-blend`
   - `multi-blend`
   - `adaptive-multi-blend`
   - `reproject-multi-blend`
@@ -56,7 +61,7 @@ This currently covers:
 From project root:
 
 ```bash
-OMFG_LAYER_IMPL=rust ./scripts/build-linux-amd64.sh
+./scripts/build-linux-amd64.sh
 ```
 
 The Rust crate vendors its dependencies under `third_party/cargo-vendor/`, so the Linux builder can run offline/reproducibly.
@@ -72,7 +77,7 @@ That runs Rust tests inside the Linux builder container and emits:
 ### Deploy
 ```bash
 export STEAMDECK_PASS='...'
-OMFG_LAYER_IMPL=rust ./scripts/deploy-steamdeck-layer.sh
+./scripts/deploy-steamdeck-layer.sh
 ```
 
 Canonical wrapper + env var reference:
@@ -83,7 +88,6 @@ Canonical wrapper + env var reference:
 ### Smoke test with vkcube
 ```bash
 export STEAMDECK_PASS='...'
-export OMFG_LAYER_IMPL=rust
 export OMFG_LAYER_MODE=passthrough
 ./scripts/test-steamdeck-vkcube.sh
 
@@ -118,6 +122,17 @@ export OMFG_OPTICAL_FLOW_PATCH_RADIUS=1
 export OMFG_OPTICAL_FLOW_LEVELS=3
 export OMFG_OPTICAL_FLOW_CONFIDENCE_SCALE=4.0
 export OMFG_OPTICAL_FLOW_MOTION_PENALTY=0.01
+./scripts/test-steamdeck-vkcube.sh
+
+export OMFG_LAYER_MODE=optflow-adaptive-blend
+./scripts/test-steamdeck-vkcube.sh
+
+export OMFG_LAYER_MODE=optflow-multi-blend
+export OMFG_MULTI_BLEND_COUNT=2
+./scripts/test-steamdeck-vkcube.sh
+
+export OMFG_LAYER_MODE=optflow-adaptive-multi-blend
+export OMFG_MULTI_BLEND_COUNT=2
 ./scripts/test-steamdeck-vkcube.sh
 
 export OMFG_LAYER_MODE=reproject-multi-blend
@@ -193,7 +208,6 @@ export OMFG_BENCHMARK_LABEL=optflow-debug-motion
 ### Full regression suite
 ```bash
 export STEAMDECK_PASS='...'
-export OMFG_LAYER_IMPL=rust
 ./scripts/run-layer-regression-suite.sh
 ```
 
@@ -202,7 +216,6 @@ This extends the normal smoke suite with long FIFO and IMMEDIATE runs for the st
 
 ```bash
 export STEAMDECK_PASS='...'
-export OMFG_LAYER_IMPL=rust
 ./scripts/run-advanced-steamdeck-validation.sh
 ```
 
@@ -211,7 +224,6 @@ This exercises the LSFG-style target-FPS controller on the Steam Deck for both `
 
 ```bash
 export STEAMDECK_PASS='...'
-export OMFG_LAYER_IMPL=rust
 ./scripts/run-target-fps-steamdeck-validation.sh
 ```
 
@@ -220,7 +232,6 @@ This exercises the present-id / present-wait timing instrumentation on the Steam
 
 ```bash
 export STEAMDECK_PASS='...'
-export OMFG_LAYER_IMPL=rust
 ./scripts/run-present-timing-steamdeck-validation.sh
 ```
 
@@ -234,7 +245,6 @@ This validates black-frame insertion behavior, including a reduced-cadence `OMFG
 
 ```bash
 export STEAMDECK_PASS='...'
-export OMFG_LAYER_IMPL=rust
 ./scripts/run-bfi-steamdeck-validation.sh
 ```
 
@@ -251,7 +261,6 @@ This runs the Steam Deck benchmark matrix and writes per-run CSV/summary artifac
 
 ```bash
 export STEAMDECK_PASS='...'
-export OMFG_LAYER_IMPL=rust
 ./scripts/run-steamdeck-benchmark-suite.sh
 
 # Fast decision subset only
@@ -274,7 +283,6 @@ This runs a `multi-blend` multiplier sweep and records how far the current archi
 
 ```bash
 export STEAMDECK_PASS='...'
-export OMFG_LAYER_IMPL=rust
 ./scripts/run-steamdeck-multi-count-sweep.sh
 ```
 
@@ -283,7 +291,6 @@ This repeatedly runs the fast decision subset, aggregates the results, compares 
 
 ```bash
 export STEAMDECK_PASS='...'
-export OMFG_LAYER_IMPL=rust
 ./scripts/run-autoperf-loop.sh
 
 # Optional full-suite promotion on acceptance
