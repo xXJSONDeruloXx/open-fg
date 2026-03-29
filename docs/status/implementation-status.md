@@ -3,8 +3,7 @@
 ## Summary
 
 We now have:
-- a **working Linux Vulkan layer MVP** in C++
-- a **working Rust parity port** for the current MVP scope
+- a **working Rust Vulkan layer MVP**
 - multiple **Rust shader-based generated-frame backends**
 - a simple **software BFI / black-frame-insertion mode** in Rust
 - a first **adaptive frame-count control path** in Rust multi-FG
@@ -15,9 +14,9 @@ This is beyond paper architecture at this point.
 ## Real-game journal
 
 Real Steam-game investigation notes now live under:
-- `docs/compat-journal/README.md`
-- `docs/compat-journal/960990-beyond-two-souls.md`
-- `docs/compat-journal/1196590-resident-evil-village.md`
+- `docs/research/compatibility/README.md`
+- `docs/research/compatibility/960990-beyond-two-souls.md`
+- `docs/research/compatibility/1196590-resident-evil-village.md`
 
 These capture per-game outcomes, repo snapshots, wrapper assumptions, and the specific good/bad log snippets that informed compatibility decisions.
 
@@ -47,12 +46,12 @@ These capture per-game outcomes, repo snapshots, wrapper assumptions, and the sp
   - `scripts/assert-vkcube-log.py`
   - `scripts/compile-rust-shaders.sh`
 
-### Rust parity status
+### Rust implementation status
 
 Rust implementation location:
 - `implementation/vk-layer-rust/`
 
-Rust implementation currently has verified parity for the existing MVP feature set:
+Rust implementation currently has the following verified utility / baseline modes:
 - `passthrough`
 - `clear`
 - `bfi`
@@ -82,7 +81,7 @@ Validated via:
 
 ### Verified runtime modes on Steam Deck
 
-The modes below are proven on the Steam Deck in the original C++ implementation, and now also in the Rust parity port for the main `vkcube` smoke path.
+The modes below are proven on the Steam Deck for the Rust layer on the main `vkcube` smoke path.
 
 #### 1. `passthrough`
 Working.
@@ -547,7 +546,7 @@ Current pieces:
   - now has a matching `reproject-quality` comparison preset for focused reprojection heuristic work
 - `scripts/run-autoperf-loop.sh`
   - orchestrates repeated decision-subset runs, aggregation, comparison, and optional full-suite promotion
-- `experiments/program.md`
+- `docs/experiments/program.md`
   - records the current fast subset and acceptance rules
 
 The current fast decision subset is:
@@ -622,7 +621,7 @@ The repo now explicitly treats backend directions as separate tracks:
 - the public FSR4 path is a poor direct fit for the current repo assumptions because it expects richer platform and integration constraints than the current Linux explicit-layer path provides
 
 Detailed rationale now lives in:
-- `docs/future-backends.md`
+- `docs/architecture/future-backends.md`
 
 ---
 
@@ -714,7 +713,6 @@ Under the current remote test setup, `vkgears` is not yet a useful validation ta
 Observed behavior:
 - layer negotiation occurs
 - the process times out under the remote harness
-- this remains true for both the C++ MVP and the Rust parity port
 - we do not yet get the same clean create-device / create-swapchain / present trace as `vkcube`
 
 That means `vkcube` is currently the reliable smoke-test target.
@@ -734,11 +732,9 @@ The next best implementation step is:
 ## **keep improving the classical Linux mainline while treating ML and vendor optical flow as explicit side branches**
 
 Recommended execution model now:
-- keep the C++ layer as the already-proven oracle
-- make the Rust port the primary place for new safety-minded implementation and test growth
-- keep both on the same Deck smoke harness until interpolation parity is achieved
-- continue iterating toward the roadmap recorded in `docs/rust-feature-roadmap.md`
-- use `docs/future-backends.md` as the guide for when FSR3-style ideas, RIFE-style ML, and NVIDIA optical-flow paths should enter the roadmap
+- keep the Rust layer as the primary place for implementation and test growth
+- continue iterating toward the roadmap recorded in `docs/planning/rust-feature-roadmap.md`
+- use `docs/architecture/future-backends.md` as the guide for when FSR3-style ideas, RIFE-style ML, and NVIDIA optical-flow paths should enter the roadmap
 
 Meaning:
 - keep the current queue/swapchain/present path

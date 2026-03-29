@@ -4,12 +4,7 @@ This document records the current implementation direction for the project.
 
 ## Primary direction
 
-The Rust Vulkan layer is now the **primary implementation path**.
-
-The C++ layer remains important as:
-- the proven oracle/reference implementation
-- a fallback when validating Rust behavior
-- a comparison point during risky refactors
+The Rust Vulkan layer is the implementation path for this repository.
 
 ## Ongoing objective
 
@@ -26,7 +21,7 @@ Continue iterating on the Rust implementation until practical feature parity is 
 ## Current completed milestones
 
 ### Done
-- Rust parity with the current C++ MVP for:
+- Working utility / validation modes:
   - `passthrough`
   - `clear`
   - `copy`
@@ -93,7 +88,7 @@ ML and vendor-specific paths are now tracked as explicit side branches rather th
 - FSR4 ML
   - best use: **later conceptual reference**, not near-term Linux mainline work
 
-See `docs/future-backends.md` for the full rationale and branch placement.
+See `docs/architecture/future-backends.md` for the full rationale and branch placement.
 
 ## Next implementation ladder
 

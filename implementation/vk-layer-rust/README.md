@@ -1,15 +1,15 @@
 # Vulkan layer Rust port
 
-Rust port of the current explicit Vulkan post-process frame-generation layer MVP.
+Rust implementation of the explicit Vulkan post-process frame-generation layer.
 
 ## Current goal
 
-Reach feature parity with the C++ MVP while building a safer foundation for future work.
+Keep extending the Rust layer as the mainline implementation while building a safer foundation for future work.
 
 Current Rust capability set:
 - explicit Vulkan layer ABI exports
 - instance / device / swapchain / present interception
-- parity/runtime utility modes:
+- utility / runtime validation modes:
   - `passthrough`
   - `clear`
   - `bfi`
@@ -78,7 +78,7 @@ OMFG_LAYER_IMPL=rust ./scripts/deploy-steamdeck-layer.sh
 Canonical wrapper + env var reference:
 
 - `../../scripts/steamdeck-omfg-wrapper.sh`
-- `../../docs/omfg-wrapper-and-env-vars.md`
+- `../../docs/operations/omfg-wrapper-and-env-vars.md`
 
 ### Smoke test with vkcube
 ```bash
@@ -295,14 +295,14 @@ OMFG_AUTOPERF_COMPARE_PRESET=reproject-quality \
 ./scripts/run-autoperf-loop.sh
 ```
 
-See `experiments/program.md` for the current subset, weights, and accept/reject rules.
+See `docs/experiments/program.md` for the current subset, weights, and accept/reject rules.
 
 ### Future backend planning
 For the broader roadmap beyond the current Rust mainline, see:
-- `docs/future-backends.md`
-- `docs/rust-feature-roadmap.md`
-- `docs/debug-observability-plan.md`
-- `docs/optical-flow-v0-plan.md`
+- `docs/architecture/future-backends.md`
+- `docs/planning/rust-feature-roadmap.md`
+- `docs/status/debug-observability-plan.md`
+- `docs/architecture/optical-flow-v0-plan.md`
 
 Those documents record how:
 - FSR3-style analytical FG concepts fit the current Linux post-process mainline

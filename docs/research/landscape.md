@@ -60,7 +60,7 @@ The part still missing in open source is:
   - inject them via a Vulkan layer
 
 **Key sourced details**
-- `research/fetch/nvidia-smooth-motion-linux.html`
+- `docs/research/vendor/nvidia-smooth-motion.md`
 - NVIDIA README says:
   - supported on **GeForce RTX 40+**
   - supports **Vulkan applications**
@@ -228,11 +228,10 @@ It is a **hybrid engine-integrated FG algorithm**, not a final-frame-only algori
 Repo cloned to:
 - `research/repos/NVIDIAOpticalFlowSDK`
 
-Fetched docs:
-- `research/fetch/nvidia-fruc-guide.html`
-- `research/fetch/nvidia-nvofa-programming-guide.html`
-- `research/fetch/nvidia-nvofa-application-note.html`
-- `research/fetch/nvidia-opticalflow-download.html`
+Curated vendor notes:
+- `docs/research/vendor/nvidia-fruc.md`
+- `docs/research/vendor/nvidia-optical-flow-sdk.md`
+- `docs/research/vendor/README.md`
 
 #### 5a) NVOFA / VK_NV_optical_flow
 
@@ -732,13 +731,11 @@ The key reason for that ordering is simple:
 - `research/repos/vkBasalt`
 - `research/repos/rife-ncnn-vulkan`
 
-### Fetched docs/pages
-- `research/fetch/nvidia-smooth-motion-linux.html`
-- `research/fetch/nvidia-gaming-linux.html`
-- `research/fetch/nvidia-fruc-guide.html`
-- `research/fetch/nvidia-nvofa-programming-guide.html`
-- `research/fetch/nvidia-nvofa-application-note.html`
-- `research/fetch/nvidia-opticalflow-download.html`
+### Curated vendor notes
+- `docs/research/vendor/nvidia-smooth-motion.md`
+- `docs/research/vendor/nvidia-fruc.md`
+- `docs/research/vendor/nvidia-optical-flow-sdk.md`
+- `docs/research/vendor/README.md`
 
 ---
 

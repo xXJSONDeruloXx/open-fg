@@ -133,7 +133,7 @@ These control whether the OMFG Vulkan layer gets injected at all.
 | `OMFG_BASE_DIR` | path | `/home/deck/post-proc-fg-research` | Base directory used by the canonical wrapper. |
 | `OMFG_WRAPPER_ENV_FILE` | path | unset | Optional file sourced by `scripts/steamdeck-omfg-wrapper.sh` before exporting vars. |
 | `OMFG_HOT_CONFIG_PATH` | path to TOML file | unset | Optional live-reload config overlay. The Rust layer polls it and overlays matching OMFG values on top of the process env. |
-| `OMFG_LAYER_IMPL` | `rust`, `mvp`, `cpp` | wrapper: `rust`; helper scripts: `mvp` unless overridden | Selects which implementation family the helper scripts target. `cpp` is treated as `mvp` by `scripts/_omfg_layer_impl.sh`. |
+| `OMFG_LAYER_IMPL` | `rust` | `rust` | Selects the implementation family targeted by helper scripts. This repository is now Rust-only. |
 | `OMFG_LAYER_DIR` | path | `${OMFG_BASE_DIR}/deploy/vk-layer-${OMFG_LAYER_IMPL}` | Directory prepended to `VK_LAYER_PATH` by the canonical wrapper. |
 | `OMFG_LAYER_NAME` | Vulkan layer name | `VK_LAYER_OMFG_${OMFG_LAYER_IMPL}` | Layer name exported into `VK_INSTANCE_LAYERS`. |
 | `OMFG_DISABLE_LAYER` | boolean | `0` | Wrapper-level hard off switch. If true, the game runs without OMFG injection. |

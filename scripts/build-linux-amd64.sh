@@ -18,21 +18,6 @@ docker build \
   -f "${ROOT_DIR}/docker/linux-amd64-builder.Dockerfile" \
   "${ROOT_DIR}"
 
-if [[ "${OMFG_LAYER_BUILD_SYSTEM}" == "cmake" ]]; then
-  docker run --rm \
-    --platform linux/amd64 \
-    -v "${ROOT_DIR}:/workspace" \
-    -w /workspace \
-    "${IMAGE_TAG}" \
-    bash -lc '
-      set -euo pipefail
-      cmake -S implementation/vk-layer-mvp -B build/linux-amd64/vk-layer-mvp -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
-      cmake --build build/linux-amd64/vk-layer-mvp --verbose
-      ls -lah build/linux-amd64/vk-layer-mvp/out
-    '
-  exit 0
-fi
-
 docker run --rm \
   --platform linux/amd64 \
   -v "${ROOT_DIR}:/workspace" \
