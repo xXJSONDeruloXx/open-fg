@@ -1,0 +1,71 @@
+# Canonical OMFG hot-reload config.
+#
+# Point the runtime at this file with:
+#   OMFG_HOT_CONFIG_PATH=/path/to/config/omfg-live.toml
+#
+# The Rust layer polls this file roughly every 250ms and overlays matching
+# values on top of the process environment.
+#
+# Only OMFG-related keys are consumed here. Wrapper-only vars like VK_LAYER_PATH
+# are not meaningful in this file.
+
+[env]
+
+# Primary live mode switch.
+OMFG_LAYER_MODE = "reproject-blend"
+
+# Optional debug views for supported modes:
+# off | motion | confidence | ambiguity | disocclusion | hole-fill | fallback
+OMFG_DEBUG_VIEW = "off"
+
+# Reprojection defaults.
+OMFG_REPROJECT_SEARCH_RADIUS = 2
+OMFG_REPROJECT_PATCH_RADIUS = 1
+OMFG_REPROJECT_CONFIDENCE_SCALE = 4.0
+OMFG_REPROJECT_DISOCCLUSION_CURRENT_BIAS = 0.75
+OMFG_REPROJECT_DISOCCLUSION_SCALE = 2.0
+OMFG_REPROJECT_HOLE_FILL_STRENGTH = 0.85
+OMFG_REPROJECT_HOLE_FILL_RADIUS = 2
+OMFG_REPROJECT_GRADIENT_CONFIDENCE_WEIGHT = 8.0
+OMFG_REPROJECT_CHROMA_WEIGHT = 0.3
+OMFG_REPROJECT_AMBIGUITY_SCALE = 6.0
+
+# Optical-flow v0 defaults.
+OMFG_OPTICAL_FLOW_SEARCH_RADIUS = 2
+OMFG_OPTICAL_FLOW_PATCH_RADIUS = 1
+OMFG_OPTICAL_FLOW_LEVELS = 3
+OMFG_OPTICAL_FLOW_CONFIDENCE_SCALE = 4.0
+OMFG_OPTICAL_FLOW_MOTION_PENALTY = 0.01
+
+# Multi-FG / adaptive controller knobs.
+# These are mainly relevant for adaptive-* and *-multi-blend modes.
+OMFG_MULTI_BLEND_COUNT = 2
+OMFG_ADAPTIVE_MULTI_MIN_GENERATED_FRAMES = 0
+OMFG_ADAPTIVE_MULTI_MAX_GENERATED_FRAMES = 2
+# OMFG_ADAPTIVE_MULTI_TARGET_FPS = 120
+# OMFG_ADAPTIVE_MULTI_INTERVAL_THRESHOLD_MS = 1.0
+
+# Utility / validation modes.
+OMFG_BFI_PERIOD = 1
+# OMFG_BFI_HOLD_MS = 8
+# OMFG_VISUAL_HOLD_MS = 8
+# OMFG_HISTORY_COPY_FREEZE_HISTORY = 0
+# OMFG_COPY_ORIGINAL_PRESENT_FIRST = 0
+# OMFG_BLEND_ORIGINAL_PRESENT_FIRST = 0
+
+# Present timing / benchmarking.
+OMFG_PRESENT_TIMING = 0
+OMFG_PRESENT_WAIT = 0
+OMFG_PRESENT_WAIT_TIMEOUT_NS = 5000000000
+OMFG_BENCHMARK = 0
+OMFG_BENCHMARK_LABEL = "live"
+
+# Startup/swapchain-scoped values can be kept here for convenience, but changes
+# to them typically apply on next launch or next swapchain recreation rather than
+# immediately to the current live stream.
+# OMFG_SWAPCHAIN_IMAGE_BUMP_OVERRIDE = 0
+# OMFG_CREATE_DEVICE_DEBUG = 0
+# OMFG_CREATE_DEVICE_APPEND_TIMING_EXTENSIONS = 0
+# OMFG_CREATE_DEVICE_APPEND_TIMING_FEATURES = 0
+# ENABLE_OMFG_RUST = 1
+# DISABLE_OMFG_RUST = 0

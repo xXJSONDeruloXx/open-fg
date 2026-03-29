@@ -57,6 +57,9 @@ The Rust layer now supports an **optional hot-reload TOML file** selected by:
 
 - `OMFG_HOT_CONFIG_PATH=/path/to/hot.conf.toml`
 
+Canonical checked-in file:
+- `config/omfg-live.toml`
+
 When this env var is set, OMFG checks that file roughly every `250ms` and overlays any matching values on top of the process environment.
 
 ### Supported TOML shapes
