@@ -3,3 +3,6 @@ replace-with = "vendored-sources"
 
 [source.vendored-sources]
 directory = "third_party/cargo-vendor"
+
+[target.aarch64-linux-android]
+rustflags = ["-C", "link-arg=-fuse-ld=lld"]
