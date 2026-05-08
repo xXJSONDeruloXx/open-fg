@@ -16,5 +16,6 @@ OMFG is a **Rust Vulkan layer** for Linux that intercepts swapchain and present 
 
 - utility / validation: `passthrough`, `clear`, `bfi`, `copy`, `history-copy`
 - single generated frame: `blend`, `adaptive-blend`, `search-blend`, `search-adaptive-blend`, `reproject-blend`, `reproject-adaptive-blend`, `optflow-blend`
-- multi generated frame: `multi-blend`, `adaptive-multi-blend`, `reproject-multi-blend`, `reproject-adaptive-multi-blend`, `optflow-multi-blend`, `optflow-adaptive-multi-blend`
+- clean-room NN-lite generated frame: `nn-lite-blend`, `nn-lite-adaptive-blend`
+- multi generated frame: `multi-blend`, `adaptive-multi-blend`, `reproject-multi-blend`, `reproject-adaptive-multi-blend`, `optflow-multi-blend`, `optflow-adaptive-multi-blend`, `nn-lite-multi-blend`, `nn-lite-adaptive-multi-blend`
 

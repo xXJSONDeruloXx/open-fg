@@ -1,6 +1,7 @@
 #![allow(clippy::missing_safety_doc)]
 
 mod config;
+mod gs_vk;
 #[cfg(test)]
 mod heuristics;
 mod layer_defs;
@@ -376,6 +377,42 @@ type PfnVkGetQueryPoolResults = unsafe extern "system" fn(
 type PfnVkCmdWriteTimestamp =
     unsafe extern "system" fn(vk::CommandBuffer, vk::PipelineStageFlags, vk::QueryPool, u32);
 
+// Compute pipeline + buffer support (gs-vk mode)
+type PfnVkCreateComputePipelines = unsafe extern "system" fn(
+    vk::Device,
+    vk::PipelineCache,
+    u32,
+    *const vk::ComputePipelineCreateInfo<'static>,
+    *const AllocationCallbacks,
+    *mut vk::Pipeline,
+) -> vk::Result;
+type PfnVkCmdDispatch = unsafe extern "system" fn(vk::CommandBuffer, u32, u32, u32);
+type PfnVkCreateBuffer = unsafe extern "system" fn(
+    vk::Device,
+    *const vk::BufferCreateInfo<'static>,
+    *const AllocationCallbacks,
+    *mut vk::Buffer,
+) -> vk::Result;
+type PfnVkDestroyBuffer =
+    unsafe extern "system" fn(vk::Device, vk::Buffer, *const AllocationCallbacks);
+type PfnVkGetBufferMemoryRequirements =
+    unsafe extern "system" fn(vk::Device, vk::Buffer, *mut vk::MemoryRequirements);
+type PfnVkBindBufferMemory = unsafe extern "system" fn(
+    vk::Device,
+    vk::Buffer,
+    vk::DeviceMemory,
+    vk::DeviceSize,
+) -> vk::Result;
+type PfnVkMapMemory = unsafe extern "system" fn(
+    vk::Device,
+    vk::DeviceMemory,
+    vk::DeviceSize,
+    vk::DeviceSize,
+    vk::MemoryMapFlags,
+    *mut *mut c_void,
+) -> vk::Result;
+type PfnVkUnmapMemory = unsafe extern "system" fn(vk::Device, vk::DeviceMemory);
+
 #[derive(Default)]
 struct LoggerSink {
     file: Option<std::fs::File>,
@@ -514,6 +551,16 @@ struct DeviceDispatch {
     destroy_query_pool: Option<PfnVkDestroyQueryPool>,
     get_query_pool_results: Option<PfnVkGetQueryPoolResults>,
     cmd_write_timestamp: Option<PfnVkCmdWriteTimestamp>,
+
+    // Compute pipeline support (for gs-vk mode)
+    create_compute_pipelines: Option<PfnVkCreateComputePipelines>,
+    cmd_dispatch: Option<PfnVkCmdDispatch>,
+    create_buffer: Option<PfnVkCreateBuffer>,
+    destroy_buffer: Option<PfnVkDestroyBuffer>,
+    get_buffer_memory_requirements: Option<PfnVkGetBufferMemoryRequirements>,
+    bind_buffer_memory: Option<PfnVkBindBufferMemory>,
+    map_memory: Option<PfnVkMapMemory>,
+    unmap_memory: Option<PfnVkUnmapMemory>,
 }
 
 #[derive(Clone, Copy, Default)]
@@ -633,7 +680,6 @@ struct BlendPushConstants {
     debug_view: u32,
 }
 
-#[derive(Clone)]
 struct SwapchainState {
     device: vk::Device,
     physical_device: vk::PhysicalDevice,
@@ -665,6 +711,47 @@ struct SwapchainState {
     benchmark: BenchmarkStats,
     inject: InjectResources,
     blend: BlendResources,
+    gs_vk: gs_vk::GsVkPipeline,
+}
+
+// Manual Clone for SwapchainState — gs_vk pipeline is not trivially clonable,
+// so we just default it on clone (the clone path is only used for re-creation).
+impl Clone for SwapchainState {
+    fn clone(&self) -> Self {
+        Self {
+            device: self.device,
+            physical_device: self.physical_device,
+            surface: self.surface,
+            handle: self.handle,
+            format: self.format,
+            extent: self.extent,
+            present_mode: self.present_mode,
+            original_usage: self.original_usage,
+            modified_usage: self.modified_usage,
+            original_min_image_count: self.original_min_image_count,
+            modified_min_image_count: self.modified_min_image_count,
+            images: self.images.clone(),
+            history_image: self.history_image,
+            history_memory: self.history_memory,
+            history_valid: self.history_valid,
+            present_count: self.present_count,
+            last_present_timestamp_us: self.last_present_timestamp_us,
+            last_present_interval_ms: self.last_present_interval_ms,
+            smoothed_present_interval_ms: self.smoothed_present_interval_ms,
+            adaptive_generated_frame_credit: self.adaptive_generated_frame_credit,
+            last_adaptive_requested_generated_frames: self.last_adaptive_requested_generated_frames,
+            generated_present_count: self.generated_present_count,
+            injection_attempted: self.injection_attempted,
+            injection_works: self.injection_works,
+            next_present_id: self.next_present_id,
+            last_logged_timing_present_id: self.last_logged_timing_present_id,
+            refresh_duration_ns: self.refresh_duration_ns,
+            benchmark: self.benchmark,
+            inject: self.inject,
+            blend: self.blend.clone(),
+            gs_vk: gs_vk::GsVkPipeline::new(),
+        }
+    }
 }
 
 impl Default for SwapchainState {
@@ -700,6 +787,7 @@ impl Default for SwapchainState {
             benchmark: BenchmarkStats::default(),
             inject: InjectResources::default(),
             blend: BlendResources::default(),
+            gs_vk: gs_vk::GsVkPipeline::new(),
         }
     }
 }
@@ -715,6 +803,8 @@ struct DeviceInfo {
     supports_display_timing: bool,
     instance_dispatch: InstanceDispatch,
     dispatch: DeviceDispatch,
+    memory_properties: vk::PhysicalDeviceMemoryProperties,
+    queue: QueueInfo,
 }
 
 #[derive(Default)]
@@ -895,6 +985,20 @@ unsafe fn fill_device_dispatch(device: vk::Device, gdpa: PfnVkGetDeviceProcAddr)
         destroy_query_pool: load_device_fn(gdpa, device, cstr!("vkDestroyQueryPool")),
         get_query_pool_results: load_device_fn(gdpa, device, cstr!("vkGetQueryPoolResults")),
         cmd_write_timestamp: load_device_fn(gdpa, device, cstr!("vkCmdWriteTimestamp")),
+
+        // Compute pipeline + buffer support (gs-vk mode)
+        create_compute_pipelines: load_device_fn(gdpa, device, cstr!("vkCreateComputePipelines")),
+        cmd_dispatch: load_device_fn(gdpa, device, cstr!("vkCmdDispatch")),
+        create_buffer: load_device_fn(gdpa, device, cstr!("vkCreateBuffer")),
+        destroy_buffer: load_device_fn(gdpa, device, cstr!("vkDestroyBuffer")),
+        get_buffer_memory_requirements: load_device_fn(
+            gdpa,
+            device,
+            cstr!("vkGetBufferMemoryRequirements"),
+        ),
+        bind_buffer_memory: load_device_fn(gdpa, device, cstr!("vkBindBufferMemory")),
+        map_memory: load_device_fn(gdpa, device, cstr!("vkMapMemory")),
+        unmap_memory: load_device_fn(gdpa, device, cstr!("vkUnmapMemory")),
     }
 }
 
@@ -1169,7 +1273,11 @@ fn parse_hot_config(contents: &str) -> Result<HashMap<String, String>, String> {
             continue;
         }
         let Some((raw_key, raw_value)) = line.split_once('=') else {
-            return Err(format!("invalid hot config line {}: {}", line_no + 1, raw_line));
+            return Err(format!(
+                "invalid hot config line {}: {}",
+                line_no + 1,
+                raw_line
+            ));
         };
         let Some(key) = parse_hot_config_key(raw_key) else {
             return Err(format!("invalid hot config key on line {}", line_no + 1));
@@ -1228,7 +1336,8 @@ fn reload_hot_config_if_needed(state: &mut HotConfigState, path: &Path) {
                 state.last_error = None;
                 log_info(format!(
                     "hot config reloaded: path={}; values={}",
-                    path.display(), value_count
+                    path.display(),
+                    value_count
                 ));
             }
             Err(err) => {
@@ -1360,7 +1469,10 @@ fn generated_acquire_timeout_ns_for_state(state: &SwapchainState) -> u64 {
     adaptive_ns
 }
 
-fn default_multi_blend_original_present_first(mode: Mode, present_mode: vk::PresentModeKHR) -> bool {
+fn default_multi_blend_original_present_first(
+    mode: Mode,
+    present_mode: vk::PresentModeKHR,
+) -> bool {
     matches!(
         mode,
         Mode::MultiBlendTest
@@ -1369,6 +1481,8 @@ fn default_multi_blend_original_present_first(mode: Mode, present_mode: vk::Pres
             | Mode::ReprojectAdaptiveMultiBlendTest
             | Mode::OptFlowMultiBlendTest
             | Mode::OptFlowAdaptiveMultiBlendTest
+            | Mode::NnLiteMultiBlendTest
+            | Mode::NnLiteAdaptiveMultiBlendTest
     ) && present_mode == vk::PresentModeKHR::MAILBOX
 }
 
@@ -1587,13 +1701,15 @@ fn reserved_fixed_multi_generated_frame_count() -> u32 {
 
 fn requested_multi_generated_frames_for_swapchain(mode: Mode) -> u32 {
     let requested = match mode {
-        Mode::MultiBlendTest | Mode::ReprojectMultiBlendTest | Mode::OptFlowMultiBlendTest => {
-            effective_fixed_multi_generated_frame_count()
-                .max(reserved_fixed_multi_generated_frame_count())
-        }
+        Mode::MultiBlendTest
+        | Mode::ReprojectMultiBlendTest
+        | Mode::OptFlowMultiBlendTest
+        | Mode::NnLiteMultiBlendTest => effective_fixed_multi_generated_frame_count()
+            .max(reserved_fixed_multi_generated_frame_count()),
         Mode::AdaptiveMultiBlendTest
         | Mode::ReprojectAdaptiveMultiBlendTest
-        | Mode::OptFlowAdaptiveMultiBlendTest => {
+        | Mode::OptFlowAdaptiveMultiBlendTest
+        | Mode::NnLiteAdaptiveMultiBlendTest => {
             let target_enabled = adaptive_multi_target_fps() > 0.0;
             let min_count = env_u32(
                 "OMFG_ADAPTIVE_MULTI_MIN_GENERATED_FRAMES",
@@ -1620,6 +1736,8 @@ fn maybe_expand_multi_swapchain_min_image_count(
             | Mode::ReprojectAdaptiveMultiBlendTest
             | Mode::OptFlowMultiBlendTest
             | Mode::OptFlowAdaptiveMultiBlendTest
+            | Mode::NnLiteMultiBlendTest
+            | Mode::NnLiteAdaptiveMultiBlendTest
     ) {
         return current_modified_min_image_count;
     }
@@ -2717,6 +2835,11 @@ unsafe fn destroy_swapchain_resources(device_info: &DeviceInfo, swapchain: &mut 
         device_info.device,
         &mut swapchain.blend,
     );
+    gs_vk::destroy_gs_vk_pipeline(
+        &device_info.dispatch,
+        device_info.device,
+        &mut swapchain.gs_vk,
+    );
     swapchain.history_valid = false;
     if let Some(destroy_image) = device_info.dispatch.destroy_image {
         if !swapchain.history_image.is_null() {
@@ -3151,6 +3274,26 @@ fn optflow_motion_penalty() -> f32 {
     env_f32("OMFG_OPTICAL_FLOW_MOTION_PENALTY", 0.01).clamp(0.0, 1.0)
 }
 
+fn nn_lite_search_radius() -> u32 {
+    env_u32("OMFG_NN_LITE_SEARCH_RADIUS", optflow_search_radius()).clamp(1, 4)
+}
+
+fn nn_lite_patch_radius() -> u32 {
+    env_u32("OMFG_NN_LITE_PATCH_RADIUS", optflow_patch_radius()).min(2)
+}
+
+fn nn_lite_confidence_scale() -> f32 {
+    env_f32("OMFG_NN_LITE_CONFIDENCE_SCALE", 6.0).clamp(0.0, 32.0)
+}
+
+fn nn_lite_levels() -> u32 {
+    env_u32("OMFG_NN_LITE_LEVELS", 2).clamp(1, 4)
+}
+
+fn nn_lite_motion_penalty() -> f32 {
+    env_f32("OMFG_NN_LITE_MOTION_PENALTY", 0.02).clamp(0.0, 1.0)
+}
+
 fn debug_view() -> DebugView {
     DebugView::from_env()
 }
@@ -3162,8 +3305,12 @@ fn effective_debug_view(mode: Mode) -> DebugView {
             | Mode::ReprojectAdaptiveBlendTest
             | Mode::OptFlowBlendTest
             | Mode::OptFlowAdaptiveBlendTest
+            | Mode::NnLiteBlendTest
+            | Mode::NnLiteAdaptiveBlendTest
             | Mode::OptFlowMultiBlendTest
             | Mode::OptFlowAdaptiveMultiBlendTest
+            | Mode::NnLiteMultiBlendTest
+            | Mode::NnLiteAdaptiveMultiBlendTest
             | Mode::ReprojectMultiBlendTest
             | Mode::ReprojectAdaptiveMultiBlendTest
     ) {
@@ -3347,6 +3494,50 @@ fn blend_push_constants_for_mode(mode: Mode) -> BlendPushConstants {
             debug_view: effective_debug_view(mode).shader_code(),
             ..Default::default()
         },
+        Mode::NnLiteBlendTest => BlendPushConstants {
+            alpha: 0.5,
+            confidence_scale: nn_lite_confidence_scale(),
+            disocclusion_scale: reproject_disocclusion_scale(),
+            hole_fill_strength: reproject_hole_fill_strength(),
+            gradient_confidence_weight: reproject_gradient_confidence_weight(),
+            chroma_weight: reproject_chroma_weight(),
+            ambiguity_scale: reproject_ambiguity_scale(),
+            optflow_motion_penalty: nn_lite_motion_penalty(),
+            disocclusion_current_bias: reproject_disocclusion_current_bias(),
+            search_radius: nn_lite_search_radius(),
+            patch_radius: nn_lite_patch_radius(),
+            hole_fill_radius: reproject_hole_fill_radius(),
+            optflow_levels: nn_lite_levels(),
+            mode: 8,
+            debug_view: effective_debug_view(mode).shader_code(),
+            ..Default::default()
+        },
+        Mode::NnLiteAdaptiveBlendTest => BlendPushConstants {
+            alpha: 0.5,
+            adaptive_strength: blend_adaptive_strength(),
+            adaptive_bias: blend_adaptive_bias(),
+            confidence_scale: nn_lite_confidence_scale(),
+            disocclusion_scale: reproject_disocclusion_scale(),
+            hole_fill_strength: reproject_hole_fill_strength(),
+            gradient_confidence_weight: reproject_gradient_confidence_weight(),
+            chroma_weight: reproject_chroma_weight(),
+            ambiguity_scale: reproject_ambiguity_scale(),
+            optflow_motion_penalty: nn_lite_motion_penalty(),
+            disocclusion_current_bias: reproject_disocclusion_current_bias(),
+            search_radius: nn_lite_search_radius(),
+            patch_radius: nn_lite_patch_radius(),
+            hole_fill_radius: reproject_hole_fill_radius(),
+            optflow_levels: nn_lite_levels(),
+            mode: 9,
+            debug_view: effective_debug_view(mode).shader_code(),
+            ..Default::default()
+        },
+        Mode::GsVkBlendTest => BlendPushConstants {
+            alpha: 0.5,
+            mode: 10,
+            debug_view: effective_debug_view(mode).shader_code(),
+            ..Default::default()
+        },
         _ => BlendPushConstants::default(),
     }
 }
@@ -3360,6 +3551,7 @@ fn multi_blend_push_constants_plan(
         Mode::AdaptiveMultiBlendTest
             | Mode::ReprojectAdaptiveMultiBlendTest
             | Mode::OptFlowAdaptiveMultiBlendTest
+            | Mode::NnLiteAdaptiveMultiBlendTest
     );
     let reproject = matches!(
         mode,
@@ -3369,6 +3561,11 @@ fn multi_blend_push_constants_plan(
         mode,
         Mode::OptFlowMultiBlendTest | Mode::OptFlowAdaptiveMultiBlendTest
     );
+    let nn_lite = matches!(
+        mode,
+        Mode::NnLiteMultiBlendTest | Mode::NnLiteAdaptiveMultiBlendTest
+    );
+    let gs_vk = matches!(mode, Mode::GsVkBlendTest);
 
     (1..=generated_frame_count)
         .map(|index| {
@@ -3385,35 +3582,37 @@ fn multi_blend_push_constants_plan(
                     reproject_confidence_scale()
                 } else if optflow {
                     optflow_confidence_scale()
+                } else if nn_lite {
+                    nn_lite_confidence_scale()
                 } else {
                     0.0
                 },
-                disocclusion_scale: if reproject || optflow {
+                disocclusion_scale: if reproject || optflow || nn_lite || gs_vk {
                     reproject_disocclusion_scale()
                 } else {
                     0.0
                 },
-                hole_fill_strength: if reproject || optflow {
+                hole_fill_strength: if reproject || optflow || nn_lite || gs_vk {
                     reproject_hole_fill_strength()
                 } else {
                     0.0
                 },
-                gradient_confidence_weight: if reproject || optflow {
+                gradient_confidence_weight: if reproject || optflow || nn_lite || gs_vk {
                     reproject_gradient_confidence_weight()
                 } else {
                     0.0
                 },
-                chroma_weight: if reproject || optflow {
+                chroma_weight: if reproject || optflow || nn_lite || gs_vk {
                     reproject_chroma_weight()
                 } else {
                     0.0
                 },
-                ambiguity_scale: if reproject || optflow {
+                ambiguity_scale: if reproject || optflow || nn_lite || gs_vk {
                     reproject_ambiguity_scale()
                 } else {
                     0.0
                 },
-                disocclusion_current_bias: if reproject || optflow {
+                disocclusion_current_bias: if reproject || optflow || nn_lite || gs_vk {
                     reproject_disocclusion_current_bias()
                 } else {
                     0.0
@@ -3422,6 +3621,8 @@ fn multi_blend_push_constants_plan(
                     reproject_search_radius()
                 } else if optflow {
                     optflow_search_radius()
+                } else if nn_lite {
+                    nn_lite_search_radius()
                 } else {
                     0
                 },
@@ -3429,20 +3630,30 @@ fn multi_blend_push_constants_plan(
                     reproject_patch_radius()
                 } else if optflow {
                     optflow_patch_radius()
+                } else if nn_lite {
+                    nn_lite_patch_radius()
                 } else {
                     0
                 },
-                hole_fill_radius: if reproject || optflow {
+                hole_fill_radius: if reproject || optflow || nn_lite || gs_vk {
                     reproject_hole_fill_radius()
                 } else {
                     0
                 },
                 optflow_motion_penalty: if optflow {
                     optflow_motion_penalty()
+                } else if nn_lite {
+                    nn_lite_motion_penalty()
                 } else {
                     0.0
                 },
-                optflow_levels: if optflow { optflow_levels() } else { 0 },
+                optflow_levels: if optflow {
+                    optflow_levels()
+                } else if nn_lite {
+                    nn_lite_levels()
+                } else {
+                    0
+                },
                 mode: if reproject {
                     if adaptive {
                         5
@@ -3455,12 +3666,20 @@ fn multi_blend_push_constants_plan(
                     } else {
                         6
                     }
+                } else if nn_lite {
+                    if adaptive {
+                        9
+                    } else {
+                        8
+                    }
+                } else if gs_vk {
+                    10
                 } else if adaptive {
                     1
                 } else {
                     0
                 },
-                debug_view: if reproject || optflow {
+                debug_view: if reproject || optflow || nn_lite || gs_vk {
                     effective_debug_view(mode).shader_code()
                 } else {
                     DebugView::Off.shader_code()
@@ -3518,6 +3737,31 @@ fn blend_mode_labels(mode: Mode) -> (&'static str, &'static str, &'static str) {
             "first optical-flow adaptive multi blended generated-frame present succeeded",
             "optical-flow adaptive multi blended frame present=",
         ),
+        Mode::NnLiteBlendTest => (
+            "nn-lite-blend primed previous frame history",
+            "first NN-lite blended generated-frame present succeeded",
+            "NN-lite blended frame present=",
+        ),
+        Mode::NnLiteAdaptiveBlendTest => (
+            "nn-lite-adaptive-blend primed previous frame history",
+            "first NN-lite adaptive blended generated-frame present succeeded",
+            "NN-lite adaptive blended frame present=",
+        ),
+        Mode::NnLiteMultiBlendTest => (
+            "nn-lite-multi-blend primed previous frame history",
+            "first NN-lite multi blended generated-frame present succeeded",
+            "NN-lite multi blended frame present=",
+        ),
+        Mode::NnLiteAdaptiveMultiBlendTest => (
+            "nn-lite-adaptive-multi-blend primed previous frame history",
+            "first NN-lite adaptive multi blended generated-frame present succeeded",
+            "NN-lite adaptive multi blended frame present=",
+        ),
+        Mode::GsVkBlendTest => (
+            "gs-vk-blend primed previous frame history",
+            "first GameScopeVK compute pipeline generated-frame present succeeded",
+            "GameScopeVK compute pipeline frame present=",
+        ),
         Mode::MultiBlendTest => (
             "multi-blend primed previous frame history",
             "first multi blended generated-frame present succeeded",
@@ -3550,6 +3794,7 @@ fn adaptive_multi_controller_log_label(mode: Mode) -> &'static str {
     match mode {
         Mode::ReprojectAdaptiveMultiBlendTest => "reproject-adaptive-multi",
         Mode::OptFlowAdaptiveMultiBlendTest => "optflow-adaptive-multi",
+        Mode::NnLiteAdaptiveMultiBlendTest => "nn-lite-adaptive-multi",
         _ => "adaptive-multi",
     }
 }
@@ -3561,6 +3806,9 @@ fn adaptive_multi_refresh_log_label(mode: Mode) -> &'static str {
         }
         Mode::OptFlowAdaptiveMultiBlendTest => {
             "optflow-adaptive-multi-blend refreshed history without generated frame"
+        }
+        Mode::NnLiteAdaptiveMultiBlendTest => {
+            "nn-lite-adaptive-multi-blend refreshed history without generated frame"
         }
         _ => "adaptive-multi-blend refreshed history without generated frame",
     }
@@ -3579,6 +3827,12 @@ unsafe fn try_present_blend_frame(
     }
     if !init_blend_resources(state, device_info) {
         return false;
+        // Initialize gs-vk compute pipeline if this mode uses it.
+        if mode == Mode::GsVkBlendTest {
+            if !gs_vk::init_gs_vk_pipeline(state, device_info) {
+                log_warn("gs-vk: pipeline init failed, falling back to blend");
+            }
+        }
     }
 
     let present_info = match present_info.as_ref() {
@@ -4317,18 +4571,21 @@ unsafe fn try_present_multi_blend_frame(
     let adaptive_request = match mode {
         Mode::AdaptiveMultiBlendTest
         | Mode::ReprojectAdaptiveMultiBlendTest
-        | Mode::OptFlowAdaptiveMultiBlendTest => Some(adaptive_multi_frame_request(state)),
+        | Mode::OptFlowAdaptiveMultiBlendTest
+        | Mode::NnLiteAdaptiveMultiBlendTest => Some(adaptive_multi_frame_request(state)),
         _ => None,
     };
     let requested_generated_frame_count = match mode {
         Mode::AdaptiveMultiBlendTest
         | Mode::ReprojectAdaptiveMultiBlendTest
-        | Mode::OptFlowAdaptiveMultiBlendTest => adaptive_request
+        | Mode::OptFlowAdaptiveMultiBlendTest
+        | Mode::NnLiteAdaptiveMultiBlendTest => adaptive_request
             .map(|request| request.generated_frame_count)
             .unwrap_or(0),
-        Mode::MultiBlendTest | Mode::ReprojectMultiBlendTest | Mode::OptFlowMultiBlendTest => {
-            effective_fixed_multi_generated_frame_count() as usize
-        }
+        Mode::MultiBlendTest
+        | Mode::ReprojectMultiBlendTest
+        | Mode::OptFlowMultiBlendTest
+        | Mode::NnLiteMultiBlendTest => effective_fixed_multi_generated_frame_count() as usize,
         _ => 1,
     };
     let generated_plan = multi_blend_push_constants_plan(mode, requested_generated_frame_count);
@@ -5046,7 +5303,9 @@ unsafe fn try_present_multi_blend_frame(
                 if env_bool_opt("OMFG_BLEND_ORIGINAL_PRESENT_FIRST").is_some() {
                     log_info("multi-blend original-first mode enabled");
                 } else {
-                    log_info("multi-blend original-first mode auto-enabled for MAILBOX present mode");
+                    log_info(
+                        "multi-blend original-first mode auto-enabled for MAILBOX present mode",
+                    );
                 }
             }
             log_info(format!(
@@ -6512,6 +6771,13 @@ unsafe extern "system" fn layer_create_device(
     if let Some(get_properties) = instance_dispatch.get_physical_device_properties {
         get_properties(physical_device, &mut properties);
     }
+
+    // Query physical device memory properties for image allocation.
+    let mut mem_props = vk::PhysicalDeviceMemoryProperties::default();
+    if let Some(get_mem_props) = instance_dispatch.get_physical_device_memory_properties {
+        get_mem_props(physical_device, &mut mem_props);
+    }
+
     let device_info = DeviceInfo {
         instance,
         physical_device,
@@ -6522,6 +6788,8 @@ unsafe extern "system" fn layer_create_device(
         supports_display_timing,
         instance_dispatch,
         dispatch: device_dispatch,
+        memory_properties: mem_props,
+        queue: QueueInfo::default(),
     };
 
     if let (Some(get_queue_family_properties), Some(get_device_queue)) = (
@@ -6867,8 +7135,12 @@ unsafe extern "system" fn layer_create_swapchain_khr(
             | Mode::ReprojectAdaptiveBlendTest
             | Mode::OptFlowBlendTest
             | Mode::OptFlowAdaptiveBlendTest
+            | Mode::NnLiteBlendTest
+            | Mode::NnLiteAdaptiveBlendTest
             | Mode::OptFlowMultiBlendTest
             | Mode::OptFlowAdaptiveMultiBlendTest
+            | Mode::NnLiteMultiBlendTest
+            | Mode::NnLiteAdaptiveMultiBlendTest
             | Mode::MultiBlendTest
             | Mode::AdaptiveMultiBlendTest
             | Mode::ReprojectMultiBlendTest
@@ -6892,6 +7164,8 @@ unsafe extern "system" fn layer_create_swapchain_khr(
             | Mode::ReprojectAdaptiveMultiBlendTest
             | Mode::OptFlowMultiBlendTest
             | Mode::OptFlowAdaptiveMultiBlendTest
+            | Mode::NnLiteMultiBlendTest
+            | Mode::NnLiteAdaptiveMultiBlendTest
     ) && expanded_min_image_count > mutation.modified_min_image_count
     {
         let requested_generated_frames = requested_multi_generated_frames_for_swapchain(mode);
@@ -6978,7 +7252,10 @@ unsafe extern "system" fn layer_queue_present_khr(
     let mode = Mode::from_env();
     let multi_mode_disabled = matches!(
         mode,
-        Mode::MultiBlendTest | Mode::ReprojectMultiBlendTest | Mode::OptFlowMultiBlendTest
+        Mode::MultiBlendTest
+            | Mode::ReprojectMultiBlendTest
+            | Mode::OptFlowMultiBlendTest
+            | Mode::NnLiteMultiBlendTest
     ) && effective_fixed_multi_generated_frame_count() == 0;
     let present_info_ref = &*present_info;
     if present_info_ref.swapchain_count == 1 {
@@ -7130,6 +7407,8 @@ unsafe extern "system" fn layer_queue_present_khr(
                             | Mode::ReprojectAdaptiveBlendTest
                             | Mode::OptFlowBlendTest
                             | Mode::OptFlowAdaptiveBlendTest
+                            | Mode::NnLiteBlendTest
+                            | Mode::NnLiteAdaptiveBlendTest
                     ) && have_queue =>
                 {
                     swapchain_state.injection_attempted = true;
@@ -7154,6 +7433,8 @@ unsafe extern "system" fn layer_queue_present_khr(
                             | Mode::ReprojectAdaptiveMultiBlendTest
                             | Mode::OptFlowMultiBlendTest
                             | Mode::OptFlowAdaptiveMultiBlendTest
+                            | Mode::NnLiteMultiBlendTest
+                            | Mode::NnLiteAdaptiveMultiBlendTest
                     ) && have_queue =>
                 {
                     swapchain_state.injection_attempted = true;
@@ -7547,8 +7828,7 @@ OMFG_REPROJECT_CONFIDENCE_SCALE = 7.25
         assert_eq!(debug_view(), DebugView::Motion);
 
         std::thread::sleep(Duration::from_millis(HOT_CONFIG_RELOAD_INTERVAL_MS + 25));
-        std::fs::write(&path, "OMFG_DEBUG_VIEW = \"confidence\"\n")
-            .expect("rewrite hot config");
+        std::fs::write(&path, "OMFG_DEBUG_VIEW = \"confidence\"\n").expect("rewrite hot config");
         std::thread::sleep(Duration::from_millis(HOT_CONFIG_RELOAD_INTERVAL_MS + 25));
 
         assert_eq!(debug_view(), DebugView::Confidence);
@@ -7609,7 +7889,10 @@ OMFG_REPROJECT_CONFIDENCE_SCALE = 7.25
         std::env::set_var("OMFG_MULTI_BLEND_COUNT", "0");
         std::env::remove_var("OMFG_MULTI_BLEND_RESERVED_COUNT");
         assert_eq!(effective_fixed_multi_generated_frame_count(), 0);
-        assert_eq!(requested_multi_generated_frames_for_swapchain(Mode::MultiBlendTest), 0);
+        assert_eq!(
+            requested_multi_generated_frames_for_swapchain(Mode::MultiBlendTest),
+            0
+        );
         std::env::remove_var("OMFG_MULTI_BLEND_COUNT");
     }
 
@@ -7619,7 +7902,10 @@ OMFG_REPROJECT_CONFIDENCE_SCALE = 7.25
         std::env::set_var("OMFG_MULTI_BLEND_COUNT", "0");
         std::env::set_var("OMFG_MULTI_BLEND_RESERVED_COUNT", "3");
         assert_eq!(effective_fixed_multi_generated_frame_count(), 0);
-        assert_eq!(requested_multi_generated_frames_for_swapchain(Mode::MultiBlendTest), 3);
+        assert_eq!(
+            requested_multi_generated_frames_for_swapchain(Mode::MultiBlendTest),
+            3
+        );
         let result = maybe_expand_multi_swapchain_min_image_count(Mode::MultiBlendTest, 3, 6, None);
         assert_eq!(result, 6);
         std::env::remove_var("OMFG_MULTI_BLEND_COUNT");
@@ -7632,7 +7918,10 @@ OMFG_REPROJECT_CONFIDENCE_SCALE = 7.25
         std::env::set_var("OMFG_MULTI_BLEND_COUNT", "0");
         std::env::set_var("OMFG_MULTI_BLEND_RESERVED_COUNT", "99");
         std::env::set_var("OMFG_MULTI_SWAPCHAIN_MAX_GENERATED_FRAMES", "4");
-        assert_eq!(requested_multi_generated_frames_for_swapchain(Mode::ReprojectMultiBlendTest), 4);
+        assert_eq!(
+            requested_multi_generated_frames_for_swapchain(Mode::ReprojectMultiBlendTest),
+            4
+        );
         std::env::remove_var("OMFG_MULTI_BLEND_COUNT");
         std::env::remove_var("OMFG_MULTI_BLEND_RESERVED_COUNT");
         std::env::remove_var("OMFG_MULTI_SWAPCHAIN_MAX_GENERATED_FRAMES");
@@ -7818,6 +8107,78 @@ OMFG_REPROJECT_CONFIDENCE_SCALE = 7.25
     }
 
     #[test]
+    fn nn_lite_push_constants_use_clean_room_shader_modes() {
+        let _guard = env_test_lock().lock().expect("env test mutex poisoned");
+        std::env::set_var("OMFG_NN_LITE_SEARCH_RADIUS", "3");
+        std::env::set_var("OMFG_NN_LITE_PATCH_RADIUS", "2");
+        std::env::set_var("OMFG_NN_LITE_LEVELS", "2");
+        std::env::set_var("OMFG_NN_LITE_CONFIDENCE_SCALE", "7.0");
+        std::env::set_var("OMFG_NN_LITE_MOTION_PENALTY", "0.04");
+        std::env::set_var("OMFG_DEBUG_VIEW", "confidence");
+
+        let push = blend_push_constants_for_mode(Mode::NnLiteBlendTest);
+        assert_eq!(push.search_radius, 3);
+        assert_eq!(push.patch_radius, 2);
+        assert_eq!(push.optflow_levels, 2);
+        assert_eq!(push.confidence_scale, 7.0);
+        assert_eq!(push.optflow_motion_penalty, 0.04);
+        assert_eq!(push.mode, 8);
+        assert_eq!(push.debug_view, DebugView::Confidence.shader_code());
+
+        let adaptive = blend_push_constants_for_mode(Mode::NnLiteAdaptiveBlendTest);
+        assert_eq!(adaptive.mode, 9);
+        assert!(adaptive.adaptive_strength > 0.0);
+        assert_eq!(adaptive.debug_view, DebugView::Confidence.shader_code());
+
+        std::env::remove_var("OMFG_NN_LITE_SEARCH_RADIUS");
+        std::env::remove_var("OMFG_NN_LITE_PATCH_RADIUS");
+        std::env::remove_var("OMFG_NN_LITE_LEVELS");
+        std::env::remove_var("OMFG_NN_LITE_CONFIDENCE_SCALE");
+        std::env::remove_var("OMFG_NN_LITE_MOTION_PENALTY");
+        std::env::remove_var("OMFG_DEBUG_VIEW");
+    }
+
+    #[test]
+    fn nn_lite_multi_blend_plan_uses_nn_lite_modes_per_generated_frame() {
+        let _guard = env_test_lock().lock().expect("env test mutex poisoned");
+        std::env::set_var("OMFG_NN_LITE_LEVELS", "2");
+        std::env::set_var("OMFG_NN_LITE_CONFIDENCE_SCALE", "6.5");
+        std::env::set_var("OMFG_DEBUG_VIEW", "motion");
+
+        let plan = multi_blend_push_constants_plan(Mode::NnLiteMultiBlendTest, 2);
+        assert_eq!(plan.len(), 2);
+        for frame in &plan {
+            assert_eq!(frame.mode, 8, "nn-lite-multi per-frame mode should be 8");
+            assert_eq!(frame.optflow_levels, 2);
+            assert_eq!(frame.confidence_scale, 6.5);
+            assert!(frame.optflow_motion_penalty > 0.0);
+            assert_eq!(frame.debug_view, DebugView::Motion.shader_code());
+        }
+
+        let adaptive_plan = multi_blend_push_constants_plan(Mode::NnLiteAdaptiveMultiBlendTest, 2);
+        assert_eq!(adaptive_plan.len(), 2);
+        for frame in &adaptive_plan {
+            assert_eq!(
+                frame.mode, 9,
+                "nn-lite-adaptive-multi per-frame mode should be 9"
+            );
+            assert!(frame.adaptive_strength > 0.0);
+            assert_eq!(frame.debug_view, DebugView::Motion.shader_code());
+        }
+
+        std::env::remove_var("OMFG_NN_LITE_LEVELS");
+        std::env::remove_var("OMFG_NN_LITE_CONFIDENCE_SCALE");
+        std::env::remove_var("OMFG_DEBUG_VIEW");
+    }
+
+    #[test]
+    fn gs_vk_blend_test_push_constants_use_mode_ten() {
+        let push = blend_push_constants_for_mode(Mode::GsVkBlendTest);
+        assert_eq!(push.mode, 10, "gs-vk-blend mode should be 10");
+        assert_eq!(push.alpha, 0.5);
+    }
+
+    #[test]
     fn optflow_multi_blend_plan_uses_optflow_mode_per_generated_frame() {
         let _guard = env_test_lock().lock().expect("env test mutex poisoned");
         std::env::set_var("OMFG_OPTICAL_FLOW_LEVELS", "4");
@@ -7951,7 +8312,10 @@ OMFG_REPROJECT_CONFIDENCE_SCALE = 7.25
         std::env::set_var("OMFG_BLEND_ADAPTIVE_BIAS", "0.3");
 
         let push = blend_push_constants_for_mode(Mode::SearchAdaptiveBlendTest);
-        assert_eq!(push.mode, 3, "SearchAdaptiveBlendTest must use shader mode 3");
+        assert_eq!(
+            push.mode, 3,
+            "SearchAdaptiveBlendTest must use shader mode 3"
+        );
         assert!((push.alpha - 0.5).abs() < 1e-6);
         assert_eq!(push.search_radius, 2);
         assert_eq!(push.adaptive_strength, 1.5);
@@ -7983,7 +8347,10 @@ OMFG_REPROJECT_CONFIDENCE_SCALE = 7.25
         std::env::set_var("OMFG_BLEND_ADAPTIVE_STRENGTH", "2.5");
 
         let push = blend_push_constants_for_mode(Mode::ReprojectAdaptiveBlendTest);
-        assert_eq!(push.mode, 5, "ReprojectAdaptiveBlendTest must use shader mode 5");
+        assert_eq!(
+            push.mode, 5,
+            "ReprojectAdaptiveBlendTest must use shader mode 5"
+        );
         assert!((push.alpha - 0.5).abs() < 1e-6);
         assert_eq!(push.adaptive_strength, 2.5);
         assert!(push.confidence_scale > 0.0);
@@ -8037,7 +8404,10 @@ OMFG_REPROJECT_CONFIDENCE_SCALE = 7.25
         let plan = multi_blend_push_constants_plan(Mode::AdaptiveMultiBlendTest, 2);
         assert_eq!(plan.len(), 2);
         for push in &plan {
-            assert_eq!(push.mode, 1, "AdaptiveMultiBlendTest per-frame mode must be 1");
+            assert_eq!(
+                push.mode, 1,
+                "AdaptiveMultiBlendTest per-frame mode must be 1"
+            );
             assert_eq!(push.adaptive_strength, 4.0);
             assert_eq!(push.adaptive_bias, 0.2);
         }
@@ -8063,7 +8433,10 @@ OMFG_REPROJECT_CONFIDENCE_SCALE = 7.25
         let plan = multi_blend_push_constants_plan(Mode::ReprojectMultiBlendTest, 2);
         assert_eq!(plan.len(), 2);
         for push in &plan {
-            assert_eq!(push.mode, 4, "ReprojectMultiBlendTest per-frame mode must be 4");
+            assert_eq!(
+                push.mode, 4,
+                "ReprojectMultiBlendTest per-frame mode must be 4"
+            );
             assert!(push.confidence_scale > 0.0);
         }
     }
@@ -8073,8 +8446,7 @@ OMFG_REPROJECT_CONFIDENCE_SCALE = 7.25
     #[test]
     fn passthrough_does_not_expand_multi_swapchain_headroom() {
         let _guard = env_test_lock().lock().expect("env test mutex poisoned");
-        let result =
-            maybe_expand_multi_swapchain_min_image_count(Mode::PassThrough, 3, 5, None);
+        let result = maybe_expand_multi_swapchain_min_image_count(Mode::PassThrough, 3, 5, None);
         assert_eq!(result, 5);
     }
 
@@ -8091,8 +8463,7 @@ OMFG_REPROJECT_CONFIDENCE_SCALE = 7.25
             Mode::OptFlowBlendTest,
             Mode::OptFlowAdaptiveBlendTest,
         ] {
-            let result =
-                maybe_expand_multi_swapchain_min_image_count(mode, 3, 5, None);
+            let result = maybe_expand_multi_swapchain_min_image_count(mode, 3, 5, None);
             assert_eq!(result, 5, "mode {:?} should not expand", mode);
         }
     }
@@ -8335,13 +8706,8 @@ OMFG_REPROJECT_CONFIDENCE_SCALE = 7.25
         let mut carry = 0.0_f32;
         let mut emitted = Vec::new();
         for _ in 0..6 {
-            let decision = determine_target_generated_frame_count(
-                Some(interval_30fps),
-                60.0,
-                0,
-                2,
-                carry,
-            );
+            let decision =
+                determine_target_generated_frame_count(Some(interval_30fps), 60.0, 0, 2, carry);
             emitted.push(decision.emitted_generated_frames);
             carry = decision.next_credit;
         }

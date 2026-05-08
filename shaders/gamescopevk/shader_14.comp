@@ -1,0 +1,50 @@
+#version 450
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+layout(binding = 0, std140) uniform _12_13
+{
+    float _m0;
+    float _m1;
+    float _m2;
+} _13;
+
+layout(binding = 48, rgba8) uniform writeonly image2D _4;
+layout(binding = 32) uniform sampler2D _5;
+layout(binding = 33) uniform sampler2D _6;
+layout(binding = 34) uniform sampler2D _7;
+layout(binding = 35) uniform sampler2D _8;
+layout(binding = 49, rgba8) uniform writeonly image2D _9;
+layout(binding = 50, rgba8) uniform writeonly image2D _10;
+layout(binding = 36) uniform sampler2D _11;
+
+void main()
+{
+    do
+    {
+        ivec2 _94 = ivec2(gl_GlobalInvocationID.xy);
+        if (any(greaterThanEqual(_94, imageSize(_4))))
+        {
+            break;
+        }
+        uvec2 _104 = uvec2(textureSize(_5, 0));
+        vec2 _109 = vec2(float(_104.x), float(_104.y));
+        vec2 _111 = vec2(gl_GlobalInvocationID.xy) + vec2(0.5);
+        vec4 _115 = vec4(textureLod(_11, _111 / _109, 0.0));
+        vec4 _129 = vec4(_115.xy * float(_13._m1), _115.zw * float(1.0 - _13._m1));
+        vec2 _133 = (_111 + vec2(_129.xy)) / _109;
+        vec2 _137 = (_111 + vec2(_129.zw)) / _109;
+        vec4 _140 = vec4(textureLod(_5, _133, 0.0));
+        vec4 _143 = vec4(textureLod(_6, _133, 0.0));
+        float _147 = dot(_140, vec4(textureLodOffset(_7, _137, 0.0, ivec2(-1, 0))));
+        vec4 _175 = vec4(dot(_140, vec4(textureLodOffset(_7, _137, 0.0, ivec2(-1)))) + dot(_143, vec4(textureLodOffset(_8, _137, 0.0, ivec2(-1)))), dot(_140, vec4(textureLodOffset(_7, _137, 0.0, ivec2(0, -1)))) + dot(_143, vec4(textureLodOffset(_8, _137, 0.0, ivec2(0, -1)))), dot(_140, vec4(textureLodOffset(_7, _137, 0.0, ivec2(1, -1)))) + dot(_143, vec4(textureLodOffset(_8, _137, 0.0, ivec2(1, -1)))), _147);
+        _175.w = _147 + dot(_143, vec4(textureLodOffset(_8, _137, 0.0, ivec2(-1, 0))));
+        imageStore(_4, _94, vec4(((_175 - vec4(float(2.646484375), float(2.720703125), float(2.650390625), float(2.740234375))) * vec4(float(0.810546875), float(0.947265625), float(0.80419921875), float(0.89697265625))) + vec4(float(0.19873046875), float(0.341064453125), float(0.1671142578125), float(0.30908203125))));
+        float _190 = dot(_140, vec4(textureLodOffset(_7, _137, 0.0, ivec2(0, 1))));
+        vec4 _218 = vec4(dot(_140, vec4(textureLod(_7, _137, 0.0))) + dot(_143, vec4(textureLod(_8, _137, 0.0))), dot(_140, vec4(textureLodOffset(_7, _137, 0.0, ivec2(1, 0)))) + dot(_143, vec4(textureLodOffset(_8, _137, 0.0, ivec2(1, 0)))), dot(_140, vec4(textureLodOffset(_7, _137, 0.0, ivec2(-1, 1)))) + dot(_143, vec4(textureLodOffset(_8, _137, 0.0, ivec2(-1, 1)))), _190);
+        _218.w = _190 + dot(_143, vec4(textureLodOffset(_8, _137, 0.0, ivec2(0, 1))));
+        imageStore(_9, _94, vec4(((_218 - vec4(float(2.91796875), float(2.751953125), float(2.642578125), float(2.71484375))) * vec4(float(0.8369140625), float(0.86474609375), float(0.93603515625), float(0.89501953125))) + vec4(float(0.313720703125), float(0.31103515625), float(0.1827392578125), float(0.30517578125))));
+        imageStore(_10, _94, vec4(vec4((((dot(_140, vec4(textureLodOffset(_7, _137, 0.0, ivec2(1)))) + dot(_143, vec4(textureLodOffset(_8, _137, 0.0, ivec2(1))))) - float(2.650390625)) * float(0.89794921875)) + float(0.2105712890625), float(0.0), float(0.0), float(0.0))));
+        break;
+    } while(false);
+}
+

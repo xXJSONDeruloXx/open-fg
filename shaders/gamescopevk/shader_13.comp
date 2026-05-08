@@ -1,0 +1,179 @@
+#version 450
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+layout(binding = 0, std140) uniform _7_8
+{
+    float _m0;
+    float _m1;
+    float _m2;
+} _8;
+
+layout(binding = 32) uniform sampler2D _5;
+layout(binding = 33) uniform sampler2D _6;
+layout(binding = 48, r8) uniform writeonly image2D _9;
+layout(binding = 49, r8) uniform writeonly image2D _10;
+layout(binding = 50, r8) uniform writeonly image2D _11;
+layout(binding = 51, r8) uniform writeonly image2D _12;
+layout(binding = 52, r8) uniform writeonly image2D _13;
+layout(binding = 53, r8) uniform writeonly image2D _14;
+
+shared float _151[32][32];
+
+void main()
+{
+    uvec2 _168 = uvec2(textureSize(_5, 0));
+    vec2 _173 = vec2(float(_168.x), float(_168.y));
+    uvec2 _176 = gl_WorkGroupID.xy * uvec2(32u);
+    uvec2 _179 = gl_LocalInvocationID.xy * uvec2(2u);
+    for (uint _181 = 0u; _181 < 2u; _181++)
+    {
+        for (uint _188 = 0u; _188 < 2u; _188++)
+        {
+            ivec2 _197 = ivec2((_176 + _179) + uvec2(_188, _181));
+            ivec2 _199 = ivec2(_173) - ivec2(1);
+            ivec2 _202 = clamp(_197 + ivec2(-1), ivec2(0), _199);
+            ivec2 _209 = clamp(_197 + ivec2(-1, 0), ivec2(0), _199);
+            ivec2 _217 = clamp(_197 + ivec2(-1, 1), ivec2(0), _199);
+            ivec2 _225 = clamp(_197 + ivec2(0, -1), ivec2(0), _199);
+            ivec2 _232 = clamp(_197, ivec2(0), _199);
+            ivec2 _240 = clamp(_197 + ivec2(0, 1), ivec2(0), _199);
+            ivec2 _248 = clamp(_197 + ivec2(1, -1), ivec2(0), _199);
+            ivec2 _256 = clamp(_197 + ivec2(1, 0), ivec2(0), _199);
+            ivec2 _264 = clamp(_197 + ivec2(1), ivec2(0), _199);
+            float _311 = ((((((((((((((dot(vec4(texelFetch(_5, _202, 0)), vec4(float(0.70947265625), float(-0.411376953125), float(-0.435302734375), float(-0.58203125))) + dot(vec4(texelFetch(_5, _209, 0)), vec4(float(0.67431640625), float(-0.29736328125), float(-0.485595703125), float(-1.0830078125)))) + dot(vec4(texelFetch(_5, _217, 0)), vec4(float(1.1103515625), float(-0.5859375), float(-0.63671875), float(-1.16796875)))) + dot(vec4(texelFetch(_5, _225, 0)), vec4(float(0.31591796875), float(-0.455078125), float(-0.57470703125), float(-0.88330078125)))) + dot(vec4(texelFetch(_5, _232, 0)), vec4(float(0.232177734375), float(-0.218017578125), float(-0.51513671875), float(-1.6123046875)))) + dot(vec4(texelFetch(_5, _240, 0)), vec4(float(0.70849609375), float(-0.5029296875), float(-0.6328125), float(-1.62890625)))) + dot(vec4(texelFetch(_5, _248, 0)), vec4(float(0.8505859375), float(-0.689453125), float(-0.87841796875), float(-0.71923828125)))) + dot(vec4(texelFetch(_5, _256, 0)), vec4(float(0.712890625), float(-0.53271484375), float(-0.76513671875), float(-0.89892578125)))) + dot(vec4(texelFetch(_5, _264, 0)), vec4(float(1.11328125), float(-0.763671875), float(-0.87646484375), float(-1.166015625)))) + dot(vec4(texelFetch(_6, _202, 0)), vec4(float(-0.7666015625), float(0.8642578125), float(-0.54052734375), float(0.51953125)))) + dot(vec4(texelFetch(_6, _209, 0)), vec4(float(-0.96142578125), float(0.73388671875), float(-0.6201171875), float(0.59375)))) + dot(vec4(texelFetch(_6, _217, 0)), vec4(float(-1.3798828125), float(0.92626953125), float(-0.77685546875), float(0.72900390625)))) + dot(vec4(texelFetch(_6, _225, 0)), vec4(float(-0.61279296875), float(0.6650390625), float(-0.6083984375), float(0.63427734375)))) + dot(vec4(texelFetch(_6, _232, 0)), vec4(float(-0.478515625), float(0.432373046875), float(-0.63720703125), float(0.6142578125)))) + dot(vec4(texelFetch(_6, _240, 0)), vec4(float(-0.810546875), float(0.58984375), float(-0.70263671875), float(0.74609375)))) + dot(vec4(texelFetch(_6, _248, 0)), vec4(float(-1.15625), float(0.82958984375), float(-0.8193359375), float(0.8388671875)));
+            float _328 = float(1.0) / (float(1.0) + exp(-(((_311 + dot(vec4(texelFetch(_6, _256, 0)), vec4(float(-0.97607421875), float(0.67333984375), float(-0.798828125), float(0.8271484375)))) + dot(vec4(texelFetch(_6, _264, 0)), vec4(float(-1.296875), float(0.8388671875), float(-0.7939453125), float(0.96484375)))) + float(0.21533203125))));
+            float _333 = step(float(_8._m2), _328) * _328;
+            if (all(lessThan(_197, imageSize(_9))))
+            {
+                imageStore(_9, _197, vec4(float(_333)));
+            }
+            _151[_179.x + _188][_179.y + _181] = _333;
+        }
+    }
+    barrier();
+    bool _350 = gl_LocalInvocationID.x < 16u;
+    bool _356;
+    if (_350)
+    {
+        _356 = gl_LocalInvocationID.y < 16u;
+    }
+    else
+    {
+        _356 = _350;
+    }
+    if (_356)
+    {
+        uint _359 = gl_LocalInvocationID.x << 1u;
+        uint _362 = gl_LocalInvocationID.y << 1u;
+        uint _365 = _359 + 1u;
+        uint _369 = _362 + 1u;
+        float _376 = float(0.25) * (((_151[_359][_362] + _151[_365][_362]) + _151[_359][_369]) + _151[_365][_369]);
+        ivec2 _379 = ivec2((gl_WorkGroupID.xy * uvec2(16u)) + gl_LocalInvocationID.xy);
+        if (all(lessThan(_379, imageSize(_10))))
+        {
+            imageStore(_10, _379, vec4(float(_376)));
+        }
+        _151[gl_LocalInvocationID.x][gl_LocalInvocationID.y] = _376;
+    }
+    barrier();
+    bool _390 = gl_LocalInvocationID.x < 8u;
+    bool _396;
+    if (_390)
+    {
+        _396 = gl_LocalInvocationID.y < 8u;
+    }
+    else
+    {
+        _396 = _390;
+    }
+    if (_396)
+    {
+        uint _399 = gl_LocalInvocationID.x << 1u;
+        uint _402 = gl_LocalInvocationID.y << 1u;
+        uint _405 = _399 + 1u;
+        uint _409 = _402 + 1u;
+        float _416 = float(0.25) * (((_151[_399][_402] + _151[_405][_402]) + _151[_399][_409]) + _151[_405][_409]);
+        ivec2 _419 = ivec2((gl_WorkGroupID.xy * uvec2(8u)) + gl_LocalInvocationID.xy);
+        if (all(lessThan(_419, imageSize(_11))))
+        {
+            imageStore(_11, _419, vec4(float(_416)));
+        }
+        _151[gl_LocalInvocationID.x][gl_LocalInvocationID.y] = _416;
+    }
+    barrier();
+    bool _430 = gl_LocalInvocationID.x < 4u;
+    bool _436;
+    if (_430)
+    {
+        _436 = gl_LocalInvocationID.y < 4u;
+    }
+    else
+    {
+        _436 = _430;
+    }
+    if (_436)
+    {
+        uint _439 = gl_LocalInvocationID.x << 1u;
+        uint _442 = gl_LocalInvocationID.y << 1u;
+        uint _445 = _439 + 1u;
+        uint _449 = _442 + 1u;
+        float _456 = float(0.25) * (((_151[_439][_442] + _151[_445][_442]) + _151[_439][_449]) + _151[_445][_449]);
+        ivec2 _459 = ivec2((gl_WorkGroupID.xy * uvec2(4u)) + gl_LocalInvocationID.xy);
+        if (all(lessThan(_459, imageSize(_12))))
+        {
+            imageStore(_12, _459, vec4(float(_456)));
+        }
+        _151[gl_LocalInvocationID.x][gl_LocalInvocationID.y] = _456;
+    }
+    barrier();
+    bool _470 = gl_LocalInvocationID.x < 2u;
+    bool _476;
+    if (_470)
+    {
+        _476 = gl_LocalInvocationID.y < 2u;
+    }
+    else
+    {
+        _476 = _470;
+    }
+    if (_476)
+    {
+        uint _479 = gl_LocalInvocationID.x << 1u;
+        uint _482 = gl_LocalInvocationID.y << 1u;
+        uint _485 = _479 + 1u;
+        uint _489 = _482 + 1u;
+        float _496 = float(0.25) * (((_151[_479][_482] + _151[_485][_482]) + _151[_479][_489]) + _151[_485][_489]);
+        ivec2 _499 = ivec2((gl_WorkGroupID.xy * uvec2(2u)) + gl_LocalInvocationID.xy);
+        if (all(lessThan(_499, imageSize(_13))))
+        {
+            imageStore(_13, _499, vec4(float(_496)));
+        }
+        _151[gl_LocalInvocationID.x][gl_LocalInvocationID.y] = _496;
+    }
+    barrier();
+    bool _510 = gl_LocalInvocationID.x < 1u;
+    bool _516;
+    if (_510)
+    {
+        _516 = gl_LocalInvocationID.y < 1u;
+    }
+    else
+    {
+        _516 = _510;
+    }
+    if (_516)
+    {
+        uint _519 = gl_LocalInvocationID.x << 1u;
+        uint _522 = gl_LocalInvocationID.y << 1u;
+        uint _525 = _519 + 1u;
+        uint _529 = _522 + 1u;
+        float _536 = float(0.25) * (((_151[_519][_522] + _151[_525][_522]) + _151[_519][_529]) + _151[_525][_529]);
+        ivec2 _538 = ivec2(gl_WorkGroupID.xy + gl_LocalInvocationID.xy);
+        if (all(lessThan(_538, imageSize(_14))))
+        {
+            imageStore(_14, _538, vec4(float(_536)));
+        }
+        _151[gl_LocalInvocationID.x][gl_LocalInvocationID.y] = _536;
+    }
+}
+

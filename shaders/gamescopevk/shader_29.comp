@@ -1,0 +1,23 @@
+#version 450
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+layout(binding = 48, rgba16f) uniform writeonly image2D _4;
+layout(binding = 32) uniform sampler2D _5;
+layout(binding = 33) uniform sampler2D _6;
+
+void main()
+{
+    do
+    {
+        ivec2 _243 = ivec2(gl_GlobalInvocationID.xy);
+        if (any(greaterThanEqual(_243, imageSize(_4))))
+        {
+            break;
+        }
+        uvec2 _253 = uvec2(textureSize(_5, 0));
+        vec2 _261 = (vec2(gl_GlobalInvocationID.xy) + vec2(0.5)) / vec2(float(_253.x), float(_253.y));
+        imageStore(_4, _243, vec4(((((((((((mat4(vec4(float(0.2978515625), float(0.27880859375), float(-0.744140625), float(-0.70068359375)), vec4(float(0.1429443359375), float(0.12115478515625), float(0.11199951171875), float(0.135009765625)), vec4(float(0.20263671875), float(0.2030029296875), float(0.38818359375), float(0.3916015625)), vec4(float(-0.6982421875), float(-0.69775390625), float(0.326416015625), float(0.32373046875))) * vec4(textureLodOffset(_5, _261, 0.0, ivec2(-1)))) + (mat4(vec4(float(0.6103515625), float(0.59814453125), float(-0.07452392578125), float(-0.0933837890625)), vec4(float(0.47900390625), float(0.47021484375), float(0.3330078125), float(0.36669921875)), vec4(float(0.399658203125), float(0.395263671875), float(0.439453125), float(0.43896484375)), vec4(float(-0.66015625), float(-0.6337890625), float(0.1593017578125), float(0.1490478515625))) * vec4(textureLodOffset(_5, _261, 0.0, ivec2(-1, 0))))) + (mat4(vec4(float(0.317626953125), float(0.295166015625), float(-0.8017578125), float(-0.76171875)), vec4(float(0.099365234375), float(0.07647705078125), float(0.212890625), float(0.2216796875)), vec4(float(0.275146484375), float(0.26708984375), float(0.279052734375), float(0.306396484375)), vec4(float(-0.69970703125), float(-0.6669921875), float(0.314453125), float(0.320068359375))) * vec4(textureLodOffset(_5, _261, 0.0, ivec2(-1, 1))))) + (mat4(vec4(float(0.56640625), float(0.576171875), float(0.0634765625), float(0.0697021484375)), vec4(float(0.47265625), float(0.468017578125), float(0.405029296875), float(0.41650390625)), vec4(float(0.37353515625), float(0.36474609375), float(0.541015625), float(0.556640625)), vec4(float(-0.625), float(-0.6630859375), float(0.2158203125), float(0.20947265625))) * vec4(textureLodOffset(_5, _261, 0.0, ivec2(0, -1))))) + (mat4(vec4(float(0.85791015625), float(0.8330078125), float(0.6259765625), float(0.591796875)), vec4(float(0.826171875), float(0.7802734375), float(0.6591796875), float(0.66015625)), vec4(float(0.5673828125), float(0.5419921875), float(0.61669921875), float(0.6171875)), vec4(float(-0.55224609375), float(-0.5537109375), float(0.0438232421875), float(0.0533447265625))) * vec4(textureLod(_5, _261, 0.0)))) + (mat4(vec4(float(0.59033203125), float(0.5673828125), float(-0.1058349609375), float(-0.12890625)), vec4(float(0.439208984375), float(0.419677734375), float(0.5283203125), float(0.53759765625)), vec4(float(0.46337890625), float(0.44873046875), float(0.47509765625), float(0.48193359375)), vec4(float(-0.67529296875), float(-0.6640625), float(0.2344970703125), float(0.2325439453125))) * vec4(textureLodOffset(_5, _261, 0.0, ivec2(0, 1))))) + (mat4(vec4(float(0.32373046875), float(0.308349609375), float(-0.59814453125), float(-0.54345703125)), vec4(float(0.1268310546875), float(0.11712646484375), float(0.1986083984375), float(0.2012939453125)), vec4(float(0.25390625), float(0.2548828125), float(0.40625), float(0.403076171875)), vec4(float(-0.66845703125), float(-0.6845703125), float(0.290771484375), float(0.289794921875))) * vec4(textureLodOffset(_5, _261, 0.0, ivec2(1, -1))))) + (mat4(vec4(float(0.5859375), float(0.595703125), float(-0.0224151611328125), float(-0.0367431640625)), vec4(float(0.438232421875), float(0.453369140625), float(0.45068359375), float(0.455810546875)), vec4(float(0.444091796875), float(0.447021484375), float(0.475341796875), float(0.47216796875)), vec4(float(-0.64892578125), float(-0.6533203125), float(0.1353759765625), float(0.1385498046875))) * vec4(textureLodOffset(_5, _261, 0.0, ivec2(1, 0))))) + (mat4(vec4(float(0.316650390625), float(0.325927734375), float(-0.81396484375), float(-0.798828125)), vec4(float(0.06280517578125), float(0.07110595703125), float(0.341552734375), float(0.3369140625)), vec4(float(0.30712890625), float(0.3095703125), float(0.338134765625), float(0.3212890625)), vec4(float(-0.71337890625), float(-0.6943359375), float(0.291259765625), float(0.30078125))) * vec4(textureLodOffset(_5, _261, 0.0, ivec2(1))))) + vec4(float(0.7431640625), float(0.830078125), float(0.434814453125), float(0.371337890625))) + vec4(textureLod(_6, _261, 0.0))));
+        break;
+    } while(false);
+}
+

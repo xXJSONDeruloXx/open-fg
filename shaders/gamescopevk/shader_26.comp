@@ -1,0 +1,180 @@
+#version 450
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+layout(binding = 48, rgba8) uniform writeonly image2D _4;
+layout(binding = 32) uniform sampler2D _5;
+
+void main()
+{
+    do
+    {
+        ivec2 _251 = ivec2(gl_GlobalInvocationID.xy);
+        if (any(greaterThanEqual(_251, imageSize(_4))))
+        {
+            break;
+        }
+        ivec2 _259 = _251 + ivec2(-1);
+        bool _261 = all(greaterThanEqual(_259, ivec2(0)));
+        bool _269;
+        if (_261)
+        {
+            _269 = all(lessThan(_259, textureSize(_5, 0)));
+        }
+        else
+        {
+            _269 = _261;
+        }
+        vec4 _276;
+        if (_269)
+        {
+            _276 = texelFetch(_5, _259, 0);
+        }
+        else
+        {
+            _276 = vec4(0.0);
+        }
+        ivec2 _279 = _251 + ivec2(-1, 0);
+        bool _281 = all(greaterThanEqual(_279, ivec2(0)));
+        bool _289;
+        if (_281)
+        {
+            _289 = all(lessThan(_279, textureSize(_5, 0)));
+        }
+        else
+        {
+            _289 = _281;
+        }
+        vec4 _296;
+        if (_289)
+        {
+            _296 = texelFetch(_5, _279, 0);
+        }
+        else
+        {
+            _296 = vec4(0.0);
+        }
+        ivec2 _300 = _251 + ivec2(-1, 1);
+        bool _302 = all(greaterThanEqual(_300, ivec2(0)));
+        bool _310;
+        if (_302)
+        {
+            _310 = all(lessThan(_300, textureSize(_5, 0)));
+        }
+        else
+        {
+            _310 = _302;
+        }
+        vec4 _317;
+        if (_310)
+        {
+            _317 = texelFetch(_5, _300, 0);
+        }
+        else
+        {
+            _317 = vec4(0.0);
+        }
+        ivec2 _321 = _251 + ivec2(0, -1);
+        bool _323 = all(greaterThanEqual(_321, ivec2(0)));
+        bool _331;
+        if (_323)
+        {
+            _331 = all(lessThan(_321, textureSize(_5, 0)));
+        }
+        else
+        {
+            _331 = _323;
+        }
+        vec4 _338;
+        if (_331)
+        {
+            _338 = texelFetch(_5, _321, 0);
+        }
+        else
+        {
+            _338 = vec4(0.0);
+        }
+        ivec2 _348 = _251 + ivec2(0, 1);
+        bool _350 = all(greaterThanEqual(_348, ivec2(0)));
+        bool _358;
+        if (_350)
+        {
+            _358 = all(lessThan(_348, textureSize(_5, 0)));
+        }
+        else
+        {
+            _358 = _350;
+        }
+        vec4 _365;
+        if (_358)
+        {
+            _365 = texelFetch(_5, _348, 0);
+        }
+        else
+        {
+            _365 = vec4(0.0);
+        }
+        ivec2 _369 = _251 + ivec2(1, -1);
+        bool _371 = all(greaterThanEqual(_369, ivec2(0)));
+        bool _379;
+        if (_371)
+        {
+            _379 = all(lessThan(_369, textureSize(_5, 0)));
+        }
+        else
+        {
+            _379 = _371;
+        }
+        vec4 _386;
+        if (_379)
+        {
+            _386 = texelFetch(_5, _369, 0);
+        }
+        else
+        {
+            _386 = vec4(0.0);
+        }
+        ivec2 _390 = _251 + ivec2(1, 0);
+        bool _392 = all(greaterThanEqual(_390, ivec2(0)));
+        bool _400;
+        if (_392)
+        {
+            _400 = all(lessThan(_390, textureSize(_5, 0)));
+        }
+        else
+        {
+            _400 = _392;
+        }
+        vec4 _407;
+        if (_400)
+        {
+            _407 = texelFetch(_5, _390, 0);
+        }
+        else
+        {
+            _407 = vec4(0.0);
+        }
+        ivec2 _411 = _251 + ivec2(1);
+        bool _413 = all(greaterThanEqual(_411, ivec2(0)));
+        bool _421;
+        if (_413)
+        {
+            _421 = all(lessThan(_411, textureSize(_5, 0)));
+        }
+        else
+        {
+            _421 = _413;
+        }
+        vec4 _428;
+        if (_421)
+        {
+            _428 = texelFetch(_5, _411, 0);
+        }
+        else
+        {
+            _428 = vec4(0.0);
+        }
+        imageStore(_4, _251, vec4((((((((((((mat4(vec4(float(0.039886474609375), float(-0.494873046875), float(-0.4248046875), float(-0.51171875)), vec4(float(0.0177764892578125), float(0.6962890625), float(0.1864013671875), float(-0.03448486328125)), vec4(float(0.0787353515625), float(-0.1571044921875), float(-1.1572265625), float(-0.184326171875)), vec4(float(0.08892822265625), float(0.54150390625), float(0.436279296875), float(0.05548095703125))) * vec4(_276)) + (mat4(vec4(float(0.04754638671875), float(-0.444091796875), float(-0.123779296875), float(0.58544921875)), vec4(float(-0.035858154296875), float(-0.38232421875), float(0.240966796875), float(0.2244873046875)), vec4(float(-0.058807373046875), float(0.4736328125), float(-0.047515869140625), float(-0.6357421875)), vec4(float(-0.1734619140625), float(-0.459716796875), float(0.41748046875), float(0.60791015625))) * vec4(_296))) + (mat4(vec4(float(0.359375), float(-0.40380859375), float(-0.42236328125), float(-0.224609375)), vec4(float(-0.328369140625), float(0.10101318359375), float(0.1622314453125), float(0.284423828125)), vec4(float(0.270263671875), float(0.033599853515625), float(-0.95751953125), float(-0.65087890625)), vec4(float(0.015594482421875), float(0.154296875), float(0.60400390625), float(0.374267578125))) * vec4(_317))) + (mat4(vec4(float(-0.322265625), float(-0.10394287109375), float(-0.039337158203125), float(-0.321044921875)), vec4(float(0.034881591796875), float(-0.423583984375), float(-0.00583648681640625), float(0.06292724609375)), vec4(float(0.07269287109375), float(0.4716796875), float(-0.337890625), float(0.05535888671875)), vec4(float(0.17333984375), float(-0.4306640625), float(-0.09906005859375), float(-0.01125335693359375))) * vec4(_338))) + (mat4(vec4(float(0.04608154296875), float(-0.08575439453125), float(0.1285400390625), float(0.50537109375)), vec4(float(0.049591064453125), float(0.1475830078125), float(0.365234375), float(0.220947265625)), vec4(float(-0.025482177734375), float(-0.2076416015625), float(0.23486328125), float(-0.454345703125)), vec4(float(0.13818359375), float(0.0987548828125), float(0.1697998046875), float(0.60400390625))) * vec4(texelFetch(_5, _251, 0)))) + (mat4(vec4(float(0.04095458984375), float(-0.047119140625), float(-0.126220703125), float(0.1849365234375)), vec4(float(-0.00021994113922119140625), float(0.25439453125), float(0.06365966796875), float(-0.0229949951171875)), vec4(float(-0.0081787109375), float(-0.1314697265625), float(-0.0679931640625), float(-0.293701171875)), vec4(float(0.05316162109375), float(0.3388671875), float(0.0745849609375), float(0.26513671875))) * vec4(_365))) + (mat4(vec4(float(-0.9833984375), float(0.1689453125), float(0.034088134765625), float(-0.446533203125)), vec4(float(0.403564453125), float(0.59765625), float(0.0286102294921875), float(0.151611328125)), vec4(float(-0.3740234375), float(-0.59228515625), float(-0.71533203125), float(0.06878662109375)), vec4(float(0.46044921875), float(0.80859375), float(0.149658203125), float(-0.14990234375))) * vec4(_386))) + (mat4(vec4(float(-0.294189453125), float(-0.265869140625), float(0.1612548828125), float(-0.2166748046875)), vec4(float(0.06060791015625), float(-0.412353515625), float(0.10845947265625), float(0.12841796875)), vec4(float(-0.1680908203125), float(0.391845703125), float(-0.0364990234375), float(0.15234375)), vec4(float(0.2183837890625), float(-0.433349609375), float(0.01494598388671875), float(-0.1700439453125))) * vec4(_407))) + (mat4(vec4(float(-0.2239990234375), float(-0.427978515625), float(-0.2034912109375), float(-0.489501953125)), vec4(float(0.1865234375), float(0.44482421875), float(0.14208984375), float(0.1512451171875)), vec4(float(-0.487548828125), float(-0.03253173828125), float(-1.2294921875), float(-0.1922607421875)), vec4(float(0.50537109375), float(0.306640625), float(0.2359619140625), float(-0.13232421875))) * vec4(_428))) - vec4(float(0.61962890625), float(0.87060546875), float(-0.330322265625), float(0.35009765625))) * vec4(float(0.322021484375), float(0.591796875), float(0.59912109375), float(0.42138671875))) + vec4(float(0.5595703125), float(0.37646484375), float(1.2724609375), float(-0.1226806640625))));
+        break;
+    } while(false);
+}
+

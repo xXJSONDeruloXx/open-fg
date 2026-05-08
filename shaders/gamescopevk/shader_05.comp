@@ -1,0 +1,23 @@
+#version 450
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+layout(binding = 48, rgba8) uniform writeonly image2D _4;
+layout(binding = 32) uniform sampler2D _5;
+
+void main()
+{
+    do
+    {
+        ivec2 _114 = ivec2(gl_GlobalInvocationID.xy);
+        if (any(greaterThanEqual(_114, imageSize(_4))))
+        {
+            break;
+        }
+        uvec2 _124 = uvec2(textureSize(_5, 0));
+        vec2 _133 = (vec2(gl_GlobalInvocationID.xy * uvec2(2u)) + vec2(0.5)) / vec2(float(_124.x), float(_124.y));
+        vec4 _214 = (((((((((vec4(float(0.2138671875), float(-0.061798095703125), float(-0.2091064453125), float(-1.0029296875)) * (((float(textureLodOffset(_5, _133, 0.0, ivec2(-1)).x) - float(0.2080078125)) * float(1.49609375)) + float(0.76953125))) + (vec4(float(0.343994140625), float(-0.04486083984375), float(-0.327880859375), float(-0.62060546875)) * (((float(textureLodOffset(_5, _133, 0.0, ivec2(-1, 0)).x) - float(0.2080078125)) * float(1.49609375)) + float(0.76953125)))) + (vec4(float(0.1617431640625), float(-0.0237274169921875), float(-0.16748046875), float(-0.256103515625)) * (((float(textureLodOffset(_5, _133, 0.0, ivec2(-1, 1)).x) - float(0.2080078125)) * float(1.49609375)) + float(0.76953125)))) + (vec4(float(0.34033203125), float(-0.0031566619873046875), float(-0.315673828125), float(0.0011692047119140625)) * (((float(textureLodOffset(_5, _133, 0.0, ivec2(0, -1)).x) - float(0.2080078125)) * float(1.49609375)) + float(0.76953125)))) + (vec4(float(0.70654296875), float(0.04998779296875), float(-0.666015625), float(0.1534423828125)) * (((float(textureLod(_5, _133, 0.0).x) - float(0.2080078125)) * float(1.49609375)) + float(0.76953125)))) + (vec4(float(0.441650390625), float(0.060455322265625), float(-0.435546875), float(0.2081298828125)) * (((float(textureLodOffset(_5, _133, 0.0, ivec2(0, 1)).x) - float(0.2080078125)) * float(1.49609375)) + float(0.76953125)))) + (vec4(float(0.14453125), float(0.006183624267578125), float(-0.154296875), float(-0.07080078125)) * (((float(textureLodOffset(_5, _133, 0.0, ivec2(1, -1)).x) - float(0.2080078125)) * float(1.49609375)) + float(0.76953125)))) + (vec4(float(0.44677734375), float(0.05987548828125), float(-0.418701171875), float(0.0965576171875)) * (((float(textureLodOffset(_5, _133, 0.0, ivec2(1, 0)).x) - float(0.2080078125)) * float(1.49609375)) + float(0.76953125)))) + (vec4(float(0.352783203125), float(0.047119140625), float(-0.324951171875), float(0.1416015625)) * (((float(textureLodOffset(_5, _133, 0.0, ivec2(1)).x) - float(0.2080078125)) * float(1.49609375)) + float(0.76953125)))) - vec4(float(2.408203125), float(0.06976318359375), float(-2.306640625), float(-1.0205078125));
+        imageStore(_4, _114, vec4((_214 * vec4(float(0.1949462890625), float(0.292236328125), float(0.43359375), float(0.6943359375))) + vec4(float(0.0882568359375), float(-0.257568359375), float(-0.1861572265625), float(-0.52392578125))));
+        break;
+    } while(false);
+}
+

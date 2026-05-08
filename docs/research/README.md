@@ -8,6 +8,8 @@
   - curated vendor-source summaries and source ledger
 - [Real-game compatibility journal](./compatibility/README.md)
   - Steam Deck compatibility investigation notes
+- [GameScopeVK clean-room NN-lite shader notes](./gamescopevk-nn-lite-clean-room.md)
+  - local reverse-engineering summary, clean-room constraints, and NN-lite mode design
 
 ## Notes
 

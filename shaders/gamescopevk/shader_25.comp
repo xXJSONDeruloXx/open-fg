@@ -1,0 +1,123 @@
+#version 450
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+layout(binding = 0, std140) uniform _6_7
+{
+    float _m0;
+    float _m1;
+    float _m2;
+} _7;
+
+layout(binding = 48, rgba8) uniform writeonly image2D _4;
+layout(binding = 32) uniform sampler2D _5;
+layout(binding = 36) uniform sampler2D _8;
+layout(binding = 37) uniform sampler2D _9;
+layout(binding = 33) uniform sampler2D _10;
+layout(binding = 34) uniform sampler2D _11;
+layout(binding = 35) uniform sampler2D _12;
+
+void main()
+{
+    do
+    {
+        ivec2 _297 = ivec2(gl_GlobalInvocationID.xy);
+        if (any(greaterThanEqual(_297, imageSize(_4))))
+        {
+            break;
+        }
+        uvec2 _307 = uvec2(textureSize(_5, 0));
+        vec2 _312 = vec2(float(_307.x), float(_307.y));
+        vec2 _314 = vec2(gl_GlobalInvocationID.xy) + vec2(0.5);
+        vec2 _315 = _314 / _312;
+        ivec2 _317 = ivec2(_307) - ivec2(1);
+        float _321 = float(1.0 - _7._m1);
+        float _322 = float(_7._m1);
+        vec4 _325 = vec4(textureLod(_8, _315, 0.0));
+        vec2 _337 = (_314 + vec2(vec2(textureLod(_8, (_314 + vec2(_325.xy * _321)) / _312, 0.0).xy))) / _312;
+        vec2 _349 = (_314 + vec2(vec2(textureLod(_8, (_314 + vec2(_325.zw * _322)) / _312, 0.0).zw))) / _312;
+        vec4 _352 = vec4(textureLod(_9, _315, 0.0));
+        vec4 _375 = vec4(vec2(textureLod(_9, (_314 + vec2(_352.xy * _321)) / _312, 0.0).xy), vec2(textureLod(_9, (_314 + vec2(_352.zw * _322)) / _312, 0.0).zw));
+        vec2 _379 = (_314 + vec2(_375.xy)) / _312;
+        vec2 _383 = (_314 + vec2(_375.zw)) / _312;
+        vec4 _386 = vec4(textureLod(_5, _337, 0.0));
+        vec4 _389 = vec4(textureLod(_10, _337, 0.0));
+        vec4 _392 = vec4(textureLod(_5, _379, 0.0));
+        vec4 _395 = vec4(textureLod(_10, _379, 0.0));
+        ivec2 _398 = clamp(_297 + ivec2(-1), ivec2(0), _317);
+        vec4 _401 = vec4(texelFetch(_11, _398, 0));
+        vec4 _405 = vec4(texelFetch(_12, _398, 0));
+        ivec2 _408 = clamp(_297 + ivec2(0, -1), ivec2(0), _317);
+        vec4 _411 = vec4(texelFetch(_11, _408, 0));
+        vec4 _415 = vec4(texelFetch(_12, _408, 0));
+        ivec2 _418 = clamp(_297 + ivec2(1, -1), ivec2(0), _317);
+        vec4 _421 = vec4(texelFetch(_11, _418, 0));
+        vec4 _425 = vec4(texelFetch(_12, _418, 0));
+        ivec2 _428 = clamp(_297 + ivec2(-1, 0), ivec2(0), _317);
+        vec4 _431 = vec4(texelFetch(_11, _428, 0));
+        float _432 = dot(_386, _431);
+        vec4 _442 = vec4(dot(_386, _401) + dot(_389, _405), dot(_386, _411) + dot(_389, _415), dot(_386, _421) + dot(_389, _425), _432);
+        float _443 = dot(_392, _431);
+        vec4 _453 = vec4(dot(_392, _401) + dot(_395, _405), dot(_392, _411) + dot(_395, _415), dot(_392, _421) + dot(_395, _425), _443);
+        vec4 _457 = vec4(texelFetch(_12, _428, 0));
+        _442.w = _432 + dot(_389, _457);
+        _453.w = _443 + dot(_395, _457);
+        vec4 _466 = vec4(textureLod(_11, _315, 0.0));
+        vec4 _469 = vec4(textureLod(_12, _315, 0.0));
+        ivec2 _472 = clamp(_297 + ivec2(1, 0), ivec2(0), _317);
+        vec4 _475 = vec4(texelFetch(_11, _472, 0));
+        vec4 _479 = vec4(texelFetch(_12, _472, 0));
+        ivec2 _482 = clamp(_297 + ivec2(-1, 1), ivec2(0), _317);
+        vec4 _485 = vec4(texelFetch(_11, _482, 0));
+        vec4 _489 = vec4(texelFetch(_12, _482, 0));
+        ivec2 _492 = clamp(_297 + ivec2(0, 1), ivec2(0), _317);
+        vec4 _495 = vec4(texelFetch(_11, _492, 0));
+        float _496 = dot(_386, _495);
+        vec4 _506 = vec4(dot(_386, _466) + dot(_389, _469), dot(_386, _475) + dot(_389, _479), dot(_386, _485) + dot(_389, _489), _496);
+        float _507 = dot(_392, _495);
+        vec4 _517 = vec4(dot(_392, _466) + dot(_395, _469), dot(_392, _475) + dot(_395, _479), dot(_392, _485) + dot(_395, _489), _507);
+        vec4 _521 = vec4(texelFetch(_12, _492, 0));
+        _506.w = _496 + dot(_389, _521);
+        _517.w = _507 + dot(_395, _521);
+        ivec2 _530 = clamp(_297 + ivec2(1), ivec2(0), _317);
+        vec4 _533 = vec4(texelFetch(_11, _530, 0));
+        vec4 _537 = vec4(texelFetch(_12, _530, 0));
+        vec4 _540 = vec4(textureLod(_11, _349, 0.0));
+        vec4 _543 = vec4(textureLod(_12, _349, 0.0));
+        vec4 _546 = vec4(textureLod(_11, _383, 0.0));
+        vec4 _549 = vec4(textureLod(_12, _383, 0.0));
+        vec4 _553 = vec4(texelFetch(_5, _398, 0));
+        vec4 _557 = vec4(texelFetch(_10, _398, 0));
+        vec4 _561 = vec4(texelFetch(_5, _408, 0));
+        vec4 _565 = vec4(texelFetch(_10, _408, 0));
+        vec4 _569 = vec4(texelFetch(_5, _418, 0));
+        vec4 _573 = vec4(texelFetch(_10, _418, 0));
+        vec4 _577 = vec4(texelFetch(_5, _428, 0));
+        float _578 = dot(_540, _577);
+        vec4 _588 = vec4(dot(_540, _553) + dot(_543, _557), dot(_540, _561) + dot(_543, _565), dot(_540, _569) + dot(_543, _573), _578);
+        float _589 = dot(_546, _577);
+        vec4 _599 = vec4(dot(_546, _553) + dot(_549, _557), dot(_546, _561) + dot(_549, _565), dot(_546, _569) + dot(_549, _573), _589);
+        vec4 _603 = vec4(texelFetch(_10, _428, 0));
+        _588.w = _578 + dot(_543, _603);
+        _599.w = _589 + dot(_549, _603);
+        vec4 _612 = vec4(textureLod(_5, _315, 0.0));
+        vec4 _615 = vec4(textureLod(_10, _315, 0.0));
+        vec4 _619 = vec4(texelFetch(_5, _472, 0));
+        vec4 _623 = vec4(texelFetch(_10, _472, 0));
+        vec4 _627 = vec4(texelFetch(_5, _482, 0));
+        vec4 _631 = vec4(texelFetch(_10, _482, 0));
+        vec4 _635 = vec4(texelFetch(_5, _492, 0));
+        float _636 = dot(_540, _635);
+        vec4 _646 = vec4(dot(_540, _612) + dot(_543, _615), dot(_540, _619) + dot(_543, _623), dot(_540, _627) + dot(_543, _631), _636);
+        float _647 = dot(_546, _635);
+        vec4 _657 = vec4(dot(_546, _612) + dot(_549, _615), dot(_546, _619) + dot(_549, _623), dot(_546, _627) + dot(_549, _631), _647);
+        vec4 _661 = vec4(texelFetch(_10, _492, 0));
+        _646.w = _636 + dot(_543, _661);
+        _657.w = _647 + dot(_549, _661);
+        vec4 _671 = vec4(texelFetch(_5, _530, 0));
+        vec4 _675 = vec4(texelFetch(_10, _530, 0));
+        vec4 _737 = ((((((((mat4(vec4(float(0.4501953125), float(0.49365234375), float(0.1787109375), float(0.4853515625)), vec4(float(-0.06634521484375), float(0.62060546875), float(-0.09783935546875), float(0.493896484375)), vec4(float(0.34130859375), float(0.447509765625), float(0.293212890625), float(0.414794921875)), vec4(float(-0.0943603515625), float(0.580078125), float(-0.1612548828125), float(0.322998046875))) * clamp(((_442 - vec4(float(2.609375), float(2.685546875), float(2.607421875), float(2.71484375))) * vec4(float(1.3974609375), float(1.1240234375), float(1.337890625), float(1.1181640625))) + vec4(float(-0.442138671875), float(0.082763671875), float(-0.56787109375), float(0.096923828125)), vec4(float(0.0)), vec4(float(1.0)))) + (mat4(vec4(float(-0.356689453125), float(0.5048828125), float(-0.0845947265625), float(0.42529296875)), vec4(float(-0.11151123046875), float(0.7509765625), float(-0.0767822265625), float(0.23046875)), vec4(float(0.254638671875), float(0.1102294921875), float(0.0364990234375), float(0.356201171875)), vec4(float(0.000872135162353515625), float(0.6552734375), float(-0.09271240234375), float(0.350341796875))) * clamp(((_506 - vec4(float(2.896484375), float(2.71484375), float(2.609375), float(2.689453125))) * vec4(float(0.99267578125), float(0.8349609375), float(0.9697265625), float(0.783203125))) + vec4(float(0.3408203125), float(0.24169921875), float(-0.0697021484375), float(0.195556640625)), vec4(float(0.0)), vec4(float(1.0))))) + (vec4(float(0.352783203125), float(0.0994873046875), float(0.0078125), float(0.34130859375)) * clamp((((dot(_386, _533) + dot(_389, _537)) - float(2.611328125)) * float(1.0478515625)) + float(-0.04693603515625), float(0.0), float(1.0)))) + (mat4(vec4(float(-0.5322265625), float(-0.1083984375), float(-0.64697265625), float(-0.2734375)), vec4(float(-0.38232421875), float(0.07257080078125), float(-0.5546875), float(-0.07635498046875)), vec4(float(-0.69287109375), float(-0.08441162109375), float(-0.548828125), float(-0.332763671875)), vec4(float(-0.51513671875), float(0.10284423828125), float(-0.477294921875), float(-0.08941650390625))) * clamp(((_588 - vec4(float(2.609375), float(2.685546875), float(2.607421875), float(2.71484375))) * vec4(float(1.3974609375), float(1.1240234375), float(1.337890625), float(1.1181640625))) + vec4(float(-0.442138671875), float(0.082763671875), float(-0.56787109375), float(0.096923828125)), vec4(float(0.0)), vec4(float(1.0))))) + (mat4(vec4(float(-1.0478515625), float(-0.060821533203125), float(-0.408203125), float(0.1461181640625)), vec4(float(-0.5244140625), float(0.1883544921875), float(-0.472412109375), float(-0.190673828125)), vec4(float(0.021148681640625), float(-0.1319580078125), float(-0.59521484375), float(-0.333251953125)), vec4(float(-0.238525390625), float(0.196533203125), float(-0.50537109375), float(-0.154541015625))) * clamp(((_646 - vec4(float(2.896484375), float(2.71484375), float(2.609375), float(2.689453125))) * vec4(float(0.99267578125), float(0.8349609375), float(0.9697265625), float(0.783203125))) + vec4(float(0.3408203125), float(0.24169921875), float(-0.0697021484375), float(0.195556640625)), vec4(float(0.0)), vec4(float(1.0))))) + (vec4(float(-0.02752685546875), float(-0.174560546875), float(-0.59228515625), float(-0.35400390625)) * clamp((((dot(_540, _671) + dot(_543, _675)) - float(2.611328125)) * float(1.0478515625)) + float(-0.04693603515625), float(0.0), float(1.0)))) + (mat4(vec4(float(0.1055908203125), float(-0.04534912109375), float(0.10455322265625), float(-0.05029296875)), vec4(float(0.266357421875), float(-0.207275390625), float(0.326904296875), float(-0.200927734375)), vec4(float(-0.049713134765625), float(-0.045654296875), float(0.174560546875), float(0.1339111328125)), vec4(float(0.30419921875), float(-0.18115234375), float(0.285888671875), float(-0.252685546875))) * clamp(((_453 - vec4(float(2.609375), float(2.685546875), float(2.607421875), float(2.71484375))) * vec4(float(1.3974609375), float(1.1240234375), float(1.337890625), float(1.1181640625))) + vec4(float(-0.442138671875), float(0.082763671875), float(-0.56787109375), float(0.096923828125)), vec4(float(0.0)), vec4(float(1.0))))) + (mat4(vec4(float(-0.61279296875), float(-0.459716796875), float(0.49169921875), float(-0.84375)), vec4(float(0.1854248046875), float(-0.0595703125), float(0.282958984375), float(-0.25341796875)), vec4(float(0.16845703125), float(-0.2236328125), float(0.16259765625), float(-0.007289886474609375)), vec4(float(0.01971435546875), float(0.01392364501953125), float(0.27978515625), float(-0.216796875))) * clamp(((_517 - vec4(float(2.896484375), float(2.71484375), float(2.609375), float(2.689453125))) * vec4(float(0.99267578125), float(0.8349609375), float(0.9697265625), float(0.783203125))) + vec4(float(0.3408203125), float(0.24169921875), float(-0.0697021484375), float(0.195556640625)), vec4(float(0.0)), vec4(float(1.0))))) + (vec4(float(0.2744140625), float(-0.1727294921875), float(0.06805419921875), float(0.061279296875)) * clamp((((dot(_392, _533) + dot(_395, _537)) - float(2.611328125)) * float(1.0478515625)) + float(-0.04693603515625), float(0.0), float(1.0)));
+        imageStore(_4, _297, vec4((((((_737 + (mat4(vec4(float(0.095947265625), float(-0.0023250579833984375), float(0.182861328125), float(0.00882720947265625)), vec4(float(0.2379150390625), float(-0.1378173828125), float(0.271728515625), float(-0.183837890625)), vec4(float(0.0667724609375), float(0.039459228515625), float(0.1470947265625), float(0.0296783447265625)), vec4(float(0.341796875), float(-0.1363525390625), float(0.2744140625), float(-0.139404296875))) * clamp(((_599 - vec4(float(2.609375), float(2.685546875), float(2.607421875), float(2.71484375))) * vec4(float(1.3974609375), float(1.1240234375), float(1.337890625), float(1.1181640625))) + vec4(float(-0.442138671875), float(0.082763671875), float(-0.56787109375), float(0.096923828125)), vec4(float(0.0)), vec4(float(1.0))))) + (mat4(vec4(float(-0.69189453125), float(-0.341064453125), float(0.491455078125), float(-0.7236328125)), vec4(float(0.201904296875), float(-0.017181396484375), float(0.336669921875), float(-0.08819580078125)), vec4(float(0.36962890625), float(-0.1961669921875), float(0.1878662109375), float(0.035675048828125)), vec4(float(0.0215301513671875), float(0.0272674560546875), float(0.286376953125), float(-0.10150146484375))) * clamp(((_657 - vec4(float(2.896484375), float(2.71484375), float(2.609375), float(2.689453125))) * vec4(float(0.99267578125), float(0.8349609375), float(0.9697265625), float(0.783203125))) + vec4(float(0.3408203125), float(0.24169921875), float(-0.0697021484375), float(0.195556640625)), vec4(float(0.0)), vec4(float(1.0))))) + (vec4(float(0.33251953125), float(-0.01299285888671875), float(0.1673583984375), float(0.09429931640625)) * clamp((((dot(_546, _671) + dot(_549, _675)) - float(2.611328125)) * float(1.0478515625)) + float(-0.04693603515625), float(0.0), float(1.0)))) - vec4(float(-0.8017578125), float(0.34912109375), float(0.2242431640625), float(-0.51513671875))) * vec4(float(1.0830078125), float(1.916015625), float(1.244140625), float(1.4609375))) + vec4(float(-0.1959228515625), float(0.8134765625), float(0.354736328125), float(0.9853515625))));
+        break;
+    } while(false);
+}
+

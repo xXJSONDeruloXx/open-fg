@@ -46,6 +46,8 @@ pub fn mutate_swapchain(
             | Mode::ReprojectAdaptiveBlendTest
             | Mode::OptFlowBlendTest
             | Mode::OptFlowAdaptiveBlendTest
+            | Mode::NnLiteBlendTest
+            | Mode::NnLiteAdaptiveBlendTest
     ) {
         modified_usage |= vk::ImageUsageFlags::TRANSFER_SRC;
         modified_usage |= vk::ImageUsageFlags::SAMPLED;
@@ -64,6 +66,9 @@ pub fn mutate_swapchain(
             | Mode::ReprojectAdaptiveMultiBlendTest
             | Mode::OptFlowMultiBlendTest
             | Mode::OptFlowAdaptiveMultiBlendTest
+            | Mode::NnLiteMultiBlendTest
+            | Mode::NnLiteAdaptiveMultiBlendTest
+            | Mode::GsVkBlendTest
     ) {
         modified_usage |= vk::ImageUsageFlags::TRANSFER_SRC;
         modified_usage |= vk::ImageUsageFlags::SAMPLED;
@@ -108,12 +113,17 @@ pub fn planned_sequence(mode: Mode, state: &SimulatedPresentState) -> PresentSeq
         | Mode::ReprojectAdaptiveBlendTest
         | Mode::OptFlowBlendTest
         | Mode::OptFlowAdaptiveBlendTest
+        | Mode::NnLiteBlendTest
+        | Mode::NnLiteAdaptiveBlendTest
         | Mode::ReprojectMultiBlendTest
         | Mode::ReprojectAdaptiveMultiBlendTest
         | Mode::MultiBlendTest
         | Mode::AdaptiveMultiBlendTest
         | Mode::OptFlowMultiBlendTest
         | Mode::OptFlowAdaptiveMultiBlendTest
+        | Mode::NnLiteMultiBlendTest
+        | Mode::NnLiteAdaptiveMultiBlendTest
+        | Mode::GsVkBlendTest
             if !state.history_valid =>
         {
             PresentSequence::PrimeHistory
@@ -127,12 +137,17 @@ pub fn planned_sequence(mode: Mode, state: &SimulatedPresentState) -> PresentSeq
         | Mode::ReprojectAdaptiveBlendTest
         | Mode::OptFlowBlendTest
         | Mode::OptFlowAdaptiveBlendTest
+        | Mode::NnLiteBlendTest
+        | Mode::NnLiteAdaptiveBlendTest
         | Mode::ReprojectMultiBlendTest
         | Mode::ReprojectAdaptiveMultiBlendTest
         | Mode::MultiBlendTest
         | Mode::AdaptiveMultiBlendTest
         | Mode::OptFlowMultiBlendTest
-        | Mode::OptFlowAdaptiveMultiBlendTest => PresentSequence::GeneratedThenOriginal,
+        | Mode::OptFlowAdaptiveMultiBlendTest
+        | Mode::NnLiteMultiBlendTest
+        | Mode::NnLiteAdaptiveMultiBlendTest
+        | Mode::GsVkBlendTest => PresentSequence::GeneratedThenOriginal,
     }
 }
 
@@ -253,7 +268,9 @@ pub fn mark_injection_result(
         | Mode::ReprojectBlendTest
         | Mode::ReprojectAdaptiveBlendTest
         | Mode::OptFlowBlendTest
-        | Mode::OptFlowAdaptiveBlendTest => {
+        | Mode::OptFlowAdaptiveBlendTest
+        | Mode::NnLiteBlendTest
+        | Mode::NnLiteAdaptiveBlendTest => {
             if state.history_valid && injected_successfully {
                 state.injection_works = true;
                 state.generated_present_count += 1;
@@ -265,7 +282,10 @@ pub fn mark_injection_result(
         | Mode::ReprojectMultiBlendTest
         | Mode::ReprojectAdaptiveMultiBlendTest
         | Mode::OptFlowMultiBlendTest
-        | Mode::OptFlowAdaptiveMultiBlendTest => {
+        | Mode::OptFlowAdaptiveMultiBlendTest
+        | Mode::NnLiteMultiBlendTest
+        | Mode::NnLiteAdaptiveMultiBlendTest
+        | Mode::GsVkBlendTest => {
             if state.history_valid && injected_successfully {
                 state.injection_works = true;
                 state.generated_present_count += 2;
@@ -994,7 +1014,9 @@ mod tests {
             None,
         );
         assert_eq!(result.modified_min_image_count, 4);
-        assert!(result.modified_usage.contains(vk::ImageUsageFlags::TRANSFER_DST));
+        assert!(result
+            .modified_usage
+            .contains(vk::ImageUsageFlags::TRANSFER_DST));
     }
 
     #[test]
@@ -1044,7 +1066,9 @@ mod tests {
         ] {
             let result = mutate_swapchain(mode, 3, vk::ImageUsageFlags::COLOR_ATTACHMENT, None);
             assert_eq!(result.modified_min_image_count, 5, "mode {:?}", mode);
-            assert!(result.modified_usage.contains(vk::ImageUsageFlags::TRANSFER_SRC));
+            assert!(result
+                .modified_usage
+                .contains(vk::ImageUsageFlags::TRANSFER_SRC));
             assert!(result.modified_usage.contains(vk::ImageUsageFlags::SAMPLED));
         }
     }
@@ -1187,8 +1211,7 @@ mod tests {
     fn target_generated_frame_count_enforces_min_count() {
         // Base is 60 fps, target 80 fps — desired ~0.33 generated frames.
         // With min_count=1, should still emit 1.
-        let decision =
-            determine_target_generated_frame_count(Some(1000.0 / 60.0), 80.0, 1, 3, 0.0);
+        let decision = determine_target_generated_frame_count(Some(1000.0 / 60.0), 80.0, 1, 3, 0.0);
         assert_eq!(decision.emitted_generated_frames, 1);
     }
 

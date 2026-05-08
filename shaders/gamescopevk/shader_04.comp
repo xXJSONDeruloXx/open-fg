@@ -1,0 +1,50 @@
+#version 450
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+layout(binding = 0, std140) uniform _7_8
+{
+    float _m0;
+    float _m1;
+    float _m2;
+} _8;
+
+layout(binding = 48) uniform writeonly image2D _4;
+layout(binding = 32) uniform sampler2D _5;
+layout(binding = 34) uniform sampler2D _6;
+layout(binding = 35) uniform sampler2D _9;
+layout(binding = 36) uniform sampler2D _10;
+layout(binding = 33) uniform sampler2D _11;
+
+void main()
+{
+    do
+    {
+        ivec2 _49 = ivec2(gl_GlobalInvocationID.xy);
+        if (any(greaterThanEqual(_49, imageSize(_4))))
+        {
+            break;
+        }
+        uvec2 _59 = uvec2(textureSize(_5, 0));
+        vec2 _64 = vec2(float(_59.x), float(_59.y));
+        vec2 _66 = vec2(gl_GlobalInvocationID.xy) + vec2(0.5);
+        vec2 _67 = _66 / _64;
+        vec4 _72 = textureLod(_6, _67, 0.0) * _8._m0;
+        float _75 = 2.0 * _8._m1;
+        float _76 = 1.0 - _8._m1;
+        float _77 = 2.0 * _76;
+        vec4 _80 = textureLod(_9, _67, 0.0) * _8._m0;
+        vec2 _84 = (_66 + (_72.xy * _75)) / _64;
+        vec2 _88 = (_66 + (_72.zw * _77)) / _64;
+        vec2 _92 = (_66 + (_80.xy * _75)) / _64;
+        vec2 _96 = (_66 + (_80.zw * _77)) / _64;
+        vec4 _110 = exp(vec4(textureLod(_10, _84, 0.0).x, textureLod(_10, _88, 0.0).y, textureLod(_10, _92, 0.0).z, textureLod(_10, _96, 0.0).w));
+        vec4 _119 = _110 / vec4(((_110.x + _110.y) + _110.z) + _110.w);
+        float _120 = _119.x;
+        float _121 = _119.y;
+        float _122 = _119.z;
+        float _123 = _119.w;
+        imageStore(_4, _49, (((((textureLod(_5, _84, 0.0) * _76) * _120) + ((textureLod(_11, _88, 0.0) * _8._m1) * _121)) + ((textureLod(_5, _92, 0.0) * _76) * _122)) + ((textureLod(_11, _96, 0.0) * _8._m1) * _123)) / vec4(((((_76 * _120) + (_8._m1 * _121)) + (_76 * _122)) + (_8._m1 * _123)) + 9.9999999392252902907785028219223e-09));
+        break;
+    } while(false);
+}
+
