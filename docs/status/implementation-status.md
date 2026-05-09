@@ -69,6 +69,10 @@ Rust also now has additional next-step backend modes:
 - `optflow-adaptive-blend`
 - `optflow-multi-blend`
 - `optflow-adaptive-multi-blend`
+- `nn-lite-blend`
+- `nn-lite-adaptive-blend`
+- `nn-lite-multi-blend`
+- `nn-lite-adaptive-multi-blend`
 - `multi-blend`
 - `adaptive-multi-blend`
 - `reproject-multi-blend`

@@ -13,8 +13,12 @@ pub enum Mode {
     ReprojectAdaptiveBlendTest,
     OptFlowBlendTest,
     OptFlowAdaptiveBlendTest,
+    NnLiteBlendTest,
+    NnLiteAdaptiveBlendTest,
     OptFlowMultiBlendTest,
     OptFlowAdaptiveMultiBlendTest,
+    NnLiteMultiBlendTest,
+    NnLiteAdaptiveMultiBlendTest,
     ReprojectMultiBlendTest,
     ReprojectAdaptiveMultiBlendTest,
     MultiBlendTest,
@@ -54,6 +58,16 @@ impl Mode {
             | "optflow-adaptive"
             | "optical-flow-adaptive"
             | "optflow-adaptive-blend-test" => Self::OptFlowAdaptiveBlendTest,
+            "nn-lite-blend"
+            | "nn-lite"
+            | "neural-lite-blend"
+            | "neural-network-lite"
+            | "nn-lite-blend-test" => Self::NnLiteBlendTest,
+            "nn-lite-adaptive-blend"
+            | "nn-lite-adaptive"
+            | "neural-lite-adaptive"
+            | "neural-network-lite-adaptive"
+            | "nn-lite-adaptive-blend-test" => Self::NnLiteAdaptiveBlendTest,
             "optflow-multi-blend"
             | "optflow-multi-fg"
             | "optflow-multi"
@@ -64,6 +78,16 @@ impl Mode {
             | "optflow-adaptive-multi"
             | "optical-flow-adaptive-multi"
             | "optflow-adaptive-multi-blend-test" => Self::OptFlowAdaptiveMultiBlendTest,
+            "nn-lite-multi-blend"
+            | "nn-lite-multi-fg"
+            | "nn-lite-multi"
+            | "neural-lite-multi"
+            | "nn-lite-multi-blend-test" => Self::NnLiteMultiBlendTest,
+            "nn-lite-adaptive-multi-blend"
+            | "nn-lite-adaptive-multi-fg"
+            | "nn-lite-adaptive-multi"
+            | "neural-lite-adaptive-multi"
+            | "nn-lite-adaptive-multi-blend-test" => Self::NnLiteAdaptiveMultiBlendTest,
             "reproject-multi-blend"
             | "reproject-multi-fg"
             | "reproject-multi-blend-test"
@@ -103,8 +127,12 @@ impl Mode {
             Self::ReprojectAdaptiveBlendTest => "reproject-adaptive-blend-test",
             Self::OptFlowBlendTest => "optflow-blend-test",
             Self::OptFlowAdaptiveBlendTest => "optflow-adaptive-blend-test",
+            Self::NnLiteBlendTest => "nn-lite-blend-test",
+            Self::NnLiteAdaptiveBlendTest => "nn-lite-adaptive-blend-test",
             Self::OptFlowMultiBlendTest => "optflow-multi-blend-test",
             Self::OptFlowAdaptiveMultiBlendTest => "optflow-adaptive-multi-blend-test",
+            Self::NnLiteMultiBlendTest => "nn-lite-multi-blend-test",
+            Self::NnLiteAdaptiveMultiBlendTest => "nn-lite-adaptive-multi-blend-test",
             Self::ReprojectMultiBlendTest => "reproject-multi-blend-test",
             Self::ReprojectAdaptiveMultiBlendTest => "reproject-adaptive-multi-blend-test",
             Self::MultiBlendTest => "multi-blend-test",
@@ -320,6 +348,22 @@ mod tests {
             Mode::OptFlowAdaptiveBlendTest
         );
         assert_eq!(
+            Mode::from_env_value(Some("nn-lite-blend")),
+            Mode::NnLiteBlendTest
+        );
+        assert_eq!(
+            Mode::from_env_value(Some("neural-network-lite")),
+            Mode::NnLiteBlendTest
+        );
+        assert_eq!(
+            Mode::from_env_value(Some("nn-lite-adaptive-blend")),
+            Mode::NnLiteAdaptiveBlendTest
+        );
+        assert_eq!(
+            Mode::from_env_value(Some("neural-network-lite-adaptive")),
+            Mode::NnLiteAdaptiveBlendTest
+        );
+        assert_eq!(
             Mode::from_env_value(Some("optflow-multi-blend")),
             Mode::OptFlowMultiBlendTest
         );
@@ -358,6 +402,22 @@ mod tests {
         assert_eq!(
             Mode::from_env_value(Some("optflow-adaptive-multi-blend-test")),
             Mode::OptFlowAdaptiveMultiBlendTest
+        );
+        assert_eq!(
+            Mode::from_env_value(Some("nn-lite-multi-blend")),
+            Mode::NnLiteMultiBlendTest
+        );
+        assert_eq!(
+            Mode::from_env_value(Some("neural-lite-multi")),
+            Mode::NnLiteMultiBlendTest
+        );
+        assert_eq!(
+            Mode::from_env_value(Some("nn-lite-adaptive-multi-blend")),
+            Mode::NnLiteAdaptiveMultiBlendTest
+        );
+        assert_eq!(
+            Mode::from_env_value(Some("neural-lite-adaptive-multi")),
+            Mode::NnLiteAdaptiveMultiBlendTest
         );
         assert_eq!(
             Mode::from_env_value(Some("reproject-multi-blend")),
@@ -447,6 +507,11 @@ mod tests {
             Mode::OptFlowAdaptiveBlendTest.name(),
             "optflow-adaptive-blend-test"
         );
+        assert_eq!(Mode::NnLiteBlendTest.name(), "nn-lite-blend-test");
+        assert_eq!(
+            Mode::NnLiteAdaptiveBlendTest.name(),
+            "nn-lite-adaptive-blend-test"
+        );
         assert_eq!(
             Mode::OptFlowMultiBlendTest.name(),
             "optflow-multi-blend-test"
@@ -454,6 +519,14 @@ mod tests {
         assert_eq!(
             Mode::OptFlowAdaptiveMultiBlendTest.name(),
             "optflow-adaptive-multi-blend-test"
+        );
+        assert_eq!(
+            Mode::NnLiteMultiBlendTest.name(),
+            "nn-lite-multi-blend-test"
+        );
+        assert_eq!(
+            Mode::NnLiteAdaptiveMultiBlendTest.name(),
+            "nn-lite-adaptive-multi-blend-test"
         );
         assert_eq!(
             Mode::ReprojectMultiBlendTest.name(),

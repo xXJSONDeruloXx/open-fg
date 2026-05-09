@@ -57,6 +57,67 @@ float symmetric_patch_error(vec2 center_uv, ivec2 half_offset_px, int patch_radi
     return error;
 }
 
+vec4 nn_lite_feature(sampler2D frame, vec2 uv, vec2 texel) {
+    // Clean-room, fixed-weight feature encoder inspired by the public GameScopeVK-RE
+    // architecture notes: keep a tiny 4-channel feature space and use 3x3 local
+    // context. These constants are hand-authored Sobel/Laplacian/color-basis
+    // filters, not extracted network weights.
+    vec3 center = texture(frame, uv).rgb;
+    float center_luma = luma(center);
+    float left_luma = luma(texture(frame, uv - vec2(texel.x, 0.0)).rgb);
+    float right_luma = luma(texture(frame, uv + vec2(texel.x, 0.0)).rgb);
+    float up_luma = luma(texture(frame, uv - vec2(0.0, texel.y)).rgb);
+    float down_luma = luma(texture(frame, uv + vec2(0.0, texel.y)).rgb);
+    float diag0 = luma(texture(frame, uv + vec2(texel.x, texel.y)).rgb);
+    float diag1 = luma(texture(frame, uv + vec2(-texel.x, texel.y)).rgb);
+    float diag2 = luma(texture(frame, uv + vec2(texel.x, -texel.y)).rgb);
+    float diag3 = luma(texture(frame, uv - vec2(texel.x, texel.y)).rgb);
+
+    float gx = (right_luma - left_luma) + 0.5 * (diag0 + diag2 - diag1 - diag3);
+    float gy = (down_luma - up_luma) + 0.5 * (diag0 + diag1 - diag2 - diag3);
+    float lap = (left_luma + right_luma + up_luma + down_luma) * 0.25 - center_luma;
+    float chroma = length(center - vec3(center_luma));
+
+    vec4 h0 = vec4(center_luma, gx, gy, chroma);
+    h0 = (h0 * vec4(1.25, 3.5, 3.5, 2.0) + vec4(-0.15, 0.0, 0.0, -0.05));
+    h0 = h0 / (vec4(1.0) + abs(h0));
+
+    // A tiny fixed MLP-like channel mixer. It provides a smoother descriptor for
+    // matching than raw RGB without shipping any proprietary/trained weights.
+    vec4 h1;
+    h1.x = max(0.0,  0.70 * h0.x + 0.18 * h0.w - 0.08 * abs(lap));
+    h1.y =          0.55 * h0.y + 0.20 * h0.x - 0.10 * h0.w;
+    h1.z =          0.55 * h0.z + 0.20 * h0.x - 0.10 * h0.w;
+    h1.w = max(0.0, 0.35 * abs(h0.y) + 0.35 * abs(h0.z) + 0.30 * h0.w + 0.20 * abs(lap));
+    return h1;
+}
+
+float nn_lite_feature_patch_error(vec2 center_uv, ivec2 half_offset_px, int patch_radius, vec2 texel, float chroma_weight) {
+    float error = 0.0;
+    for (int patch_y = -MAX_PATCH_RADIUS; patch_y <= MAX_PATCH_RADIUS; ++patch_y) {
+        if (abs(patch_y) > patch_radius) {
+            continue;
+        }
+        for (int patch_x = -MAX_PATCH_RADIUS; patch_x <= MAX_PATCH_RADIUS; ++patch_x) {
+            if (abs(patch_x) > patch_radius) {
+                continue;
+            }
+            vec2 patch_offset = vec2(patch_x, patch_y) * texel;
+            vec4 prev_feature = nn_lite_feature(u_prev_frame, center_uv + vec2(half_offset_px) * texel + patch_offset, texel);
+            vec4 curr_feature = nn_lite_feature(u_curr_frame, center_uv - vec2(half_offset_px) * texel + patch_offset, texel);
+            float feature_error = dot(abs(prev_feature - curr_feature), vec4(0.35, 0.25, 0.25, 0.15));
+
+            // Keep a small color residual in the score so flat UI/game regions do
+            // not over-trust edge features alone.
+            vec3 prev_rgb = texture(u_prev_frame, center_uv + vec2(half_offset_px) * texel + patch_offset).rgb;
+            vec3 curr_rgb = texture(u_curr_frame, center_uv - vec2(half_offset_px) * texel + patch_offset).rgb;
+            float color_error = mix(abs(luma(prev_rgb) - luma(curr_rgb)), length(prev_rgb - curr_rgb), chroma_weight);
+            error += feature_error + 0.35 * color_error;
+        }
+    }
+    return error;
+}
+
 vec4 neighborhood_temporal_fill(vec2 center_uv, vec2 half_offset_uv, float alpha, int radius, vec2 texel) {
     vec4 accum = vec4(0.0);
     float total_weight = 0.0;
@@ -142,6 +203,91 @@ void coarse_to_fine_half_offset(
     }
 }
 
+void nn_lite_half_offset(
+    vec2 center_uv,
+    int search_radius,
+    int patch_radius,
+    int levels,
+    vec2 texel,
+    float chroma_weight,
+    float motion_penalty_scale,
+    out ivec2 best_half_offset,
+    out float zero_error,
+    out float best_error,
+    out float second_best_error
+) {
+    zero_error = nn_lite_feature_patch_error(center_uv, ivec2(0), patch_radius, texel, chroma_weight);
+    best_half_offset = ivec2(0);
+    best_error = zero_error;
+    second_best_error = 1e20;
+
+    int clamped_levels = clamp(levels, 1, MAX_OPTFLOW_LEVELS);
+    for (int level = MAX_OPTFLOW_LEVELS - 1; level >= 0; --level) {
+        if (level >= clamped_levels) {
+            continue;
+        }
+
+        int step_px = 1 << level;
+        float level_best_error = 1e20;
+        float level_second_best_error = 1e20;
+        ivec2 level_best_half_offset = best_half_offset;
+
+        for (int oy = -MAX_SEARCH_RADIUS; oy <= MAX_SEARCH_RADIUS; ++oy) {
+            if (abs(oy) > search_radius) {
+                continue;
+            }
+            for (int ox = -MAX_SEARCH_RADIUS; ox <= MAX_SEARCH_RADIUS; ++ox) {
+                if (abs(ox) > search_radius) {
+                    continue;
+                }
+                ivec2 step_offset = ivec2(ox * step_px, oy * step_px);
+                ivec2 candidate_half_offset = best_half_offset + step_offset;
+                float motion_penalty = motion_penalty_scale * float(dot(step_offset, step_offset));
+                float error = nn_lite_feature_patch_error(center_uv, candidate_half_offset, patch_radius, texel, chroma_weight) + motion_penalty;
+                if (error < level_best_error) {
+                    level_second_best_error = level_best_error;
+                    level_best_error = error;
+                    level_best_half_offset = candidate_half_offset;
+                } else if (error < level_second_best_error) {
+                    level_second_best_error = error;
+                }
+            }
+        }
+
+        best_half_offset = level_best_half_offset;
+        best_error = level_best_error;
+        second_best_error = level_second_best_error;
+    }
+}
+
+vec4 nn_lite_softmax_synthesis(vec2 center_uv, vec2 half_offset_uv, float alpha, float confidence) {
+    vec4 prev_forward = texture(u_prev_frame, center_uv + half_offset_uv);
+    vec4 curr_forward = texture(u_curr_frame, center_uv - half_offset_uv);
+    vec4 prev_reverse = texture(u_prev_frame, center_uv - half_offset_uv);
+    vec4 curr_reverse = texture(u_curr_frame, center_uv + half_offset_uv);
+
+    float residual_forward = length(prev_forward.rgb - curr_forward.rgb);
+    float residual_reverse = length(prev_reverse.rgb - curr_reverse.rgb);
+    float residual_zero = length(texture(u_prev_frame, center_uv).rgb - texture(u_curr_frame, center_uv).rgb);
+
+    vec4 logits = vec4(
+        -residual_forward + log(max(1.0 - alpha, 1e-3)),
+        -residual_forward + log(max(alpha, 1e-3)),
+        -residual_reverse + log(max(1.0 - alpha, 1e-3)),
+        -mix(residual_reverse, residual_zero, 0.25) + log(max(alpha, 1e-3))
+    ) * mix(1.0, 4.0, confidence);
+    float max_logit = max(max(logits.x, logits.y), max(logits.z, logits.w));
+    vec4 weights = exp(logits - vec4(max_logit));
+    weights /= max(dot(weights, vec4(1.0)), 1e-4);
+
+    vec4 synthesized = prev_forward * weights.x
+        + curr_forward * weights.y
+        + prev_reverse * weights.z
+        + curr_reverse * weights.w;
+    synthesized.a = mix(prev_forward.a, curr_forward.a, alpha);
+    return synthesized;
+}
+
 void main() {
     vec4 prev_color = texture(u_prev_frame, v_uv);
     vec4 curr_color = texture(u_curr_frame, v_uv);
@@ -165,6 +311,8 @@ void main() {
     float debug_fallback_alpha = u_params.alpha;
     vec4 debug_reproject_prev = prev_color;
     vec4 debug_reproject_curr = curr_color;
+    vec4 nn_lite_synthesis_color = vec4(0.0);
+    float nn_lite_synthesis_weight = 0.0;
 
     if (u_params.mode == 2u || u_params.mode == 3u) {
         ivec2 size_px = textureSize(u_prev_frame, 0);
@@ -189,7 +337,7 @@ void main() {
             }
         }
         source_prev = best_prev;
-    } else if (u_params.mode == 4u || u_params.mode == 5u || u_params.mode == 6u || u_params.mode == 7u) {
+    } else if (u_params.mode == 4u || u_params.mode == 5u || u_params.mode == 6u || u_params.mode == 7u || u_params.mode == 8u || u_params.mode == 9u) {
         reproject_mode = true;
         ivec2 size_px = textureSize(u_prev_frame, 0);
         vec2 texel = 1.0 / vec2(size_px);
@@ -201,6 +349,20 @@ void main() {
 
         if (u_params.mode == 6u || u_params.mode == 7u) {
             coarse_to_fine_half_offset(
+                v_uv,
+                search_radius,
+                patch_radius,
+                int(u_params.optflow_levels),
+                texel,
+                chroma_weight,
+                u_params.optflow_motion_penalty,
+                best_half_offset,
+                zero_error,
+                best_error,
+                second_best_error
+            );
+        } else if (u_params.mode == 8u || u_params.mode == 9u) {
+            nn_lite_half_offset(
                 v_uv,
                 search_radius,
                 patch_radius,
@@ -280,9 +442,14 @@ void main() {
 
         source_prev = mix(prev_color, reproject_prev, confidence);
         source_curr = mix(curr_color, reproject_curr, confidence);
+
+        if (u_params.mode == 8u || u_params.mode == 9u) {
+            nn_lite_synthesis_color = nn_lite_softmax_synthesis(v_uv, half_offset_uv, u_params.alpha, confidence);
+            nn_lite_synthesis_weight = clamp(0.35 + 0.65 * confidence, 0.0, 1.0);
+        }
     }
 
-    if (u_params.mode == 1u || u_params.mode == 3u || u_params.mode == 5u || u_params.mode == 7u) {
+    if (u_params.mode == 1u || u_params.mode == 3u || u_params.mode == 5u || u_params.mode == 7u || u_params.mode == 9u) {
         float diff = length(source_curr.rgb - source_prev.rgb);
         float motion = clamp(diff * u_params.adaptive_strength, 0.0, 1.0);
         blend_alpha = clamp(mix(u_params.alpha, 1.0 - u_params.adaptive_bias, motion), 0.0, 1.0);
@@ -295,6 +462,9 @@ void main() {
         vec4 fallback_color = mix(prev_color, curr_color, fallback_alpha);
         vec4 reprojection_color = mix(debug_reproject_prev, debug_reproject_curr, blend_alpha);
         blended_color = mix(fallback_color, reprojection_color, debug_confidence);
+        if (u_params.mode == 8u || u_params.mode == 9u) {
+            blended_color = mix(blended_color, nn_lite_synthesis_color, nn_lite_synthesis_weight);
+        }
     }
     if (reproject_mode && reproject_hole_fill_weight > 0.0 && u_params.hole_fill_radius > 0u) {
         int hole_fill_radius = min(int(u_params.hole_fill_radius), MAX_HOLE_FILL_RADIUS);
@@ -304,7 +474,7 @@ void main() {
 
     if (u_params.debug_view == 1u) {
         float search_norm = max(float(search_radius), 1.0);
-        if (u_params.mode == 6u || u_params.mode == 7u) {
+        if (u_params.mode == 6u || u_params.mode == 7u || u_params.mode == 8u || u_params.mode == 9u) {
             search_norm *= float(1 << max(int(u_params.optflow_levels) - 1, 0));
         }
         vec2 motion_norm = clamp(debug_half_offset_px / search_norm, vec2(-1.0), vec2(1.0));
